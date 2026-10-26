@@ -1,0 +1,29 @@
+# Local / personal
+.DS_Store
+Takeout/
+*.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+*.tsbuildinfo
+out/
+dist/
+coverage/
+web-dist/
+
+# Aspire (keep aspire-apphost/.aspire/modules; ignore local caches)
+aspire-output/
+.aspire/
+aspire-apphost/.aspire/cache/
+aspire-apphost/node_modules/
+
+# Test runtime
+.testcontainers/
+playwright-report/
+test-results/
+
+# Media / data volumes (local docker)
+data/
+*.log

@@ -1,0 +1,35 @@
+{
+  "name": "placard",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Self-hosted library of the places you care about.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "packageManager": "pnpm@12.4.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "aspire run",
+    "build": "pnpm --filter @placard/web build && pnpm --filter @placard/server typecheck",
+    "start": "pnpm --filter @placard/server start",
+    "worker": "pnpm --filter @placard/server worker",
+    "db:generate": "pnpm --filter @placard/server db:generate",
+    "db:migrate": "pnpm --filter @placard/server db:migrate",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "typecheck": "pnpm -r --filter './packages/*' --filter './apps/*' typecheck",
+    "test": "pnpm --filter @placard/server test",
+    "test:unit": "pnpm --filter @placard/server test:unit",
+    "test:integration": "pnpm --filter @placard/server test:integration",
+    "test:e2e": "playwright test",
+    "compose:generate": "node scripts/compose-generate.mjs",
+    "aspire:start": "pnpm --dir aspire-apphost run aspire:start",
+    "aspire:build": "pnpm --dir aspire-apphost run aspire:build"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.3",
+    "@playwright/test": "1.64.1",
+    "typescript": "6.0.3"
+  }
+}

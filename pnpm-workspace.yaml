@@ -1,0 +1,10 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "aspire-apphost"
+
+allowBuilds:
+  cpu-features: false
+  protobufjs: false
+  ssh2: false
+  esbuild: true
