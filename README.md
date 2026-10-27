@@ -12,7 +12,7 @@ Think Immich, but for starred places: private to you or your household, Docker-f
 ## Run it (self-host)
 
 ```sh
-cp .env.example .env        # set POSTGRES_PASSWORD
+cp .env.example .env        # set POSTGRES_PASSWORD and BETTER_AUTH_SECRET
 docker compose up -d --build
 ```
 
@@ -32,6 +32,8 @@ Or without Aspire (Compose db + manual processes):
 ```sh
 docker compose up -d db     # add ports: ["5432:5432"] via compose.override.yaml for host access
 export DATABASE_URL=postgres://placard:change-me@localhost:5432/placard
+export BETTER_AUTH_SECRET=$(openssl rand -base64 32)
+export PUBLIC_URL=http://localhost:5173   # the Vite URL you open in the browser
 pnpm db:migrate
 pnpm --filter @placard/server start
 pnpm --filter @placard/web dev

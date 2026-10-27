@@ -30,6 +30,11 @@ if (!body.includes("apps/server/src/worker.ts")) {
   process.exit(1)
 }
 
+if (!body.includes("BETTER_AUTH_SECRET")) {
+  console.error("compose.yaml must pass BETTER_AUTH_SECRET to the app and worker")
+  process.exit(1)
+}
+
 if (process.env.PLACARD_COMPOSE_FROM_ASPIRE !== "1") {
   console.log(
     "compose.yaml is hand-maintained for self-hosters (Coolify). Markers OK.\n" +

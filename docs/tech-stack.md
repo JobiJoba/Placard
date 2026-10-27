@@ -114,8 +114,10 @@ The UI polls job progress (Server-Sent Events can come later).
 
 ### Auth
 
-- Better Auth with email + password and database sessions in Postgres.
-- First signup becomes admin, and after that signup is invite-only.
+- Better Auth with email + password and database sessions in Postgres, mounted as a raw route at `/api/auth/*` on the Effect router. It uses the Drizzle adapter on its own small `pg` pool; its tables are in the same Drizzle schema and migrations.
+- First signup becomes admin, and after that signup is invite-only. A Better Auth `user.create.before` hook calls the Effect `SignupGate` service, which either claims the first-admin slot atomically or consumes an invite for that email.
+- App endpoints are guarded by HttpApi middleware (`Authentication`, `AdminAuthentication`) that resolves the session cookie to a `CurrentUser`.
+- Better Auth only accepts requests whose `Origin` matches `PUBLIC_URL`. Under Aspire, `PUBLIC_URL` is the Vite URL, because the browser talks to Vite and Vite proxies `/api`.
 - Personal access tokens for MCP are a separate table.
 
 ### PWA
@@ -130,6 +132,7 @@ A web manifest, icons, and a responsive layout. Only a minimal service worker fo
 | `drizzle-orm`, `drizzle-kit` | 1.0.0-rc.5 | The Effect 4 integration (`drizzle-orm/effect-postgres`) only exists in the 1.0 line |
 | `typescript` | 6.0.3 | Same major across the monorepo |
 | `vite` | 7.x | SPA bundler |
+| `better-auth` | 1.7.13 | Auth; server and React client must match |
 | Aspire CLI / SDK | 13.6.x | TypeScript AppHost GA |
 | Postgres image | `imresamu/postgis:18-3.6` | Multi-arch (amd64 + arm64); the official `postgis/postgis` image is amd64-only |
 

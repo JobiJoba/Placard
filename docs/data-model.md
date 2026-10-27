@@ -25,6 +25,7 @@ users ─┬─< places ─┬─< place_facts
        │           └─< decide_picks
        ├─< import_runs ─< import_entries ──> places (once committed)
        └─< api_tokens
+       └─< invitations (invited_by)
 instance_settings (single row)
 sessions, accounts, verifications   (Better Auth)
 ```
@@ -48,7 +49,22 @@ Better Auth's user table, mapped to the name `users`, plus Placard fields.
 
 ### Better Auth tables (Phase 1)
 
-`sessions`, `accounts`, `verifications`, using Better Auth's standard columns. Not described further here.
+`sessions`, `accounts`, `verifications`, using Better Auth's standard columns (snake_case). `sessions` and `accounts` cascade when a user is deleted. Not described further here.
+
+### `invitations` (Phase 1)
+
+One-time signup links created by the admin. Only a SHA-256 hash of the token is stored; the link itself is shown once.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | text PK | |
+| `email` | text | Lowercased; signup must use this email |
+| `token_hash` | text unique | |
+| `role` | text | `admin` \| `member`, default `member` |
+| `invited_by` | text FK users null | set null on delete |
+| `expires_at` | timestamptz | 7 days after creation |
+| `accepted_at`, `revoked_at` | timestamptz null | A new invite for the same email revokes older pending ones |
+| `created_at`, `updated_at` | timestamptz | |
 
 ### `instance_settings` (Phase 1)
 
@@ -57,7 +73,7 @@ A single row (`id = 1`).
 | Column | Type | Notes |
 | --- | --- | --- |
 | `google_api_key` | text null | Overrides the `GOOGLE_MAPS_API_KEY` env var when set |
-| `signup_open` | boolean | true until the first user exists |
+| `signup_open` | boolean | true until the first user exists; the first signup flips it atomically. Seeded by the migration (false if users already exist) |
 | `updated_at` | timestamptz | |
 
 ### `places` (Phase 2)

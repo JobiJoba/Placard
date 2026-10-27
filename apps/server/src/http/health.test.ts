@@ -1,5 +1,5 @@
 import { expect, layer } from "@effect/vitest"
-import { Api } from "@placard/domain"
+import { AdminAuthentication, Api, Authentication } from "@placard/domain"
 import { Effect, Layer } from "effect"
 import { HttpServer } from "effect/http"
 import { HttpApiTest } from "effect/http-api"
@@ -24,7 +24,19 @@ const Unhealthy = Layer.succeed(Health, {
 
 const makeClient = HttpApiTest.groups(Api, ["health"])
 
-layer(Layer.mergeAll(HealthApiLive.pipe(Layer.provide(Healthy)), HttpServer.layerServices))(
+const Unauthenticated = Layer.mergeAll(
+  Layer.succeed(
+    Authentication,
+    Authentication.of(() => Effect.die("not under test")),
+  ),
+  Layer.succeed(
+    AdminAuthentication,
+    AdminAuthentication.of(() => Effect.die("not under test")),
+  ),
+  HttpServer.layerServices,
+)
+
+layer(Layer.mergeAll(HealthApiLive.pipe(Layer.provide(Healthy)), Unauthenticated))(
   "HealthApi when healthy",
   (it) => {
     it.effect("returns an ok report", () =>
@@ -40,7 +52,7 @@ layer(Layer.mergeAll(HealthApiLive.pipe(Layer.provide(Healthy)), HttpServer.laye
   },
 )
 
-layer(Layer.mergeAll(HealthApiLive.pipe(Layer.provide(Unhealthy)), HttpServer.layerServices))(
+layer(Layer.mergeAll(HealthApiLive.pipe(Layer.provide(Unhealthy)), Unauthenticated))(
   "HealthApi when unhealthy",
   (it) => {
     it.effect("returns an error report", () =>

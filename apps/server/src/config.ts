@@ -1,4 +1,4 @@
-import { Config, Context, Effect, Layer, Option, Redacted } from "effect"
+import { Config, Context, Effect, Layer, Option, Redacted, Schema } from "effect"
 
 const optionalSecret = (name: string) =>
   Config.String(name).pipe(
@@ -15,8 +15,16 @@ const databaseUrlConfig = Config.NonEmptyString("DATABASE_URL").pipe(
   Config.map(Redacted.make),
 )
 
+const authSecretConfig = Config.schema(
+  Schema.Trim.pipe(
+    Schema.check(Schema.isMinLength(32, { message: "must be at least 32 characters" })),
+  ),
+  "BETTER_AUTH_SECRET",
+).pipe(Config.map(Redacted.make))
+
 export const appConfig = Config.all({
   databaseUrl: databaseUrlConfig,
+  authSecret: authSecretConfig,
   publicUrl: Config.URL("PUBLIC_URL").pipe(Config.withDefault(new URL("http://localhost:3000"))),
   mediaDir: Config.NonEmptyString("MEDIA_DIR").pipe(Config.withDefault("./data/media")),
   webDistDir: Config.NonEmptyString("WEB_DIST_DIR").pipe(Config.withDefault("./web-dist")),

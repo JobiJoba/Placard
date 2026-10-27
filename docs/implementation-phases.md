@@ -64,10 +64,10 @@ Order follows your priorities: places and browsing first, then search, then impo
 
 **Build**
 
-- Better Auth: email + password, sessions in Postgres
-- First signup becomes admin; signup then closes; admin invites or creates users
-- Settings: Google API key (instance), km/miles per user
-- Auth guard for every page and API route; a tagged `Unauthorized` error mapped at the edge
+- Better Auth: email + password at `/api/auth/*`, sessions in Postgres (Drizzle adapter, `BETTER_AUTH_SECRET` required)
+- First signup becomes admin; signup then closes; the admin sends one-time invite links (7 days, revocable, bound to an email)
+- Settings: Google API key (instance; tested with a free Places "IDs only" call before saving), km/miles per user
+- Auth guard for every page and API route: `Authentication` / `AdminAuthentication` HttpApi middleware with tagged `Unauthorized` (401) and `Forbidden` (403); the SPA redirects to `/login`
 
 **You check**
 
@@ -79,8 +79,9 @@ Order follows your priorities: places and browsing first, then search, then impo
 
 **Automated**
 
-- Integration: first-user-admin rule, invite flow, one user can't read another user's data
-- E2E: sign up → log out → log in; admin invites a user
+- Unit: `BETTER_AUTH_SECRET` config; Google key verifier (accepted, Google's error message, unexpected body, unreachable)
+- Integration (full `/api` router in-process on PostGIS): first-user-admin rule, invite-only signup, invite flow (wrong email, reuse, revoke, existing user), members blocked from admin endpoints, per-user settings, Google key test-then-save, sign out / sign in
+- E2E (fresh PostGIS per run): sign up → log out → log in; second visitor can't sign up; admin invites a user who gets an empty library and their own unit setting
 
 ---
 

@@ -22,6 +22,7 @@ export const testConfigFor = (container: StartedPostgreSqlContainer) =>
   appConfig.parse(
     ConfigProvider.fromUnknown({
       DATABASE_URL: container.getConnectionUri(),
+      BETTER_AUTH_SECRET: "integration-test-secret-0123456789abcdef",
       MEDIA_DIR: "./data/test-media",
     }),
   )

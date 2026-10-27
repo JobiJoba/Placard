@@ -1,13 +1,15 @@
 import { defineConfig, devices } from "@playwright/test"
 
 const externalBaseUrl = process.env.PLAYWRIGHT_BASE_URL
-const baseURL = externalBaseUrl ?? "http://localhost:3000"
+const baseURL = externalBaseUrl ?? "http://localhost:3100"
 
 export default defineConfig({
   testDir: "./test/e2e",
-  fullyParallel: true,
+  // The account specs share one fresh database and build on each other.
+  fullyParallel: false,
+  workers: 1,
   forbidOnly: Boolean(process.env.CI),
-  retries: process.env.CI ? 1 : 0,
+  retries: 0,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL,
@@ -18,14 +20,11 @@ export default defineConfig({
     ? {}
     : {
         webServer: {
-          command: "pnpm --filter @placard/server start",
+          command: "node apps/server/test/e2e-server.ts",
           url: `${baseURL}/api/health`,
-          reuseExistingServer: !process.env.CI,
-          timeout: 120_000,
-          env: {
-            ...process.env,
-            WEB_DIST_DIR: "../web/dist",
-          },
+          reuseExistingServer: false,
+          timeout: 180_000,
+          env: { ...process.env, PORT: "3100" },
         },
       }),
 })

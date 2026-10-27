@@ -17,6 +17,12 @@ const postgresPassword = await builder.addParameter("postgres-password", {
   secret: true,
 })
 
+const authSecret = await builder.addParameterWithGeneratedValue(
+  "better-auth-secret",
+  { minLength: 48, special: false },
+  { secret: true, persist: true },
+)
+
 const postgres = await builder
   .addPostgres("db", { userName: postgresUser, password: postgresPassword })
   .withImage("imresamu/postgis", { tag: "18-3.6" })
@@ -33,7 +39,7 @@ const server = await builder
   .withReference(placardDb)
   .waitFor(placardDb)
   // withReference injects PLACARD_URI (postgresql://…). App config falls back to it.
-  .withEnvironment("PUBLIC_URL", "http://localhost:3000")
+  .withEnvironment("BETTER_AUTH_SECRET", authSecret)
   .withEnvironment("MEDIA_DIR", "./data/media")
   .withEnvironment("WEB_DIST_DIR", "./web-dist")
   .withEnvironment("MCP_ENABLED", "true")
@@ -43,6 +49,7 @@ await builder
   .withPnpm({ install: false })
   .withReference(placardDb)
   .waitFor(placardDb)
+  .withEnvironment("BETTER_AUTH_SECRET", authSecret)
   .withEnvironment("MEDIA_DIR", "./data/media")
 
 const web = await builder
@@ -50,6 +57,9 @@ const web = await builder
   .withPnpm({ install: false })
   .withReference(server)
   .waitFor(server)
+
+// The browser talks to Vite, which proxies /api; auth origin checks and invite links use it.
+await server.withEnvironment("PUBLIC_URL", web.getEndpoint("http"))
 
 await server.publishWithContainerFiles(web, "./web-dist")
 

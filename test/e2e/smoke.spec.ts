@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test"
 
-test("home page loads", async ({ page }) => {
+test("the app loads", async ({ page }) => {
   await page.goto("/")
 
   await expect(page).toHaveTitle("Placard")
-  await expect(page.getByRole("heading", { level: 1, name: "Placard" })).toBeVisible()
+  await expect(page.getByText("Placard", { exact: true }).first()).toBeVisible()
 })
 
 test("health endpoint reports a healthy database", async ({ request }) => {
@@ -12,4 +12,11 @@ test("health endpoint reports a healthy database", async ({ request }) => {
 
   expect(response.status()).toBe(200)
   expect(await response.json()).toMatchObject({ status: "ok", checks: { database: { ok: true } } })
+})
+
+test("API routes require a session", async ({ request }) => {
+  const response = await request.get("/api/me")
+
+  expect(response.status()).toBe(401)
+  expect(await response.json()).toMatchObject({ _tag: "Unauthorized" })
 })

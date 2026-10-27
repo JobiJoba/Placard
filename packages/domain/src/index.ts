@@ -1,4 +1,5 @@
-export { Api, HealthApi } from "./api.ts"
+export * from "./accounts.ts"
+export { AdminApi, Api, HealthApi, MeApi, SetupApi } from "./api.ts"
 export {
   CheckFail,
   CheckOk,

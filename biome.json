@@ -43,6 +43,12 @@
       "preset": "recommended"
     }
   },
+  "overrides": [
+    {
+      "includes": ["apps/web/src/components/ui/**"],
+      "linter": { "enabled": false }
+    }
+  ],
   "assist": {
     "actions": {
       "source": {

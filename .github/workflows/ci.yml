@@ -45,22 +45,6 @@ jobs:
   e2e:
     name: End-to-end tests
     runs-on: ubuntu-latest
-    services:
-      db:
-        image: imresamu/postgis:18-3.6
-        env:
-          POSTGRES_USER: placard
-          POSTGRES_PASSWORD: placard
-          POSTGRES_DB: placard
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U placard -d placard"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
-    env:
-      DATABASE_URL: postgres://placard:placard@localhost:5432/placard
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -71,7 +55,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm --filter @placard/web build
-      - run: pnpm db:migrate
+      # Playwright's webServer starts its own PostGIS via Testcontainers.
       - run: pnpm test:e2e
       - uses: actions/upload-artifact@v4
         if: failure()

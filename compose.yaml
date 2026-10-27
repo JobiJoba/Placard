@@ -3,6 +3,7 @@ name: placard
 x-placard-env: &placard-env
   DATABASE_URL: postgres://placard:${POSTGRES_PASSWORD:-placard}@db:5432/placard
   PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3000}
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env (openssl rand -base64 32)}
   MEDIA_DIR: /data/media
   WEB_DIST_DIR: /app/web-dist
   GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}

@@ -26,7 +26,8 @@ Coolify eats **Docker Compose** (or Dockerfile) from Git very well. Prepare:
    - documented **ports** (e.g. app `3000`)
 2. **Environment variables** listed in `.env.example`:
    - `POSTGRES_PASSWORD`
-   - `PUBLIC_URL`
+   - `BETTER_AUTH_SECRET` (required, 32+ characters: `openssl rand -base64 32`; changing it signs everyone out)
+   - `PUBLIC_URL` (sign-in only works from this origin; invite links point here)
    - optional `GOOGLE_MAPS_API_KEY` (BYOK)
    - optional `MCP_ENABLED`, token settings
 3. **No hardcoded localhost** assumptions for public URL (respect `PUBLIC_URL` / Coolify domain)
