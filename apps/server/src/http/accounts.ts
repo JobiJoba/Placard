@@ -61,9 +61,7 @@ export const AdminApiLive = HttpApiBuilder.group(
           return { invite, url: new URL(`/invite/${token}`, publicUrl).href }
         }),
       )
-      .handle("enrichmentPlan", () =>
-        withMe((me) => enrichment.planRefreshAll(me.id)),
-      )
+      .handle("enrichmentPlan", () => withMe((me) => enrichment.planRefreshAll(me.id)))
       .handle("enrichmentRun", () => withMe((me) => enrichment.currentRun(me.id)))
       .handle("refreshAll", () =>
         Effect.gen(function* () {

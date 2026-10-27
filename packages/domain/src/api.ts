@@ -16,6 +16,14 @@ import {
   SetupStatus,
   UserSummary,
 } from "./accounts.ts"
+import {
+  EnrichmentBusy,
+  EnrichmentRun,
+  FactKey,
+  FactNotFound,
+  FactOverrideInput,
+  RefreshAllPlan,
+} from "./facts.ts"
 import { HealthError, HealthOk } from "./health.ts"
 import {
   BulkInput,
@@ -30,14 +38,6 @@ import {
   TagNotFound,
   TagSummary,
 } from "./library.ts"
-import {
-  EnrichmentBusy,
-  EnrichmentRun,
-  FactKey,
-  FactOverrideInput,
-  FactNotFound,
-  RefreshAllPlan,
-} from "./facts.ts"
 import {
   AutocompleteInput,
   DeletedPlace,

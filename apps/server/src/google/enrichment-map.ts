@@ -1,9 +1,4 @@
-import {
-  type FactKey,
-  type OpeningHours,
-  type PlaceFacts,
-  type PriceLevel,
-} from "@placard/domain"
+import type { FactKey, OpeningHours, PlaceFacts, PriceLevel } from "@placard/domain"
 
 const priceLevelMap: Record<string, PriceLevel> = {
   PRICE_LEVEL_FREE: "free",
@@ -47,7 +42,10 @@ export interface MappedFact {
   readonly value: unknown
 }
 
-const cuisineFrom = (primaryType: string | undefined, types: ReadonlyArray<string>): string | null => {
+const cuisineFrom = (
+  primaryType: string | undefined,
+  types: ReadonlyArray<string>,
+): string | null => {
   const candidates = [primaryType, ...types].filter((t): t is string => Boolean(t))
   for (const type of candidates) {
     if (skipTypes.has(type)) continue

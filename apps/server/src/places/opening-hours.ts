@@ -47,7 +47,13 @@ export const isOpenAt = (
       continue
     }
     const close = toWeekMinute(period.close.day, period.close.hour, period.close.minute)
-    if (inHalfOpenWeekRange(now, open, close === open ? normalizeWeekMinute(open + MINUTES_PER_DAY) : close)) {
+    if (
+      inHalfOpenWeekRange(
+        now,
+        open,
+        close === open ? normalizeWeekMinute(open + MINUTES_PER_DAY) : close,
+      )
+    ) {
       return true
     }
   }
@@ -83,13 +89,12 @@ export const isOpenTonight = (
 }
 
 /** Format meters using the user's distance unit preference. */
-export const formatDistance = (
-  meters: number,
-  unit: "km" | "mi",
-): string => {
+export const formatDistance = (meters: number, unit: "km" | "mi"): string => {
   if (unit === "mi") {
     const miles = meters / 1609.344
-    return miles < 0.1 ? `${Math.round(meters * 3.28084)} ft` : `${miles.toFixed(miles < 10 ? 1 : 0)} mi`
+    return miles < 0.1
+      ? `${Math.round(meters * 3.28084)} ft`
+      : `${miles.toFixed(miles < 10 ? 1 : 0)} mi`
   }
   const km = meters / 1000
   return km < 1 ? `${Math.round(meters)} m` : `${km.toFixed(km < 10 ? 1 : 0)} km`

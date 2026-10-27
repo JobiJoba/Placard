@@ -181,9 +181,11 @@ function GoogleKeyCard() {
 }
 
 function EnrichmentCard() {
-  const { data: plan, error: planError, reload: reloadPlan } = useLoad(
-    useCallback(() => api((c) => c.admin.enrichmentPlan()), []),
-  )
+  const {
+    data: plan,
+    error: planError,
+    reload: reloadPlan,
+  } = useLoad(useCallback(() => api((c) => c.admin.enrichmentPlan()), []))
   const [run, setRun] = useState<EnrichmentRun | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
@@ -223,9 +225,7 @@ function EnrichmentCard() {
 
   const running = run?.status === "running"
   const progress =
-    run && run.total > 0
-      ? Math.round(((run.completed + run.failed) / run.total) * 100)
-      : 0
+    run && run.total > 0 ? Math.round(((run.completed + run.failed) / run.total) * 100) : 0
 
   return (
     <SettingsCard
@@ -269,8 +269,8 @@ function EnrichmentCard() {
         {confirming ? (
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm">
-              Refresh {plan?.placeCount ?? 0}{" "}
-              {(plan?.placeCount ?? 0) === 1 ? "place" : "places"} from Google?
+              Refresh {plan?.placeCount ?? 0} {(plan?.placeCount ?? 0) === 1 ? "place" : "places"}{" "}
+              from Google?
             </span>
             <Button size="sm" disabled={starting || running} onClick={() => void start()}>
               {starting ? "Starting…" : "Start refresh"}

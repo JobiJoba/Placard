@@ -79,40 +79,42 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("enrichment", (it)
     }),
   )
 
-  it.effect("force refresh all reports the call count, starts a run, and rejects a second start", () =>
-    Effect.gen(function* () {
-      yield* run(async () => {
-        await admin.browser.send("POST", "/api/places/google", {
-          googlePlaceId: TIER,
-          source: "map_pick",
-          sessionToken: null,
+  it.effect(
+    "force refresh all reports the call count, starts a run, and rejects a second start",
+    () =>
+      Effect.gen(function* () {
+        yield* run(async () => {
+          await admin.browser.send("POST", "/api/places/google", {
+            googlePlaceId: TIER,
+            source: "map_pick",
+            sessionToken: null,
+          })
         })
-      })
 
-      const plan = yield* run(async () => admin.browser.get("/api/admin/enrichment/plan"))
-      expect(plan.body.placeCount).toBe(2)
+        const plan = yield* run(async () => admin.browser.get("/api/admin/enrichment/plan"))
+        expect(plan.body.placeCount).toBe(2)
 
-      const started = yield* run(async () =>
-        admin.browser.send("POST", "/api/admin/enrichment/refresh-all"),
-      )
-      expect(started.status).toBe(200)
-      expect(started.body).toMatchObject({ status: "running", total: 2, completed: 0, failed: 0 })
+        const started = yield* run(async () =>
+          admin.browser.send("POST", "/api/admin/enrichment/refresh-all"),
+        )
+        expect(started.status).toBe(200)
+        expect(started.body).toMatchObject({ status: "running", total: 2, completed: 0, failed: 0 })
 
-      const current = yield* run(async () => admin.browser.get("/api/admin/enrichment/run"))
-      expect(current.body?.id).toBe(started.body.id)
+        const current = yield* run(async () => admin.browser.get("/api/admin/enrichment/run"))
+        expect(current.body?.id).toBe(started.body.id)
 
-      const busy = yield* run(async () =>
-        admin.browser.send("POST", "/api/admin/enrichment/refresh-all"),
-      )
-      expect(busy.status).toBe(409)
-      expect(busy.body._tag).toBe("EnrichmentBusy")
+        const busy = yield* run(async () =>
+          admin.browser.send("POST", "/api/admin/enrichment/refresh-all"),
+        )
+        expect(busy.status).toBe(409)
+        expect(busy.body._tag).toBe("EnrichmentBusy")
 
-      // Simulate the worker finishing both jobs so later suites aren't stuck.
-      const sql = yield* SqlClient.SqlClient
-      yield* sql`
+        // Simulate the worker finishing both jobs so later suites aren't stuck.
+        const sql = yield* SqlClient.SqlClient
+        yield* sql`
         update enrichment_runs set
           completed = total, status = 'done', finished_at = now()
         where id = ${started.body.id}`.pipe(Effect.orDie)
-    }),
+      }),
   )
 })

@@ -251,9 +251,7 @@ function PlaceFactsSection({
   const clearPhone = () => {
     setSaving(true)
     setError(null)
-    void api((c) =>
-      c.places.clearFactOverride({ params: { id: place.id, key: "phone" } }),
-    ).then(
+    void api((c) => c.places.clearFactOverride({ params: { id: place.id, key: "phone" } })).then(
       (next) => {
         onSaved(next)
         setPhone(next.facts.phone ?? "")

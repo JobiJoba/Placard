@@ -1,5 +1,5 @@
 import type { SearchHit } from "@placard/domain"
-import { APIProvider, Map as GoogleMap, AdvancedMarker } from "@vis.gl/react-google-maps"
+import { AdvancedMarker, APIProvider, Map as GoogleMap } from "@vis.gl/react-google-maps"
 import { Link } from "react-router"
 
 /** Map of the current search hits. Needs a Maps JavaScript API key. */
@@ -12,11 +12,7 @@ export default function ResultsMap({
   readonly hits: ReadonlyArray<SearchHit>
   readonly center: { readonly lat: number; readonly lng: number } | null
 }) {
-  const defaultCenter =
-    center ??
-    (hits[0]
-      ? hits[0].place.location
-      : { lat: 48.2, lng: 16.37 })
+  const defaultCenter = center ?? (hits[0] ? hits[0].place.location : { lat: 48.2, lng: 16.37 })
 
   return (
     <APIProvider apiKey={apiKey}>

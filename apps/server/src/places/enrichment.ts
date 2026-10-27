@@ -1,10 +1,10 @@
 import {
-  type EnrichmentRun,
   EnrichmentBusy,
+  type EnrichmentRun,
   type FactKey,
   GoogleKeyMissing,
   type GooglePlacesError,
-  PlaceNotFound,
+  type PlaceNotFound,
 } from "@placard/domain"
 import { Context, DateTime, Effect, Layer, Option } from "effect"
 import { SqlClient } from "effect/sql"
@@ -97,7 +97,9 @@ export class Enrichment extends Context.Service<
 
       const writeGoogleFacts = (placeId: string, details: GooglePlaceDetails) =>
         Effect.gen(function* () {
-          const mapped = factsFromGoogle(details.enrichment as Parameters<typeof factsFromGoogle>[0])
+          const mapped = factsFromGoogle(
+            details.enrichment as Parameters<typeof factsFromGoogle>[0],
+          )
           yield* sql`
             delete from place_facts
             where place_id = ${placeId} and source = 'google'`.pipe(Effect.orDie)
@@ -112,28 +114,25 @@ export class Enrichment extends Context.Service<
           }
         })
 
-      const applyDetails = Effect.fn("Enrichment.applyDetails")(function* (
-        ownerId,
-        placeId,
-        details,
-      ) {
-        const place = yield* places.get(ownerId, placeId)
-        const edited = applyFetched(
-          {
-            values: {
-              name: place.name,
-              category: place.category,
-              address: place.address,
+      const applyDetails = Effect.fn("Enrichment.applyDetails")(
+        function* (ownerId, placeId, details) {
+          const place = yield* places.get(ownerId, placeId)
+          const edited = applyFetched(
+            {
+              values: {
+                name: place.name,
+                category: place.category,
+                address: place.address,
+              },
+              manual: place.editedFields,
             },
-            manual: place.editedFields,
-          },
-          {
-            name: details.name,
-            category: details.category,
-            address: details.address,
-          },
-        )
-        yield* sql`
+            {
+              name: details.name,
+              category: details.category,
+              address: details.address,
+            },
+          )
+          yield* sql`
           update places set
             name = ${edited.values.name},
             category = ${edited.values.category},
@@ -142,8 +141,9 @@ export class Enrichment extends Context.Service<
             last_enriched_at = now(),
             updated_at = now()
           where id = ${placeId} and owner_id = ${ownerId} and deleted_at is null`.pipe(Effect.orDie)
-        yield* writeGoogleFacts(placeId, details)
-      })
+          yield* writeGoogleFacts(placeId, details)
+        },
+      )
 
       return {
         applyDetails,

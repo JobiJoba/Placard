@@ -39,7 +39,10 @@ const isEditable = (field: string): field is EditableField =>
 export class Search extends Context.Service<
   Search,
   {
-    readonly query: (ownerId: string, filter: SearchFilter) => Effect.Effect<ReadonlyArray<SearchHit>>
+    readonly query: (
+      ownerId: string,
+      filter: SearchFilter,
+    ) => Effect.Effect<ReadonlyArray<SearchHit>>
   }
 >()("placard/Search") {
   static readonly layer = Layer.effect(

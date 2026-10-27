@@ -1,5 +1,5 @@
 import { Schema } from "effect"
-import { Place, PlaceCategory, PlaceStatus, LatLng } from "./places.ts"
+import { LatLng, Place, PlaceCategory, PlaceStatus } from "./places.ts"
 
 /** When a place should be open relative to the searcher's "now". */
 export const openWhenValues = ["now", "tonight"] as const
@@ -11,9 +11,7 @@ export type OpenWhen = typeof OpenWhen.Type
  * `near` + `radiusKm` together mean "within N km of this point"; either alone is ignored.
  */
 export const SearchFilter = Schema.Struct({
-  text: Schema.optional(
-    Schema.Trim.pipe(Schema.check(Schema.isBetweenLength(1, 200))),
-  ),
+  text: Schema.optional(Schema.Trim.pipe(Schema.check(Schema.isBetweenLength(1, 200)))),
   category: Schema.optional(PlaceCategory),
   open: Schema.optional(OpenWhen),
   near: Schema.optional(LatLng),

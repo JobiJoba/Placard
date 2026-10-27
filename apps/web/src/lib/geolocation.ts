@@ -79,8 +79,7 @@ const readIpFallback = async (): Promise<GeoResult> => {
   }
 }
 
-const isUnavailable = (result: GeoResult): boolean =>
-  !result.ok && result.errorCode === 2
+const isUnavailable = (result: GeoResult): boolean => !result.ok && result.errorCode === 2
 
 /** Share one in-flight lookup (React Strict Mode mounts effects twice in dev). */
 let inFlight: Promise<GeoResult> | null = null
@@ -124,9 +123,6 @@ const requestLocationOnce = async (): Promise<GeoResult> => {
   if (fresh.ok) return fresh
   if (isUnavailable(fresh)) return readIpFallback()
 
-  return {
-    ok: false,
-    message: !fresh.ok ? fresh.message : "Couldn't get your location.",
-    errorCode: !fresh.ok ? fresh.errorCode : undefined,
-  }
+  if (!fresh.ok) return fresh
+  return { ok: false, message: "Couldn't get your location." }
 }

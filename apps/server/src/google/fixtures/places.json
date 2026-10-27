@@ -21,12 +21,30 @@
     "priceLevel": "PRICE_LEVEL_MODERATE",
     "regularOpeningHours": {
       "periods": [
-        { "open": { "day": 1, "hour": 12, "minute": 0 }, "close": { "day": 1, "hour": 23, "minute": 0 } },
-        { "open": { "day": 2, "hour": 12, "minute": 0 }, "close": { "day": 2, "hour": 23, "minute": 0 } },
-        { "open": { "day": 3, "hour": 12, "minute": 0 }, "close": { "day": 3, "hour": 23, "minute": 0 } },
-        { "open": { "day": 4, "hour": 12, "minute": 0 }, "close": { "day": 4, "hour": 23, "minute": 0 } },
-        { "open": { "day": 5, "hour": 12, "minute": 0 }, "close": { "day": 5, "hour": 23, "minute": 0 } },
-        { "open": { "day": 6, "hour": 12, "minute": 0 }, "close": { "day": 6, "hour": 23, "minute": 0 } }
+        {
+          "open": { "day": 1, "hour": 12, "minute": 0 },
+          "close": { "day": 1, "hour": 23, "minute": 0 }
+        },
+        {
+          "open": { "day": 2, "hour": 12, "minute": 0 },
+          "close": { "day": 2, "hour": 23, "minute": 0 }
+        },
+        {
+          "open": { "day": 3, "hour": 12, "minute": 0 },
+          "close": { "day": 3, "hour": 23, "minute": 0 }
+        },
+        {
+          "open": { "day": 4, "hour": 12, "minute": 0 },
+          "close": { "day": 4, "hour": 23, "minute": 0 }
+        },
+        {
+          "open": { "day": 5, "hour": 12, "minute": 0 },
+          "close": { "day": 5, "hour": 23, "minute": 0 }
+        },
+        {
+          "open": { "day": 6, "hour": 12, "minute": 0 },
+          "close": { "day": 6, "hour": 23, "minute": 0 }
+        }
       ],
       "weekdayDescriptions": [
         "Monday: 12:00 – 11:00 PM",
@@ -64,8 +82,14 @@
     "priceLevel": "PRICE_LEVEL_MODERATE",
     "regularOpeningHours": {
       "periods": [
-        { "open": { "day": 1, "hour": 7, "minute": 0 }, "close": { "day": 1, "hour": 23, "minute": 0 } },
-        { "open": { "day": 0, "hour": 7, "minute": 0 }, "close": { "day": 0, "hour": 23, "minute": 0 } }
+        {
+          "open": { "day": 1, "hour": 7, "minute": 0 },
+          "close": { "day": 1, "hour": 23, "minute": 0 }
+        },
+        {
+          "open": { "day": 0, "hour": 7, "minute": 0 },
+          "close": { "day": 0, "hour": 23, "minute": 0 }
+        }
       ],
       "weekdayDescriptions": [
         "Monday: 7:00 AM – 11:00 PM",

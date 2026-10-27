@@ -1,5 +1,6 @@
 import {
   type BulkAction,
+  placeCategories as categories,
   type OpenWhen,
   type Place,
   type PlaceCategory,
@@ -8,7 +9,6 @@ import {
   type SearchFilter,
   type SearchHit,
   type TagSummary,
-  placeCategories as categories,
 } from "@placard/domain"
 import { LayoutGrid, Map as MapIcon, Plus, Trash2 } from "lucide-react"
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react"
@@ -99,6 +99,8 @@ export function LibraryPage() {
 
   useEffect(() => {
     if (scope !== "near") return
+    // geoAttempt is a retry counter — bumping it re-runs this effect.
+    void geoAttempt
     let cancelled = false
     setGeoLoading(true)
     setGeoError(null)
@@ -213,8 +215,7 @@ export function LibraryPage() {
 
   const hasFilters = Boolean(text || tag || list || status || open || category || scope !== "all")
   const filteredEmpty = hits !== null && hits.length === 0 && hasFilters
-  const mapCenter =
-    filter.near ?? (hits?.[0] ? hits[0].place.location : null)
+  const mapCenter = filter.near ?? (hits?.[0] ? hits[0].place.location : null)
 
   if (error) return <ErrorAlert message={error} />
   if (!hits && !waitingForGeo) {
@@ -278,7 +279,8 @@ export function LibraryPage() {
             spacing={0}
             value={scope}
             onValueChange={(value) => {
-              if (value === "near" || value === "city" || value === "all") setParam("scope", value === "all" ? undefined : value)
+              if (value === "near" || value === "city" || value === "all")
+                setParam("scope", value === "all" ? undefined : value)
             }}
             aria-label="Search area"
           >
@@ -287,10 +289,7 @@ export function LibraryPage() {
             <ToggleGroupItem value="all">All</ToggleGroupItem>
           </ToggleGroup>
           {scope !== "all" && (
-            <Select
-              value={String(radiusKm)}
-              onValueChange={(v) => setParam("radius", v)}
-            >
+            <Select value={String(radiusKm)} onValueChange={(v) => setParam("radius", v)}>
               <SelectTrigger className="w-28" aria-label="Radius">
                 <SelectValue />
               </SelectTrigger>

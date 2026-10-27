@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@effect/vitest"
-import { Effect, Schema } from "effect"
 import { SearchFilter } from "@placard/domain"
+import { Effect, Schema } from "effect"
 
 describe("SearchFilter", () => {
   it.effect("round-trips a full filter through encode/decode", () =>

@@ -228,23 +228,26 @@ export class GooglePlaces extends Context.Service<
           return toSuggestions(yield* send(request, GoogleAutocompleteResponse))
         }),
 
-        details: Effect.fn("GooglePlaces.details")(function* (googlePlaceId, sessionToken, options) {
-          const now = yield* Clock.currentTimeMillis
-          const cached = cache.get(googlePlaceId)
-          if (!options?.force && cached && now - cached.at < DETAILS_CACHE_TTL_MS) return cached.details
+        details: Effect.fn("GooglePlaces.details")(
+          function* (googlePlaceId, sessionToken, options) {
+            const now = yield* Clock.currentTimeMillis
+            const cached = cache.get(googlePlaceId)
+            if (!options?.force && cached && now - cached.at < DETAILS_CACHE_TTL_MS)
+              return cached.details
 
-          const request = HttpClientRequest.get(
-            `${PLACES_BASE_URL}/places/${encodeURIComponent(googlePlaceId)}`,
-          ).pipe(
-            HttpClientRequest.setHeader("X-Goog-FieldMask", DETAILS_FIELD_MASK),
-            sessionToken ? HttpClientRequest.setUrlParam("sessionToken", sessionToken) : (r) => r,
-          )
-          const details = toDetails(yield* send(request, GooglePlaceResponse))
+            const request = HttpClientRequest.get(
+              `${PLACES_BASE_URL}/places/${encodeURIComponent(googlePlaceId)}`,
+            ).pipe(
+              HttpClientRequest.setHeader("X-Goog-FieldMask", DETAILS_FIELD_MASK),
+              sessionToken ? HttpClientRequest.setUrlParam("sessionToken", sessionToken) : (r) => r,
+            )
+            const details = toDetails(yield* send(request, GooglePlaceResponse))
 
-          if (cache.size >= DETAILS_CACHE_MAX) cache.clear()
-          cache.set(googlePlaceId, { details, at: now })
-          return details
-        }),
+            if (cache.size >= DETAILS_CACHE_MAX) cache.clear()
+            cache.set(googlePlaceId, { details, at: now })
+            return details
+          },
+        ),
       }
     }),
   )

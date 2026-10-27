@@ -1,5 +1,5 @@
-import { GooglePlacesFailed, PlaceNotFound } from "@placard/domain"
 import { describe, expect, it } from "@effect/vitest"
+import { GooglePlacesFailed, PlaceNotFound } from "@placard/domain"
 import { Duration, Effect, Exit, Schedule } from "effect"
 
 /**
