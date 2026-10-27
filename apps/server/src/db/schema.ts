@@ -7,6 +7,7 @@ import {
   index,
   integer,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -151,6 +152,7 @@ export const places = pgTable(
     notes: text("notes"),
     utcOffsetMinutes: integer("utc_offset_minutes"),
     source: text("source").notNull(),
+    manualFields: text("manual_fields").array().notNull().default(sql`'{}'::text[]`),
     lastEnrichedAt: timestamp("last_enriched_at", { withTimezone: true }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     ...timestamps,
@@ -163,8 +165,74 @@ export const places = pgTable(
     index("places_location_idx").using("gist", table.location),
     index("places_name_trgm_idx").using("gin", sql`${table.name} gin_trgm_ops`),
     index("places_owner_deleted_idx").on(table.ownerId, table.deletedAt),
+    index("places_deleted_at_idx").on(table.deletedAt).where(sql`${table.deletedAt} is not null`),
     uniqueIndex("places_owner_google_place_id_idx")
       .on(table.ownerId, table.googlePlaceId)
       .where(sql`${table.googlePlaceId} is not null and ${table.deletedAt} is null`),
+  ],
+)
+
+export const tags = pgTable(
+  "tags",
+  {
+    id: text("id").primaryKey(),
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    ...timestamps,
+  },
+  (table) => [uniqueIndex("tags_owner_name_idx").on(table.ownerId, sql`lower(${table.name})`)],
+)
+
+export const placeTags = pgTable(
+  "place_tags",
+  {
+    placeId: text("place_id")
+      .notNull()
+      .references(() => places.id, { onDelete: "cascade" }),
+    tagId: text("tag_id")
+      .notNull()
+      .references(() => tags.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.placeId, table.tagId] }),
+    index("place_tags_tag_id_idx").on(table.tagId),
+  ],
+)
+
+export const lists = pgTable(
+  "lists",
+  {
+    id: text("id").primaryKey(),
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    visibility: text("visibility").notNull().default("private"),
+    name: text("name").notNull(),
+    description: text("description"),
+    ...timestamps,
+  },
+  (table) => [
+    check("lists_visibility_check", sql`${table.visibility} in ('private')`),
+    uniqueIndex("lists_owner_name_idx").on(table.ownerId, sql`lower(${table.name})`),
+  ],
+)
+
+export const listItems = pgTable(
+  "list_items",
+  {
+    listId: text("list_id")
+      .notNull()
+      .references(() => lists.id, { onDelete: "cascade" }),
+    placeId: text("place_id")
+      .notNull()
+      .references(() => places.id, { onDelete: "cascade" }),
+    position: integer("position"),
+    addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.listId, table.placeId] }),
+    index("list_items_place_id_idx").on(table.placeId),
   ],
 )

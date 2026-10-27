@@ -29,6 +29,14 @@ export const LatLng = Schema.Struct({
 })
 export type LatLng = typeof LatLng.Type
 
+/** Fields that can come from Google and that a manual edit pins against refreshes. */
+export const editableFields = ["name", "category", "address"] as const
+export const EditableField = Schema.Literals(editableFields)
+export type EditableField = typeof EditableField.Type
+
+export const TagRef = Schema.Struct({ id: Schema.String, name: Schema.String })
+export type TagRef = typeof TagRef.Type
+
 export const Place = Schema.Struct({
   id: Schema.String,
   name: Schema.String,
@@ -37,7 +45,12 @@ export const Place = Schema.Struct({
   address: Schema.NullOr(Schema.String),
   googlePlaceId: Schema.NullOr(Schema.String),
   status: Schema.NullOr(PlaceStatus),
+  notes: Schema.NullOr(Schema.String),
   source: PlaceSource,
+  /** Fields the owner edited; refreshes from Google leave these alone. */
+  editedFields: Schema.Array(EditableField),
+  tags: Schema.Array(TagRef),
+  listIds: Schema.Array(Schema.String),
   createdAt: Schema.DateTimeUtcFromString,
 })
 export type Place = typeof Place.Type
@@ -61,6 +74,32 @@ export const ManualPlaceInput = Schema.Struct({
   address: Schema.NullOr(Schema.Trim),
 })
 export type ManualPlaceInput = typeof ManualPlaceInput.Type
+
+const Notes = Schema.Trim.pipe(Schema.check(Schema.isMaxLength(10_000)))
+
+/** A partial edit; only the keys present change. Empty address or notes clear them. */
+export const PlaceUpdate = Schema.Struct({
+  name: Schema.optional(PlaceName),
+  category: Schema.optional(PlaceCategory),
+  address: Schema.optional(Schema.NullOr(Schema.Trim)),
+  notes: Schema.optional(Schema.NullOr(Notes)),
+  status: Schema.optional(Schema.NullOr(PlaceStatus)),
+})
+export type PlaceUpdate = typeof PlaceUpdate.Type
+
+export const PlaceFilter = {
+  tag: Schema.optional(Schema.String),
+  list: Schema.optional(Schema.String),
+  status: Schema.optional(PlaceStatus),
+}
+
+/** Soft-deleted places are purged for good at `purgeAt`. */
+export const DeletedPlace = Schema.Struct({
+  place: Place,
+  deletedAt: Schema.DateTimeUtcFromString,
+  purgeAt: Schema.DateTimeUtcFromString,
+})
+export type DeletedPlace = typeof DeletedPlace.Type
 
 export const GooglePlaceInput = Schema.Struct({
   googlePlaceId: Schema.NonEmptyString,

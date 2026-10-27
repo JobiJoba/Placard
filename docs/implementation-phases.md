@@ -124,11 +124,11 @@ Order follows your priorities: places and browsing first, then search, then impo
 
 **Build**
 
-- Status: want to go / been there
-- Tags and lists: create, rename, delete, assign
-- Edit fields and notes; manual values override fetched ones
-- Multi-select in the grid: bulk tag, bulk add/remove list, bulk delete
-- Soft delete with a "Recently deleted" view, restore, and a 30-day purge job
+- Status: want to go / been there (per place, filterable)
+- Tags and lists: create, rename, delete, assign; tag names unique per owner (case-insensitive); deleting a list leaves places in the library
+- Edit name / category / address / notes / status; `manual_fields` remembers which Google-backed fields the owner set so refreshes leave them alone (`applyEdit` / `applyFetched`)
+- Multi-select in the library grid: bulk tag, add to list, set status, delete
+- Soft delete with `/deleted` ("Recently deleted"), restore, and a worker purge every hour using Effect `Clock` (30 days)
 
 **You check**
 
@@ -139,10 +139,10 @@ Order follows your priorities: places and browsing first, then search, then impo
 
 **Automated**
 
-- Unit: override rules
+- Unit: override rules (`applyEdit` / `applyFetched`)
 - Time-based (`TestClock`): purge happens after 30 days, not before
-- Integration: bulk operations are atomic; deleting a list doesn't delete places
-- E2E: create list → add places → bulk delete → restore
+- Integration: list + tag assign; rename/delete list keeps places; edit + filters; bulk delete/restore; bulk fails atomically when a list is missing
+- E2E: create list → select places → tag/edit → bulk delete → restore
 
 ---
 

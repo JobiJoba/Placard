@@ -2,7 +2,9 @@ import { Api, CurrentUser } from "@placard/domain"
 import { Effect, Option, Redacted } from "effect"
 import { HttpApiBuilder } from "effect/http-api"
 import { GooglePlaces } from "../google/places.ts"
+import { Lists } from "../places/lists.ts"
 import { Places } from "../places/places.ts"
+import { Tags } from "../places/tags.ts"
 import { InstanceSettings } from "../settings/instance-settings.ts"
 
 const withMe = <A, E, R>(f: (me: CurrentUser["Service"]) => Effect.Effect<A, E, R>) =>
@@ -17,7 +19,8 @@ export const PlacesApiLive = HttpApiBuilder.group(
     const places = yield* Places
     const google = yield* GooglePlaces
     return handlers
-      .handle("list", () => withMe((me) => places.list(me.id)))
+      .handle("list", ({ query }) => withMe((me) => places.list(me.id, query)))
+      .handle("deleted", () => withMe((me) => places.listDeleted(me.id)))
       .handle("get", ({ params }) => withMe((me) => places.get(me.id, params.id)))
       .handle("addFromGoogle", ({ payload }) =>
         Effect.gen(function* () {
@@ -29,7 +32,51 @@ export const PlacesApiLive = HttpApiBuilder.group(
         }),
       )
       .handle("addManual", ({ payload }) => withMe((me) => places.addManual(me.id, payload)))
+      .handle("update", ({ params, payload }) =>
+        withMe((me) => places.update(me.id, params.id, payload)),
+      )
+      .handle("setTags", ({ params, payload }) =>
+        withMe((me) => places.setTags(me.id, params.id, payload.names)),
+      )
+      .handle("setLists", ({ params, payload }) =>
+        withMe((me) => places.setLists(me.id, params.id, payload.listIds)),
+      )
       .handle("remove", ({ params }) => withMe((me) => places.remove(me.id, params.id)))
+      .handle("bulk", ({ payload }) =>
+        withMe((me) => places.bulk(me.id, payload.placeIds, payload.action)),
+      )
+      .handle("restore", ({ payload }) => withMe((me) => places.restore(me.id, payload.placeIds)))
+  }),
+)
+
+export const TagsApiLive = HttpApiBuilder.group(
+  Api,
+  "tags",
+  Effect.fn(function* (handlers) {
+    const tags = yield* Tags
+    return handlers
+      .handle("list", () => withMe((me) => tags.list(me.id)))
+      .handle("create", ({ payload }) => withMe((me) => tags.create(me.id, payload.name)))
+      .handle("rename", ({ params, payload }) =>
+        withMe((me) => tags.rename(me.id, params.id, payload.name)),
+      )
+      .handle("remove", ({ params }) => withMe((me) => tags.remove(me.id, params.id)))
+  }),
+)
+
+export const ListsApiLive = HttpApiBuilder.group(
+  Api,
+  "lists",
+  Effect.fn(function* (handlers) {
+    const lists = yield* Lists
+    return handlers
+      .handle("list", () => withMe((me) => lists.list(me.id)))
+      .handle("create", ({ payload }) => withMe((me) => lists.create(me.id, payload)))
+      .handle("get", ({ params }) => withMe((me) => lists.get(me.id, params.id)))
+      .handle("update", ({ params, payload }) =>
+        withMe((me) => lists.update(me.id, params.id, payload)),
+      )
+      .handle("remove", ({ params }) => withMe((me) => lists.remove(me.id, params.id)))
   }),
 )
 

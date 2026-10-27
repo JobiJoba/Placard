@@ -1,4 +1,4 @@
-import type { Place, PlaceCategory, PlaceSource } from "@placard/domain"
+import type { Place, PlaceCategory, PlaceSource, PlaceStatus } from "@placard/domain"
 import {
   BedDouble,
   Clapperboard,
@@ -42,6 +42,11 @@ export const sourceLabels: Record<PlaceSource, string> = {
   map_pick: "Map",
   takeout: "Google Takeout",
   mcp: "Assistant",
+}
+
+export const statusLabels: Record<PlaceStatus, string> = {
+  want_to_go: "Want to go",
+  been_there: "Been there",
 }
 
 export const formatCoordinates = ({ location }: Pick<Place, "location">) =>

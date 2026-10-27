@@ -3,11 +3,13 @@ import { Layer } from "effect"
 import { HttpApiBuilder } from "effect/http-api"
 import { AccountsLayer } from "../accounts/layer.ts"
 import { GooglePlaces } from "../google/places.ts"
+import { Lists } from "../places/lists.ts"
 import { Places } from "../places/places.ts"
+import { Tags } from "../places/tags.ts"
 import { AdminApiLive, MeApiLive, SetupApiLive } from "./accounts.ts"
 import { AdminAuthenticationLive, AuthenticationLive, AuthRoutesLive } from "./auth.ts"
 import { HealthApiLive } from "./health.ts"
-import { GoogleApiLive, PlacesApiLive } from "./places.ts"
+import { GoogleApiLive, ListsApiLive, PlacesApiLive, TagsApiLive } from "./places.ts"
 
 export const ApiLive = HttpApiBuilder.layer(Api, {
   openapiPath: "/openapi.json",
@@ -18,13 +20,16 @@ export const ApiLive = HttpApiBuilder.layer(Api, {
     MeApiLive,
     AdminApiLive,
     PlacesApiLive,
+    TagsApiLive,
+    ListsApiLive,
     GoogleApiLive,
   ]),
   Layer.provide([AuthenticationLive, AdminAuthenticationLive]),
 )
 
-/** Every app service behind the routes. Needs an HttpClient for Google. */
-export const ServicesLayer = Layer.mergeAll(Places.layer, GooglePlaces.layer).pipe(
+/** Tags first: Places needs them. Needs an HttpClient for Google. */
+export const ServicesLayer = Layer.mergeAll(Places.layer, Lists.layer, GooglePlaces.layer).pipe(
+  Layer.provideMerge(Tags.layer),
   Layer.provideMerge(AccountsLayer),
 )
 

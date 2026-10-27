@@ -18,17 +18,34 @@ import {
 } from "./accounts.ts"
 import { HealthError, HealthOk } from "./health.ts"
 import {
+  BulkInput,
+  BulkResult,
+  ListInput,
+  ListNotFound,
+  ListUpdate,
+  NameTaken,
+  PlaceIds,
+  PlaceList,
+  TagName,
+  TagNotFound,
+  TagSummary,
+} from "./library.ts"
+import {
   AutocompleteInput,
+  DeletedPlace,
   GoogleConfig,
   GoogleKeyMissing,
   GooglePlaceInput,
   GooglePlacesFailed,
   ManualPlaceInput,
   Place,
+  PlaceFilter,
   PlaceNotFound,
   PlacePreview,
   PlaceSuggestion,
+  PlaceUpdate,
   SavedPlace,
+  TagRef,
 } from "./places.ts"
 
 export class HealthApi extends HttpApiGroup.make("health", { topLevel: true }).add(
@@ -87,7 +104,8 @@ export class AdminApi extends HttpApiGroup.make("admin")
 
 export class PlacesApi extends HttpApiGroup.make("places")
   .add(
-    HttpApiEndpoint.get("list", "/", { success: Schema.Array(Place) }),
+    HttpApiEndpoint.get("list", "/", { query: PlaceFilter, success: Schema.Array(Place) }),
+    HttpApiEndpoint.get("deleted", "/deleted", { success: Schema.Array(DeletedPlace) }),
     HttpApiEndpoint.get("get", "/:id", {
       params: { id: Schema.String },
       success: Place,
@@ -102,13 +120,92 @@ export class PlacesApi extends HttpApiGroup.make("places")
       payload: ManualPlaceInput,
       success: SavedPlace,
     }),
+    HttpApiEndpoint.patch("update", "/:id", {
+      params: { id: Schema.String },
+      payload: PlaceUpdate,
+      success: Place,
+      error: PlaceNotFound,
+    }),
+    HttpApiEndpoint.put("setTags", "/:id/tags", {
+      params: { id: Schema.String },
+      payload: Schema.Struct({
+        names: Schema.Array(TagName).pipe(Schema.check(Schema.isMaxLength(30))),
+      }),
+      success: Place,
+      error: PlaceNotFound,
+    }),
+    HttpApiEndpoint.put("setLists", "/:id/lists", {
+      params: { id: Schema.String },
+      payload: Schema.Struct({ listIds: Schema.Array(Schema.String) }),
+      success: Place,
+      error: [PlaceNotFound, ListNotFound],
+    }),
     HttpApiEndpoint.delete("remove", "/:id", {
       params: { id: Schema.String },
+      error: PlaceNotFound,
+    }),
+    HttpApiEndpoint.post("bulk", "/bulk", {
+      payload: BulkInput,
+      success: BulkResult,
+      error: [PlaceNotFound, TagNotFound, ListNotFound],
+    }),
+    HttpApiEndpoint.post("restore", "/restore", {
+      payload: Schema.Struct({ placeIds: PlaceIds }),
+      success: BulkResult,
       error: PlaceNotFound,
     }),
   )
   .middleware(Authentication)
   .prefix("/api/places") {}
+
+export class TagsApi extends HttpApiGroup.make("tags")
+  .add(
+    HttpApiEndpoint.get("list", "/", { success: Schema.Array(TagSummary) }),
+    HttpApiEndpoint.post("create", "/", {
+      payload: Schema.Struct({ name: TagName }),
+      success: TagRef,
+      error: NameTaken,
+    }),
+    HttpApiEndpoint.patch("rename", "/:id", {
+      params: { id: Schema.String },
+      payload: Schema.Struct({ name: TagName }),
+      success: TagRef,
+      error: [TagNotFound, NameTaken],
+    }),
+    HttpApiEndpoint.delete("remove", "/:id", {
+      params: { id: Schema.String },
+      error: TagNotFound,
+    }),
+  )
+  .middleware(Authentication)
+  .prefix("/api/tags") {}
+
+export class ListsApi extends HttpApiGroup.make("lists")
+  .add(
+    HttpApiEndpoint.get("list", "/", { success: Schema.Array(PlaceList) }),
+    HttpApiEndpoint.post("create", "/", {
+      payload: ListInput,
+      success: PlaceList,
+      error: NameTaken,
+    }),
+    HttpApiEndpoint.get("get", "/:id", {
+      params: { id: Schema.String },
+      success: PlaceList,
+      error: ListNotFound,
+    }),
+    HttpApiEndpoint.patch("update", "/:id", {
+      params: { id: Schema.String },
+      payload: ListUpdate,
+      success: PlaceList,
+      error: [ListNotFound, NameTaken],
+    }),
+    HttpApiEndpoint.delete("remove", "/:id", {
+      params: { id: Schema.String },
+      error: ListNotFound,
+    }),
+  )
+  .middleware(Authentication)
+  .prefix("/api/lists") {}
 
 /** Google lookups for the Add page; the server holds the key for Places calls. */
 export class GoogleApi extends HttpApiGroup.make("google")
@@ -135,6 +232,8 @@ export class Api extends HttpApi.make("placard")
   .add(MeApi)
   .add(AdminApi)
   .add(PlacesApi)
+  .add(TagsApi)
+  .add(ListsApi)
   .add(GoogleApi)
   .annotateMerge(
     OpenApi.annotations({

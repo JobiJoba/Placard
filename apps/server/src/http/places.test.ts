@@ -16,12 +16,18 @@ const saved: Place = {
   address: "Via Cesare Sersale, 1, 80139 Napoli NA, Italy",
   googlePlaceId: "ChIJ-fixture-da-michele",
   status: null,
+  notes: null,
   source: "autocomplete",
+  editedFields: [],
+  tags: [],
+  listIds: [],
   createdAt: DateTime.makeUnsafe(0),
 }
 
 const googleCalls: Array<string> = []
 const inserts: Array<string> = []
+
+const unused = () => Effect.die("not under test")
 
 const OneSavedPlace = Layer.succeed(
   Places,
@@ -38,8 +44,15 @@ const OneSavedPlace = Layer.succeed(
           created: true,
         }
       }),
-    addManual: () => Effect.die("not under test"),
-    remove: () => Effect.die("not under test"),
+    addManual: unused,
+    update: unused,
+    setTags: unused,
+    setLists: unused,
+    remove: unused,
+    bulk: unused,
+    listDeleted: () => Effect.succeed([]),
+    restore: unused,
+    purgeExpired: Effect.succeed(0),
   }),
 )
 

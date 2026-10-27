@@ -1,15 +1,40 @@
-import { appleMapsUrl, googleMapsUrl, organicMapsUrl } from "@placard/domain"
+import {
+  appleMapsUrl,
+  googleMapsUrl,
+  organicMapsUrl,
+  type Place,
+  type PlaceCategory,
+  type PlaceList,
+  type PlaceStatus,
+  placeCategories,
+} from "@placard/domain"
 import { DateTime } from "effect"
 import { ArrowLeft, ExternalLink } from "lucide-react"
-import { useCallback, useState } from "react"
+import { type FormEvent, useCallback, useState } from "react"
 import { Link, useLocation, useNavigate, useParams } from "react-router"
 import { ErrorAlert } from "@/components/error-alert"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Textarea } from "@/components/ui/textarea"
 import { api, errorMessage, isTagged } from "@/lib/api"
-import { categoryIcons, categoryLabels, formatCoordinates, sourceLabels } from "@/lib/places"
+import {
+  categoryIcons,
+  categoryLabels,
+  formatCoordinates,
+  sourceLabels,
+  statusLabels,
+} from "@/lib/places"
 import { useLoad } from "@/lib/use-load"
 
 /** Set as router state when an add flow lands on a place the user already had. */
@@ -24,9 +49,12 @@ export function PlacePage() {
   const alreadySaved = (location.state as PlacePageState | null)?.alreadySaved === true
   const {
     data: place,
+    setData,
     error,
     cause,
+    reload,
   } = useLoad(useCallback(() => api((c) => c.places.get({ params: { id } })), [id]))
+  const { data: lists } = useLoad(useCallback(() => api((c) => c.lists.list()), []))
   const [confirming, setConfirming] = useState(false)
   const [removeError, setRemoveError] = useState<string | null>(null)
 
@@ -56,7 +84,7 @@ export function PlacePage() {
   ]
 
   return (
-    <article className="flex flex-col gap-6">
+    <article className="flex flex-col gap-8">
       <BackLink />
       {alreadySaved && (
         <Alert>
@@ -64,11 +92,23 @@ export function PlacePage() {
         </Alert>
       )}
       <header className="flex flex-col gap-2">
-        <Badge variant="secondary" className="w-fit gap-1.5">
-          <Icon aria-hidden /> {categoryLabels[place.category]}
-        </Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="secondary" className="w-fit gap-1.5">
+            <Icon aria-hidden /> {categoryLabels[place.category]}
+          </Badge>
+          {place.status && <Badge variant="outline">{statusLabels[place.status]}</Badge>}
+        </div>
         <h1 className="text-3xl font-semibold tracking-tight">{place.name}</h1>
         {place.address && <p className="text-muted-foreground">{place.address}</p>}
+        {place.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 pt-1">
+            {place.tags.map((tag) => (
+              <Badge key={tag.id} variant="secondary">
+                {tag.name}
+              </Badge>
+            ))}
+          </div>
+        )}
       </header>
 
       <div className="flex flex-wrap gap-2">
@@ -91,6 +131,15 @@ export function PlacePage() {
         </dd>
       </dl>
 
+      <EditPlace
+        place={place}
+        lists={lists ?? []}
+        onSaved={(next) => {
+          setData(next)
+          reload()
+        }}
+      />
+
       <div className="flex flex-col items-start gap-3 border-t pt-6">
         <ErrorAlert message={removeError} />
         {confirming ? (
@@ -110,6 +159,157 @@ export function PlacePage() {
         )}
       </div>
     </article>
+  )
+}
+
+function EditPlace({
+  place,
+  lists,
+  onSaved,
+}: {
+  readonly place: Place
+  readonly lists: ReadonlyArray<PlaceList>
+  readonly onSaved: (place: Place) => void
+}) {
+  const [name, setName] = useState(place.name)
+  const [category, setCategory] = useState<PlaceCategory>(place.category)
+  const [address, setAddress] = useState(place.address ?? "")
+  const [notes, setNotes] = useState(place.notes ?? "")
+  const [status, setStatus] = useState<PlaceStatus | "none">(place.status ?? "none")
+  const [tagNames, setTagNames] = useState(place.tags.map((t) => t.name).join(", "))
+  const [listIds, setListIds] = useState<ReadonlySet<string>>(new Set(place.listIds))
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const toggleList = (id: string) =>
+    setListIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+
+  const save = (event: FormEvent) => {
+    event.preventDefault()
+    setSaving(true)
+    setError(null)
+    const names = tagNames
+      .split(",")
+      .map((n) => n.trim())
+      .filter(Boolean)
+    void (async () => {
+      try {
+        await api((c) =>
+          c.places.update({
+            params: { id: place.id },
+            payload: {
+              name,
+              category,
+              address: address.trim() || null,
+              notes: notes.trim() || null,
+              status: status === "none" ? null : status,
+            },
+          }),
+        )
+        await api((c) => c.places.setTags({ params: { id: place.id }, payload: { names } }))
+        const next = await api((c) =>
+          c.places.setLists({
+            params: { id: place.id },
+            payload: { listIds: [...listIds] },
+          }),
+        )
+        onSaved(next)
+        setSaving(false)
+      } catch (cause) {
+        setError(errorMessage(cause))
+        setSaving(false)
+      }
+    })()
+  }
+
+  return (
+    <form onSubmit={save} className="flex flex-col gap-4 border-t pt-6">
+      <h2 className="text-lg font-medium">Edit</h2>
+      <FieldGroup>
+        <Field>
+          <FieldLabel htmlFor="place-name">Name</FieldLabel>
+          <Input id="place-name" value={name} onChange={(e) => setName(e.target.value)} required />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="place-category">Type</FieldLabel>
+          <Select value={category} onValueChange={(v) => setCategory(v as PlaceCategory)}>
+            <SelectTrigger id="place-category" className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {placeCategories.map((value) => (
+                <SelectItem key={value} value={value}>
+                  {categoryLabels[value]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="place-status">Status</FieldLabel>
+          <Select value={status} onValueChange={(v) => setStatus(v as PlaceStatus | "none")}>
+            <SelectTrigger id="place-status" className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No status</SelectItem>
+              <SelectItem value="want_to_go">Want to go</SelectItem>
+              <SelectItem value="been_there">Been there</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="place-address">Address</FieldLabel>
+          <Input id="place-address" value={address} onChange={(e) => setAddress(e.target.value)} />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="place-notes">Notes</FieldLabel>
+          <Textarea
+            id="place-notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={4}
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="place-tags">Tags</FieldLabel>
+          <Input
+            id="place-tags"
+            value={tagNames}
+            onChange={(e) => setTagNames(e.target.value)}
+            placeholder="date-night, pizza"
+          />
+          <p className="text-xs text-muted-foreground">Comma-separated. New names create tags.</p>
+        </Field>
+        {lists.length > 0 && (
+          <Field>
+            <FieldLabel>Lists</FieldLabel>
+            <ul className="flex flex-col gap-2">
+              {lists.map((list) => (
+                <li key={list.id} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    id={`list-${list.id}`}
+                    checked={listIds.has(list.id)}
+                    onChange={() => toggleList(list.id)}
+                  />
+                  <label htmlFor={`list-${list.id}`}>{list.name}</label>
+                </li>
+              ))}
+            </ul>
+          </Field>
+        )}
+      </FieldGroup>
+      <ErrorAlert message={error} />
+      <Button type="submit" className="w-fit" disabled={saving}>
+        {saving ? "Saving…" : "Save changes"}
+      </Button>
+    </form>
   )
 }
 
