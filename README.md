@@ -27,6 +27,8 @@ pnpm install
 aspire run                  # PostGIS + server + worker + Vite (dashboard URL in the terminal)
 ```
 
+Aspire installs the AppHost with `pnpm install --ignore-workspace`, which skips this repo's `allowBuilds` for `esbuild`. If you hit `ERR_PNPM_IGNORED_BUILDS`, set `strictDepBuilds: false` in `~/Library/Preferences/pnpm/config.yaml` (macOS) or `$XDG_CONFIG_HOME/pnpm/config.yaml`.
+
 Or without Aspire (Compose db + manual processes):
 
 ```sh

@@ -15,7 +15,7 @@ The stack choices for v0.1 ([mvp.md](mvp.md)). Change them here first, then in c
 | Schemas / validation | **Effect Schema** (replaces zod) |
 | Auth | **Better Auth** (email + password; OIDC later) — Phase 1 |
 | UI | **Tailwind 4 + shadcn/ui** |
-| Maps | **Google Maps JavaScript API** everywhere |
+| Maps | **Google Maps JavaScript API** for picking places; **Leaflet + OpenStreetMap tiles** for dropping a pin without a key |
 | Place data | **Google Places API (New)**, using the instance key (BYOK) |
 | Background jobs | **Postgres-backed queue** (pg-boss), no Redis |
 | Media | **Local filesystem volume** |
@@ -30,7 +30,7 @@ The stack choices for v0.1 ([mvp.md](mvp.md)). Change them here first, then in c
 - **One image, one origin.** The Node server serves `/api/*` and the built SPA (SPA fallback). The worker uses the same image with a different start command. Auth cookies stay same-origin.
 - **Postgres does everything stateful**: data, geo queries (PostGIS), jobs (pg-boss), and auth sessions. Backups come down to one database plus one media folder.
 - **Aspire for developers, Compose for self-hosters.** `aspire run` starts PostGIS, server, worker, and Vite with a dashboard and OTEL. The committed `compose.yaml` is what Coolify / NAS users run.
-- **Google everywhere for maps.** Clicking a point of interest on a Google map gives a Place ID directly. The same key powers autocomplete, details, and Takeout matching.
+- **Google maps for picking, OSM for keyless pins.** Clicking a point of interest on a Google map gives a Place ID directly, and the same key powers autocomplete, details, and Takeout matching. Without a key, a Leaflet map on OpenStreetMap tiles still lets you drop a pin.
 
 ## Architecture
 
@@ -82,8 +82,8 @@ For MCP: start with the official MCP SDK, feeding it JSON Schema generated from 
 
 | Need | API |
 | --- | --- |
-| Map rendering + point-of-interest clicks | Maps JavaScript API |
-| Autocomplete on the Add page | Places API (New) Autocomplete, with session tokens to keep costs down |
+| Map rendering + point-of-interest clicks | Maps JavaScript API (browser) |
+| Autocomplete on the Add page | Places API (New) Autocomplete, called by the server, with session tokens to keep costs down |
 | Details on save / refresh | Places API (New) Place Details, requesting only the fields we store |
 | Takeout matching | Text Search or Place Details from coordinates / name / CID |
 

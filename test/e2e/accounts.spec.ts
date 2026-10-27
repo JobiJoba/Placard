@@ -1,20 +1,13 @@
 import { expect, type Page, test } from "@playwright/test"
+import { admin, signIn } from "./support.ts"
 
 test.skip(Boolean(process.env.PLAYWRIGHT_BASE_URL), "needs a fresh install")
 test.describe.configure({ mode: "serial" })
 
-const admin = { name: "Ada Admin", email: "ada@example.com", password: "correct horse battery" }
 const member = { name: "Ben Member", email: "ben@example.com", password: "another long password" }
 
 const emptyLibrary = (page: Page) =>
   expect(page.getByRole("heading", { name: "Your library is empty" })).toBeVisible()
-
-const signIn = async (page: Page, user: { email: string; password: string }) => {
-  await page.goto("/login")
-  await page.getByLabel("Email").fill(user.email)
-  await page.getByLabel("Password").fill(user.password)
-  await page.getByRole("button", { name: "Sign in" }).click()
-}
 
 test("the first visitor creates the admin account, signs out and back in", async ({ page }) => {
   await page.goto("/")

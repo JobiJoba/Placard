@@ -5,10 +5,10 @@ import { Effect, Layer } from "effect"
 import { FetchHttpClient, HttpRouter, HttpStaticServer } from "effect/http"
 import { AppConfig, loadConfigOrExit } from "./config.ts"
 import { runMigrations } from "./db/migrate.ts"
+import { GoogleFixtureClient } from "./google/fixture-client.ts"
 import { RoutesLive } from "./http/api.ts"
 import { ObservabilityLive } from "./observability.ts"
 import { withConfig } from "./runtime.ts"
-import { GoogleKeyVerifier } from "./settings/google-key.ts"
 
 const directoryExists = (path: string) =>
   Effect.tryPromise({
@@ -37,8 +37,7 @@ const program = Effect.gen(function* () {
   yield* runMigrations.pipe(Effect.provide(withConfig(config)))
 
   const ServerLive = HttpRouter.serve(Layer.mergeAll(RoutesLive, StaticLive)).pipe(
-    Layer.provide(GoogleKeyVerifier.layer),
-    Layer.provide(FetchHttpClient.layer),
+    Layer.provide(config.fakeGoogle ? GoogleFixtureClient : FetchHttpClient.layer),
     Layer.provide(NodeHttpServer.layer(createServer, { port: config.port })),
     Layer.provide(withConfig(config)),
     Layer.provideMerge(ObservabilityLive),

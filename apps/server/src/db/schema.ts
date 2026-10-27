@@ -1,5 +1,16 @@
+import { placeCategories, placeSources, placeStatuses } from "@placard/domain"
 import { sql } from "drizzle-orm"
-import { boolean, check, index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core"
+import {
+  boolean,
+  check,
+  customType,
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core"
 
 export const userRoles = ["admin", "member"] as const
 export type UserRole = (typeof userRoles)[number]
@@ -113,4 +124,47 @@ export const instanceSettings = pgTable(
       .$onUpdate(() => new Date()),
   },
   (table) => [check("instance_settings_single_row", sql`${table.id} = 1`)],
+)
+
+/** WGS84 point; read and written with PostGIS functions in SQL, never as raw values. */
+const geographyPoint = customType<{ data: string; driverData: string }>({
+  dataType: () => "geography(Point, 4326)",
+})
+
+const inList = (values: ReadonlyArray<string>) =>
+  sql.raw(`(${values.map((value) => `'${value}'`).join(", ")})`)
+
+export const places = pgTable(
+  "places",
+  {
+    id: text("id").primaryKey(),
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    visibility: text("visibility").notNull().default("private"),
+    name: text("name").notNull(),
+    category: text("category").notNull().default("other"),
+    location: geographyPoint("location"),
+    address: text("address"),
+    googlePlaceId: text("google_place_id"),
+    status: text("status"),
+    notes: text("notes"),
+    utcOffsetMinutes: integer("utc_offset_minutes"),
+    source: text("source").notNull(),
+    lastEnrichedAt: timestamp("last_enriched_at", { withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    check("places_visibility_check", sql`${table.visibility} in ('private')`),
+    check("places_category_check", sql`${table.category} in ${inList(placeCategories)}`),
+    check("places_source_check", sql`${table.source} in ${inList(placeSources)}`),
+    check("places_status_check", sql`${table.status} in ${inList(placeStatuses)}`),
+    index("places_location_idx").using("gist", table.location),
+    index("places_name_trgm_idx").using("gin", sql`${table.name} gin_trgm_ops`),
+    index("places_owner_deleted_idx").on(table.ownerId, table.deletedAt),
+    uniqueIndex("places_owner_google_place_id_idx")
+      .on(table.ownerId, table.googlePlaceId)
+      .where(sql`${table.googlePlaceId} is not null and ${table.deletedAt} is null`),
+  ],
 )

@@ -28,7 +28,8 @@ Coolify eats **Docker Compose** (or Dockerfile) from Git very well. Prepare:
    - `POSTGRES_PASSWORD`
    - `BETTER_AUTH_SECRET` (required, 32+ characters: `openssl rand -base64 32`; changing it signs everyone out)
    - `PUBLIC_URL` (sign-in only works from this origin; invite links point here)
-   - optional `GOOGLE_MAPS_API_KEY` (BYOK)
+   - optional `GOOGLE_MAPS_API_KEY` (BYOK; can instead be set in Settings). Enable **Places API (New)** and **Maps JavaScript API**. The key reaches the browser for the map, so restrict it to those two APIs and set a daily quota cap (don't add an HTTP-referrer restriction: the server's Places calls send no referrer). Without a key, places are added by dropping a pin on OpenStreetMap
+   - `PLACARD_FAKE_GOOGLE` is test-only (answers Google calls from fixtures); never set it in production
    - optional `MCP_ENABLED`, token settings
 3. **No hardcoded localhost** assumptions for public URL (respect `PUBLIC_URL` / Coolify domain)
 4. **Persistent data** only on volumes — upgrades must not wipe the library

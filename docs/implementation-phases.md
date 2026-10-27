@@ -91,14 +91,15 @@ Order follows your priorities: places and browsing first, then search, then impo
 
 **Build**
 
-- `Places` service + `GooglePlaces` service (live Layer + fake Layer with recorded fixtures)
-- Add page:
-  - Autocomplete with session tokens → preview → save
-  - Google map picker: click a point of interest → preview card → add
-  - Manual pin + name + type when there's no key
-- Duplicate guard on Place ID: opens the existing card
-- Card grid home and place detail page (basic fields, "Open in Google / Apple / Organic Maps")
-- Minimal enrichment on save: name, address, coordinates, types
+- `Places` service (SQL over PostGIS, every query scoped to the owner, soft delete) and `GooglePlaces` service (Places API (New) over Effect `HttpClient`, field masks, 10-minute Details cache so preview-then-save costs one call)
+- Fake Google: `GoogleFixtureClient` answers Autocomplete, Details and Text Search from fixtures; tests use it and `PLACARD_FAKE_GOOGLE=true` turns it on for E2E. The fixtures are hand-written in Google's documented response format, not recorded from live calls
+- Add page (`/add`):
+  - Search: Autocomplete with a session token → preview → save (server-side calls, the key never leaves the server for this)
+  - Pick on map: Google Maps JavaScript map (`@vis.gl/react-google-maps`); click a point of interest → preview card → add
+  - Drop a pin: OpenStreetMap map (Leaflet, tiles from `tile.openstreetmap.org` with attribution) + name + type + optional address; the only option when there's no key
+- Duplicate guard on Place ID: the preview says "Already in your library" and links to it; saving again returns the existing place (a partial unique index makes concurrent saves safe)
+- Card grid home and place detail page (`/places/:id`: category, address, coordinates, source, "Open in Google / Apple / Organic Maps", remove)
+- Minimal enrichment on save: name, address, coordinates, category (mapped from Google types), UTC offset
 
 **You check**
 
@@ -110,10 +111,10 @@ Order follows your priorities: places and browsing first, then search, then impo
 
 **Automated**
 
-- Unit: duplicate detection, Google response decoding with Schema
-- Contract: `GooglePlaces` against recorded fixtures (autocomplete, details)
-- Integration: create place stores a PostGIS point and owner
-- E2E: autocomplete add flow with the fake Google Layer
+- Unit: duplicate detection (handlers via `HttpApiTest`: a saved Place ID never calls Google or inserts), Google response decoding with Schema, Google type → category mapping, map links
+- Contract: live `GooglePlaces` against the fixture client (URL, key and field-mask headers, session token, location bias, Google's error messages, missing key, cache expiry)
+- Integration: saving stores a PostGIS point (SRID 4326) and the owner; duplicates and concurrent saves give one row; manual pins; validation; privacy between users; soft delete; missing key
+- E2E (fake Google): drop a pin without a key; set a key, add a restaurant by typing its name; add it again and land on its card; remove it
 
 ---
 

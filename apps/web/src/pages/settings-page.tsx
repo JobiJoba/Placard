@@ -6,7 +6,8 @@ import type {
   UserSummary,
 } from "@placard/domain"
 import { DateTime } from "effect"
-import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from "react"
+import { type FormEvent, type ReactNode, useState } from "react"
+import { ErrorAlert } from "@/components/error-alert"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -15,6 +16,7 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { api, errorMessage } from "@/lib/api"
+import { useLoad } from "@/lib/use-load"
 import { useMe, useSession } from "@/session"
 
 export function SettingsPage() {
@@ -52,31 +54,6 @@ function SettingsCard({
       <CardContent>{children}</CardContent>
     </Card>
   )
-}
-
-function ErrorAlert({ message }: { readonly message: string | null }) {
-  if (!message) return null
-  return (
-    <Alert variant="destructive">
-      <AlertDescription>{message}</AlertDescription>
-    </Alert>
-  )
-}
-
-function useLoad<A>(load: () => Promise<A>) {
-  const [data, setData] = useState<A | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const reload = useCallback(() => {
-    load().then(
-      (value) => {
-        setData(value)
-        setError(null)
-      },
-      (cause: unknown) => setError(errorMessage(cause)),
-    )
-  }, [load])
-  useEffect(reload, [reload])
-  return { data, setData, error, reload }
 }
 
 const formatDate = (value: DateTime.Utc) =>
@@ -174,7 +151,10 @@ function GoogleKeyCard() {
           <Field>
             <FieldLabel htmlFor="apiKey">New key</FieldLabel>
             <Input id="apiKey" name="apiKey" autoComplete="off" spellCheck={false} required />
-            <FieldDescription>Needs the Places API (New) enabled.</FieldDescription>
+            <FieldDescription>
+              Needs Places API (New) enabled, plus Maps JavaScript API for picking places on the
+              map.
+            </FieldDescription>
           </Field>
           <ErrorAlert message={error ?? loadError} />
           {saved && (

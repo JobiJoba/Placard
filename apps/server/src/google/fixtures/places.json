@@ -1,0 +1,36 @@
+{
+  "ChIJ-fixture-da-michele": {
+    "id": "ChIJ-fixture-da-michele",
+    "types": [
+      "pizza_restaurant",
+      "italian_restaurant",
+      "restaurant",
+      "food",
+      "point_of_interest",
+      "establishment"
+    ],
+    "formattedAddress": "Via Cesare Sersale, 1, 80139 Napoli NA, Italy",
+    "location": { "latitude": 40.8497877, "longitude": 14.2633047 },
+    "displayName": { "text": "L'Antica Pizzeria da Michele", "languageCode": "it" },
+    "primaryType": "pizza_restaurant",
+    "utcOffsetMinutes": 60
+  },
+  "ChIJ-fixture-tiergarten": {
+    "id": "ChIJ-fixture-tiergarten",
+    "types": ["park", "tourist_attraction", "point_of_interest", "establishment"],
+    "formattedAddress": "Straße des 17. Juni 100, 10557 Berlin, Germany",
+    "location": { "latitude": 52.5144951, "longitude": 13.3500893 },
+    "displayName": { "text": "Großer Tiergarten", "languageCode": "de" },
+    "primaryType": "park",
+    "utcOffsetMinutes": 60
+  },
+  "ChIJ-fixture-cafe-sperl": {
+    "id": "ChIJ-fixture-cafe-sperl",
+    "types": ["cafe", "coffee_shop", "food", "point_of_interest", "establishment"],
+    "formattedAddress": "Gumpendorfer Str. 11, 1060 Wien, Austria",
+    "location": { "latitude": 48.2008946, "longitude": 16.3600893 },
+    "displayName": { "text": "Café Sperl", "languageCode": "de" },
+    "primaryType": "cafe",
+    "utcOffsetMinutes": 60
+  }
+}

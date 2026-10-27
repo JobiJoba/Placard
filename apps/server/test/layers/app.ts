@@ -4,9 +4,9 @@ import type { SqlClient } from "effect/sql"
 import { AppConfig } from "../../src/config.ts"
 import type { Database } from "../../src/db/database.ts"
 import { runMigrations } from "../../src/db/migrate.ts"
+import { GoogleFixtureClient } from "../../src/google/fixture-client.ts"
 import type { Health } from "../../src/health.ts"
 import { RoutesLive } from "../../src/http/api.ts"
-import { GoogleKeyVerifier } from "../../src/settings/google-key.ts"
 import { IntegrationLayer } from "./postgis.ts"
 
 export interface JsonResponse {
@@ -33,7 +33,7 @@ export class TestApp extends Context.Service<TestApp, { readonly browser: () => 
       const services = yield* Effect.context<SqlClient.SqlClient | AppConfig | Health | Database>()
       const app = HttpRouter.toWebHandler(
         RoutesLive.pipe(
-          Layer.provide(GoogleKeyVerifier.fake),
+          Layer.provide(GoogleFixtureClient),
           Layer.provide(Layer.succeedContext(services)),
           Layer.provide(HttpServer.layerServices),
         ),

@@ -1,0 +1,51 @@
+{
+  "suggestions": [
+    {
+      "placePrediction": {
+        "place": "places/ChIJ-fixture-da-michele",
+        "placeId": "ChIJ-fixture-da-michele",
+        "text": {
+          "text": "L'Antica Pizzeria da Michele, Via Cesare Sersale, Naples, Metropolitan City of Naples, Italy",
+          "matches": [{ "endOffset": 28 }]
+        },
+        "structuredFormat": {
+          "mainText": { "text": "L'Antica Pizzeria da Michele", "matches": [{ "endOffset": 28 }] },
+          "secondaryText": {
+            "text": "Via Cesare Sersale, Naples, Metropolitan City of Naples, Italy"
+          }
+        },
+        "types": ["pizza_restaurant", "restaurant", "food", "point_of_interest", "establishment"]
+      }
+    },
+    {
+      "placePrediction": {
+        "place": "places/ChIJ-fixture-tiergarten",
+        "placeId": "ChIJ-fixture-tiergarten",
+        "text": {
+          "text": "Großer Tiergarten, Straße des 17. Juni, Berlin, Germany",
+          "matches": [{ "endOffset": 17 }]
+        },
+        "structuredFormat": {
+          "mainText": { "text": "Großer Tiergarten", "matches": [{ "endOffset": 17 }] },
+          "secondaryText": { "text": "Straße des 17. Juni, Berlin, Germany" }
+        },
+        "types": ["park", "tourist_attraction", "point_of_interest", "establishment"]
+      }
+    },
+    {
+      "placePrediction": {
+        "place": "places/ChIJ-fixture-cafe-sperl",
+        "placeId": "ChIJ-fixture-cafe-sperl",
+        "text": {
+          "text": "Café Sperl, Gumpendorfer Straße, Vienna, Austria",
+          "matches": [{ "endOffset": 10 }]
+        },
+        "structuredFormat": {
+          "mainText": { "text": "Café Sperl", "matches": [{ "endOffset": 10 }] },
+          "secondaryText": { "text": "Gumpendorfer Straße, Vienna, Austria" }
+        },
+        "types": ["cafe", "food", "point_of_interest", "establishment"]
+      }
+    }
+  ]
+}

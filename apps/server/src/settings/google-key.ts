@@ -48,14 +48,4 @@ export class GoogleKeyVerifier extends Context.Service<
       }
     }),
   )
-
-  /** Accepts any key except ones containing "invalid"; for tests. */
-  static readonly fake = Layer.succeed(GoogleKeyVerifier, {
-    verify: (apiKey) =>
-      Redacted.value(apiKey).includes("invalid")
-        ? Effect.fail(
-            new GoogleKeyRejected({ message: "Google rejected the key: API key not valid." }),
-          )
-        : Effect.void,
-  })
 }

@@ -31,6 +31,8 @@ export const appConfig = Config.all({
   port: Config.Number("PORT").pipe(Config.withDefault(3000)),
   googleMapsApiKey: optionalSecret("GOOGLE_MAPS_API_KEY"),
   mcpEnabled: Config.Boolean("MCP_ENABLED").pipe(Config.withDefault(true)),
+  /** Test-only: answer every Google call from bundled fixtures. */
+  fakeGoogle: Config.Boolean("PLACARD_FAKE_GOOGLE").pipe(Config.withDefault(false)),
 })
 
 export type AppConfigShape = Config.Success<typeof appConfig>

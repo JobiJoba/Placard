@@ -22,6 +22,7 @@ const server = spawn(process.execPath, ["src/main.ts"], {
     PORT: port,
     PUBLIC_URL: `http://localhost:${port}`,
     WEB_DIST_DIR: "../web/dist",
+    PLACARD_FAKE_GOOGLE: "true",
   },
 })
 

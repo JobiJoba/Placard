@@ -92,7 +92,7 @@ A single row (`id = 1`).
 | `notes` | text null | Markdown |
 | `utc_offset_minutes` | int null | From Google, used for open-now |
 | `source` | text | `manual` \| `autocomplete` \| `map_pick` \| `takeout` \| `mcp` |
-| `import_run_id` | text null FK | Set when created by an import (enables "undo import") |
+| `import_run_id` | text null FK | Set when created by an import (enables "undo import"); added with `import_runs` in Phase 6 |
 | `last_enriched_at` | timestamptz null | |
 | `deleted_at` | timestamptz null | Soft delete |
 | `created_at`, `updated_at` | timestamptz | |
