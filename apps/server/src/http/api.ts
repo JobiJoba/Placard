@@ -7,11 +7,13 @@ import { JobQueue } from "../jobs/queue.ts"
 import { Enrichment } from "../places/enrichment.ts"
 import { Lists } from "../places/lists.ts"
 import { Places } from "../places/places.ts"
+import { Search } from "../places/search.ts"
 import { Tags } from "../places/tags.ts"
 import { AdminApiLive, MeApiLive, SetupApiLive } from "./accounts.ts"
 import { AdminAuthenticationLive, AuthenticationLive, AuthRoutesLive } from "./auth.ts"
 import { HealthApiLive } from "./health.ts"
 import { GoogleApiLive, ListsApiLive, PlacesApiLive, TagsApiLive } from "./places.ts"
+import { SearchApiLive } from "./search.ts"
 
 export const ApiLive = HttpApiBuilder.layer(Api, {
   openapiPath: "/openapi.json",
@@ -25,12 +27,13 @@ export const ApiLive = HttpApiBuilder.layer(Api, {
     TagsApiLive,
     ListsApiLive,
     GoogleApiLive,
+    SearchApiLive,
   ]),
   Layer.provide([AuthenticationLive, AdminAuthenticationLive]),
 )
 
 /** Enrichment needs Places + Google; Places needs Tags; JobQueue for refresh-all. */
-export const ServicesLayer = Layer.mergeAll(Lists.layer, Enrichment.layer).pipe(
+export const ServicesLayer = Layer.mergeAll(Lists.layer, Enrichment.layer, Search.layer).pipe(
   Layer.provideMerge(GooglePlaces.layer),
   Layer.provideMerge(Places.layer),
   Layer.provideMerge(Tags.layer),

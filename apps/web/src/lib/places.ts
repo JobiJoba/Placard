@@ -51,3 +51,14 @@ export const statusLabels: Record<PlaceStatus, string> = {
 
 export const formatCoordinates = ({ location }: Pick<Place, "location">) =>
   `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`
+
+export const formatDistance = (meters: number, unit: "km" | "mi") => {
+  if (unit === "mi") {
+    const miles = meters / 1609.344
+    return miles < 0.1
+      ? `${Math.round(meters * 3.28084)} ft`
+      : `${miles.toFixed(miles < 10 ? 1 : 0)} mi`
+  }
+  const km = meters / 1000
+  return km < 1 ? `${Math.round(meters)} m` : `${km.toFixed(km < 10 ? 1 : 0)} km`
+}

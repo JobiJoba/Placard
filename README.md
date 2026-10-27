@@ -25,6 +25,7 @@ Requires Node 24+, pnpm 12, Docker, and the [Aspire CLI](https://aspire.dev/get-
 ```sh
 pnpm install
 aspire run                  # PostGIS + server + worker + Vite (dashboard URL in the terminal)
+# App: https://localhost:5173  (fixed HTTPS port; trust the Aspire/dev certificate if prompted)
 ```
 
 Aspire installs the AppHost with `pnpm install --ignore-workspace`, which skips this repo's `allowBuilds` for `esbuild`. If you hit `ERR_PNPM_IGNORED_BUILDS`, set `strictDepBuilds: false` in `~/Library/Preferences/pnpm/config.yaml` (macOS) or `$XDG_CONFIG_HOME/pnpm/config.yaml`.
@@ -35,7 +36,7 @@ Or without Aspire (Compose db + manual processes):
 docker compose up -d db     # add ports: ["5432:5432"] via compose.override.yaml for host access
 export DATABASE_URL=postgres://placard:change-me@localhost:5432/placard
 export BETTER_AUTH_SECRET=$(openssl rand -base64 32)
-export PUBLIC_URL=http://localhost:5173   # the Vite URL you open in the browser
+export PUBLIC_URL=https://localhost:5173  # the Vite URL you open in the browser (HTTP also fine for plain `vite`)
 pnpm db:migrate
 pnpm --filter @placard/server start
 pnpm --filter @placard/web dev

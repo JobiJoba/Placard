@@ -55,6 +55,7 @@ import {
   SavedPlace,
   TagRef,
 } from "./places.ts"
+import { SearchFilter, SearchHit } from "./search.ts"
 
 export class HealthApi extends HttpApiGroup.make("health", { topLevel: true }).add(
   HttpApiEndpoint.get("health", "/api/health", {
@@ -258,6 +259,17 @@ export class GoogleApi extends HttpApiGroup.make("google")
   .middleware(Authentication)
   .prefix("/api/google") {}
 
+/** Structured library search — one filter Schema for UI, API, and MCP. */
+export class SearchApi extends HttpApiGroup.make("search")
+  .add(
+    HttpApiEndpoint.post("query", "/", {
+      payload: SearchFilter,
+      success: Schema.Array(SearchHit),
+    }),
+  )
+  .middleware(Authentication)
+  .prefix("/api/search") {}
+
 export class Api extends HttpApi.make("placard")
   .add(HealthApi)
   .add(SetupApi)
@@ -267,6 +279,7 @@ export class Api extends HttpApi.make("placard")
   .add(TagsApi)
   .add(ListsApi)
   .add(GoogleApi)
+  .add(SearchApi)
   .annotateMerge(
     OpenApi.annotations({
       title: "Placard API",

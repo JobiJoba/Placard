@@ -7,6 +7,7 @@ export {
   ListsApi,
   MeApi,
   PlacesApi,
+  SearchApi,
   SetupApi,
   TagsApi,
 } from "./api.ts"
@@ -22,3 +23,4 @@ export * from "./facts.ts"
 export * from "./library.ts"
 export * from "./map-links.ts"
 export * from "./places.ts"
+export * from "./search.ts"

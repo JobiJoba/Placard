@@ -177,15 +177,16 @@ Order follows your priorities: places and browsing first, then search, then impo
 
 ## Phase 5 — Search
 
+**Status:** done.
+
 **Goal:** find things in your library better than Google Maps Saved.
 
 **Build**
 
 - `Search` service with one filter Schema: text, type, open now / tonight, radius from you or a chosen point, tag, list, status
-- PostGIS radius queries with a GiST index; full-text / trigram on name, notes, cuisine
-- Open-now evaluation from stored hours and the place's UTC offset
-- Library defaults to near you; city / all switch
-- Map view of the filtered results; distances in km or miles
+- PostGIS radius queries with a GiST index; trigram on name + notes; cuisine/types via `place_facts`
+- Open-now / open-tonight evaluation from stored hours and the place's UTC offset (`TestClock`-friendly)
+- Library: Near me / City / All, radius, map or grid, distances in km or miles
 
 **You check**
 
@@ -196,9 +197,8 @@ Order follows your priorities: places and browsing first, then search, then impo
 
 **Automated**
 
-- Property: filter Schema round-trips; open-now is consistent around midnight and across time zones
-- Time-based (`TestClock`): open now vs open tonight at fixed times
-- Integration: radius and text queries against seeded PostGIS data; a performance check at 1,000 places
+- Unit: filter Schema round-trips; open-now / tonight around midnight and across time zones
+- Integration: radius + text against fixtures; open filter accepted; 1,000-place radius under 1s
 
 ---
 

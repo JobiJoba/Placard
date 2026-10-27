@@ -1,0 +1,1 @@
+CREATE INDEX "places_notes_trgm_idx" ON "places" USING gin ("notes" gin_trgm_ops);

@@ -52,14 +52,18 @@ await builder
   .withEnvironment("BETTER_AUTH_SECRET", authSecret)
   .withEnvironment("MEDIA_DIR", "./data/media")
 
+// Stable HTTPS URL for the SPA (geolocation / secure-context browsers). Port stays 5173.
 const web = await builder
   .addViteApp("web", "../apps/web")
   .withPnpm({ install: false })
+  .withHttpsEndpoint({ port: 5173, env: "PORT" })
+  .withHttpsDeveloperCertificate()
+  .withExternalHttpEndpoints()
   .withReference(server)
   .waitFor(server)
 
 // The browser talks to Vite, which proxies /api; auth origin checks and invite links use it.
-await server.withEnvironment("PUBLIC_URL", web.getEndpoint("http"))
+await server.withEnvironment("PUBLIC_URL", web.getEndpoint("https"))
 
 await server.publishWithContainerFiles(web, "./web-dist")
 

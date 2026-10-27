@@ -165,6 +165,7 @@ export const places = pgTable(
     check("places_status_check", sql`${table.status} in ${inList(placeStatuses)}`),
     index("places_location_idx").using("gist", table.location),
     index("places_name_trgm_idx").using("gin", sql`${table.name} gin_trgm_ops`),
+    index("places_notes_trgm_idx").using("gin", sql`${table.notes} gin_trgm_ops`),
     index("places_owner_deleted_idx").on(table.ownerId, table.deletedAt),
     index("places_deleted_at_idx").on(table.deletedAt).where(sql`${table.deletedAt} is not null`),
     uniqueIndex("places_owner_google_place_id_idx")
