@@ -16,7 +16,7 @@ export const PLACES_BASE_URL = "https://places.googleapis.com/v1"
 
 /** Only the fields Placard stores, which keeps Place Details in the cheapest SKU that has them. */
 export const DETAILS_FIELD_MASK =
-  "id,displayName,formattedAddress,location,types,primaryType,utcOffsetMinutes"
+  "id,displayName,formattedAddress,location,types,primaryType,utcOffsetMinutes,nationalPhoneNumber,internationalPhoneNumber,websiteUri,rating,priceLevel,regularOpeningHours"
 
 export const AUTOCOMPLETE_FIELD_MASK =
   "suggestions.placePrediction.placeId,suggestions.placePrediction.text,suggestions.placePrediction.structuredFormat"
@@ -45,6 +45,12 @@ export const GoogleAutocompleteResponse = Schema.Struct({
   ),
 })
 
+const TimeOfDay = Schema.Struct({
+  day: Schema.Number,
+  hour: Schema.Number,
+  minute: Schema.Number,
+})
+
 export const GooglePlaceResponse = Schema.Struct({
   id: Schema.String,
   displayName: Schema.optional(Text),
@@ -53,6 +59,24 @@ export const GooglePlaceResponse = Schema.Struct({
   types: Schema.optional(Schema.Array(Schema.String)),
   primaryType: Schema.optional(Schema.String),
   utcOffsetMinutes: Schema.optional(Schema.Number),
+  nationalPhoneNumber: Schema.optional(Schema.String),
+  internationalPhoneNumber: Schema.optional(Schema.String),
+  websiteUri: Schema.optional(Schema.String),
+  rating: Schema.optional(Schema.Number),
+  priceLevel: Schema.optional(Schema.String),
+  regularOpeningHours: Schema.optional(
+    Schema.Struct({
+      periods: Schema.optional(
+        Schema.Array(
+          Schema.Struct({
+            open: TimeOfDay,
+            close: Schema.optional(TimeOfDay),
+          }),
+        ),
+      ),
+      weekdayDescriptions: Schema.optional(Schema.Array(Schema.String)),
+    }),
+  ),
 })
 
 const GoogleErrorBody = Schema.Struct({
@@ -66,6 +90,16 @@ export interface GooglePlaceDetails {
   readonly location: LatLng
   readonly category: PlaceCategory
   readonly utcOffsetMinutes: number | null
+  readonly enrichment: {
+    readonly nationalPhoneNumber?: string
+    readonly internationalPhoneNumber?: string
+    readonly websiteUri?: string
+    readonly rating?: number
+    readonly priceLevel?: string
+    readonly types?: ReadonlyArray<string>
+    readonly primaryType?: string
+    readonly regularOpeningHours?: typeof GooglePlaceResponse.Type.regularOpeningHours
+  }
 }
 
 export const toSuggestions = (
@@ -90,6 +124,22 @@ export const toDetails = (place: typeof GooglePlaceResponse.Type): GooglePlaceDe
   location: { lat: place.location.latitude, lng: place.location.longitude },
   category: categoryFromGoogleTypes(place.primaryType, place.types ?? []),
   utcOffsetMinutes: place.utcOffsetMinutes ?? null,
+  enrichment: {
+    ...(place.nationalPhoneNumber !== undefined
+      ? { nationalPhoneNumber: place.nationalPhoneNumber }
+      : {}),
+    ...(place.internationalPhoneNumber !== undefined
+      ? { internationalPhoneNumber: place.internationalPhoneNumber }
+      : {}),
+    ...(place.websiteUri !== undefined ? { websiteUri: place.websiteUri } : {}),
+    ...(place.rating !== undefined ? { rating: place.rating } : {}),
+    ...(place.priceLevel !== undefined ? { priceLevel: place.priceLevel } : {}),
+    ...(place.types !== undefined ? { types: place.types } : {}),
+    ...(place.primaryType !== undefined ? { primaryType: place.primaryType } : {}),
+    ...(place.regularOpeningHours !== undefined
+      ? { regularOpeningHours: place.regularOpeningHours }
+      : {}),
+  },
 })
 
 export class GooglePlaces extends Context.Service<
@@ -102,6 +152,7 @@ export class GooglePlaces extends Context.Service<
     readonly details: (
       googlePlaceId: string,
       sessionToken: string | null,
+      options?: { readonly force?: boolean },
     ) => Effect.Effect<GooglePlaceDetails, GooglePlacesError>
   }
 >()("placard/GooglePlaces") {
@@ -177,10 +228,10 @@ export class GooglePlaces extends Context.Service<
           return toSuggestions(yield* send(request, GoogleAutocompleteResponse))
         }),
 
-        details: Effect.fn("GooglePlaces.details")(function* (googlePlaceId, sessionToken) {
+        details: Effect.fn("GooglePlaces.details")(function* (googlePlaceId, sessionToken, options) {
           const now = yield* Clock.currentTimeMillis
           const cached = cache.get(googlePlaceId)
-          if (cached && now - cached.at < DETAILS_CACHE_TTL_MS) return cached.details
+          if (!options?.force && cached && now - cached.at < DETAILS_CACHE_TTL_MS) return cached.details
 
           const request = HttpClientRequest.get(
             `${PLACES_BASE_URL}/places/${encodeURIComponent(googlePlaceId)}`,

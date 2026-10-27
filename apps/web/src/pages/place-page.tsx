@@ -9,8 +9,8 @@ import {
   placeCategories,
 } from "@placard/domain"
 import { DateTime } from "effect"
-import { ArrowLeft, ExternalLink } from "lucide-react"
-import { type FormEvent, useCallback, useState } from "react"
+import { ArrowLeft, ExternalLink, RefreshCw } from "lucide-react"
+import { type FormEvent, useCallback, useEffect, useState } from "react"
 import { Link, useLocation, useNavigate, useParams } from "react-router"
 import { ErrorAlert } from "@/components/error-alert"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -57,12 +57,29 @@ export function PlacePage() {
   const { data: lists } = useLoad(useCallback(() => api((c) => c.lists.list()), []))
   const [confirming, setConfirming] = useState(false)
   const [removeError, setRemoveError] = useState<string | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const [refreshError, setRefreshError] = useState<string | null>(null)
 
   const remove = () =>
     api((c) => c.places.remove({ params: { id } })).then(
       () => navigate("/", { replace: true }),
       (cause: unknown) => setRemoveError(errorMessage(cause)),
     )
+
+  const refresh = () => {
+    setRefreshing(true)
+    setRefreshError(null)
+    void api((c) => c.places.refresh({ params: { id } })).then(
+      (next) => {
+        setData(next)
+        setRefreshing(false)
+      },
+      (cause: unknown) => {
+        setRefreshError(errorMessage(cause))
+        setRefreshing(false)
+      },
+    )
+  }
 
   if (error) {
     return (
@@ -119,7 +136,21 @@ export function PlacePage() {
             </a>
           </Button>
         ))}
+        {place.googlePlaceId && (
+          <Button variant="outline" onClick={() => void refresh()} disabled={refreshing}>
+            <RefreshCw aria-hidden className={refreshing ? "animate-spin" : undefined} />
+            {refreshing ? "Refreshing…" : "Refresh from Google"}
+          </Button>
+        )}
       </div>
+      <ErrorAlert message={refreshError} />
+
+      <PlaceFactsSection
+        place={place}
+        onSaved={(next) => {
+          setData(next)
+        }}
+      />
 
       <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
         <dt className="text-muted-foreground">Coordinates</dt>
@@ -159,6 +190,180 @@ export function PlacePage() {
         )}
       </div>
     </article>
+  )
+}
+
+const priceLabels: Record<string, string> = {
+  free: "Free",
+  inexpensive: "Inexpensive",
+  moderate: "Moderate",
+  expensive: "Expensive",
+  very_expensive: "Very expensive",
+}
+
+function PlaceFactsSection({
+  place,
+  onSaved,
+}: {
+  readonly place: Place
+  readonly onSaved: (place: Place) => void
+}) {
+  const { facts } = place
+  const hasFacts =
+    facts.phone ||
+    facts.website ||
+    facts.rating != null ||
+    facts.priceLevel ||
+    facts.cuisine ||
+    facts.openingHours ||
+    (facts.types && facts.types.length > 0)
+  const [phone, setPhone] = useState(facts.phone ?? "")
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setPhone(facts.phone ?? "")
+  }, [facts.phone])
+
+  const savePhone = (event: FormEvent) => {
+    event.preventDefault()
+    setSaving(true)
+    setError(null)
+    const value = phone.trim() || null
+    void api((c) =>
+      c.places.setFact({
+        params: { id: place.id, key: "phone" },
+        payload: { value },
+      }),
+    ).then(
+      (next) => {
+        onSaved(next)
+        setPhone(next.facts.phone ?? "")
+        setSaving(false)
+      },
+      (cause: unknown) => {
+        setError(errorMessage(cause))
+        setSaving(false)
+      },
+    )
+  }
+
+  const clearPhone = () => {
+    setSaving(true)
+    setError(null)
+    void api((c) =>
+      c.places.clearFactOverride({ params: { id: place.id, key: "phone" } }),
+    ).then(
+      (next) => {
+        onSaved(next)
+        setPhone(next.facts.phone ?? "")
+        setSaving(false)
+      },
+      (cause: unknown) => {
+        setError(errorMessage(cause))
+        setSaving(false)
+      },
+    )
+  }
+
+  if (!hasFacts && !place.googlePlaceId) return null
+
+  return (
+    <section className="flex flex-col gap-4 border-t pt-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-lg font-medium">Details</h2>
+        {facts.fromGoogle && (
+          <p className="text-xs text-muted-foreground">
+            Place data from{" "}
+            <a
+              href="https://maps.google.com"
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-2"
+            >
+              Google
+            </a>
+          </p>
+        )}
+      </div>
+      <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
+        {facts.cuisine && (
+          <>
+            <dt className="text-muted-foreground">Cuisine</dt>
+            <dd>{facts.cuisine}</dd>
+          </>
+        )}
+        {facts.rating != null && (
+          <>
+            <dt className="text-muted-foreground">Rating</dt>
+            <dd className="tabular-nums">{facts.rating.toFixed(1)}★</dd>
+          </>
+        )}
+        {facts.priceLevel && (
+          <>
+            <dt className="text-muted-foreground">Price</dt>
+            <dd>{priceLabels[facts.priceLevel] ?? facts.priceLevel}</dd>
+          </>
+        )}
+        {facts.website && (
+          <>
+            <dt className="text-muted-foreground">Website</dt>
+            <dd>
+              <a
+                href={facts.website}
+                target="_blank"
+                rel="noreferrer"
+                className="underline underline-offset-2"
+              >
+                {facts.website.replace(/^https?:\/\//, "")}
+              </a>
+            </dd>
+          </>
+        )}
+        {facts.openingHours?.weekdayDescriptions && (
+          <>
+            <dt className="text-muted-foreground">Hours</dt>
+            <dd>
+              <ul className="flex flex-col gap-0.5">
+                {facts.openingHours.weekdayDescriptions.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            </dd>
+          </>
+        )}
+      </dl>
+      <form onSubmit={savePhone} className="flex flex-col gap-2">
+        <Field>
+          <FieldLabel htmlFor="place-phone">Phone</FieldLabel>
+          <div className="flex flex-wrap gap-2">
+            <Input
+              id="place-phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="max-w-xs"
+              placeholder="Not set"
+            />
+            <Button type="submit" size="sm" variant="secondary" disabled={saving}>
+              {saving ? "Saving…" : "Save phone"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={saving}
+              onClick={() => void clearPhone()}
+            >
+              Use Google
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Your phone number survives a refresh from Google.
+          </p>
+        </Field>
+        <ErrorAlert message={error} />
+      </form>
+    </section>
   )
 }
 

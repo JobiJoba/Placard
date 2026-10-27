@@ -371,6 +371,13 @@ function PlaceCard({
           {place.address && (
             <p className="line-clamp-2 text-sm text-muted-foreground">{place.address}</p>
           )}
+          {(place.facts.cuisine || place.facts.rating != null) && (
+            <p className="text-xs text-muted-foreground">
+              {[place.facts.cuisine, place.facts.rating != null ? `${place.facts.rating.toFixed(1)}★` : null]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          )}
         </div>
         {place.tags.length > 0 && (
           <div className="flex flex-wrap gap-1">

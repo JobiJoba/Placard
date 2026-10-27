@@ -5,6 +5,8 @@ import { Invites } from "../accounts/invites.ts"
 import { SignupGate } from "../accounts/signup.ts"
 import { Users } from "../accounts/users.ts"
 import { AppConfig } from "../config.ts"
+import { JobQueue } from "../jobs/queue.ts"
+import { Enrichment } from "../places/enrichment.ts"
 import { InstanceSettings } from "../settings/instance-settings.ts"
 
 export const SetupApiLive = HttpApiBuilder.group(
@@ -42,6 +44,8 @@ export const AdminApiLive = HttpApiBuilder.group(
     const users = yield* Users
     const invites = yield* Invites
     const settings = yield* InstanceSettings
+    const enrichment = yield* Enrichment
+    const jobs = yield* JobQueue
     const { publicUrl } = yield* AppConfig
     return handlers
       .handle("settings", () => settings.view)
@@ -57,5 +61,30 @@ export const AdminApiLive = HttpApiBuilder.group(
           return { invite, url: new URL(`/invite/${token}`, publicUrl).href }
         }),
       )
+      .handle("enrichmentPlan", () =>
+        withMe((me) => enrichment.planRefreshAll(me.id)),
+      )
+      .handle("enrichmentRun", () => withMe((me) => enrichment.currentRun(me.id)))
+      .handle("refreshAll", () =>
+        Effect.gen(function* () {
+          const me = yield* CurrentUser
+          const { run, placeIds } = yield* enrichment.startRefreshAll(me.id)
+          yield* Effect.forEach(
+            placeIds,
+            (placeId, index) =>
+              jobs.enqueueEnrichPlace(
+                { placeId, ownerId: me.id, runId: run.id },
+                { startAfterSeconds: index * 0.25 },
+              ),
+            { concurrency: 8, discard: true },
+          )
+          return run
+        }),
+      )
   }),
 )
+
+const withMe = <A, E, R>(f: (me: CurrentUser["Service"]) => Effect.Effect<A, E, R>) =>
+  Effect.gen(function* () {
+    return yield* f(yield* CurrentUser)
+  })

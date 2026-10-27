@@ -4,9 +4,21 @@ import { DateTime, Effect, Layer, Option } from "effect"
 import { HttpServer } from "effect/http"
 import { HttpApiTest } from "effect/http-api"
 import { GooglePlaces } from "../google/places.ts"
+import { Enrichment } from "../places/enrichment.ts"
 import { Places } from "../places/places.ts"
 import { InstanceSettings } from "../settings/instance-settings.ts"
 import { GoogleApiLive, PlacesApiLive } from "./places.ts"
+
+const emptyFacts = {
+  openingHours: null,
+  phone: null,
+  website: null,
+  priceLevel: null,
+  rating: null,
+  cuisine: null,
+  types: null,
+  fromGoogle: false,
+}
 
 const saved: Place = {
   id: "0199a1b2-0000-7000-8000-000000000001",
@@ -21,6 +33,7 @@ const saved: Place = {
   editedFields: [],
   tags: [],
   listIds: [],
+  facts: emptyFacts,
   createdAt: DateTime.makeUnsafe(0),
 }
 
@@ -70,6 +83,7 @@ const RecordingGoogle = Layer.succeed(
           location: { lat: 48.2, lng: 16.36 },
           category: "cafe" as const,
           utcOffsetMinutes: null,
+          enrichment: {},
         }
       }),
   }),
@@ -102,11 +116,25 @@ const Settings = Layer.succeed(InstanceSettings, {
   clearGoogleApiKey: Effect.die("not under test"),
 })
 
+const StubEnrichment = Layer.succeed(
+  Enrichment,
+  Enrichment.of({
+    applyDetails: () => Effect.void,
+    enrichPlace: unused,
+    setOverride: unused,
+    clearOverride: unused,
+    planRefreshAll: () => Effect.succeed({ placeCount: 0 }),
+    startRefreshAll: unused,
+    currentRun: () => Effect.succeed(null),
+    markJobDone: () => Effect.void,
+  }),
+)
+
 const makeClient = HttpApiTest.groups(Api, ["places", "google"])
 
 layer(
   Layer.mergeAll(PlacesApiLive, GoogleApiLive).pipe(
-    Layer.provide([OneSavedPlace, RecordingGoogle, Settings]),
+    Layer.provide([OneSavedPlace, RecordingGoogle, Settings, StubEnrichment]),
     Layer.provideMerge(SignedIn),
   ),
 )("duplicate detection", (it) => {

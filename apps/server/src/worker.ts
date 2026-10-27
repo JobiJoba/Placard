@@ -1,14 +1,20 @@
 /**
- * Background work for Placard. Today: health heartbeat + soft-delete purge.
- * Later phases add pg-boss jobs here.
+ * Background work for Placard: health heartbeat, soft-delete purge, and pg-boss jobs.
  */
 import { writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { NodeRuntime } from "@effect/platform-node"
 import { Effect, Layer, Schedule } from "effect"
+import { FetchHttpClient } from "effect/http"
+import { AccountsLayer } from "./accounts/layer.ts"
 import { loadConfigOrExit } from "./config.ts"
+import { GoogleFixtureClient } from "./google/fixture-client.ts"
+import { GooglePlaces } from "./google/places.ts"
 import { Health } from "./health.ts"
+import { registerEnrichPlaceWorker } from "./jobs/enrich-place.ts"
+import { JobQueue } from "./jobs/queue.ts"
+import { Enrichment } from "./places/enrichment.ts"
 import { Places } from "./places/places.ts"
 import { purgeDeletedPlaces, purgeSchedule } from "./places/purge.ts"
 import { Tags } from "./places/tags.ts"
@@ -27,10 +33,22 @@ const beat = Effect.gen(function* () {
   }
 })
 
-/** Places over the worker's database; no Google client needed. */
-const WorkerServices = Places.layer.pipe(Layer.provideMerge(Tags.layer))
+/** Places, enrichment, and the job queue over the worker's database. */
+const WorkerServices = Enrichment.layer.pipe(
+  Layer.provideMerge(GooglePlaces.layer),
+  Layer.provideMerge(Places.layer),
+  Layer.provideMerge(Tags.layer),
+  Layer.provideMerge(AccountsLayer),
+  Layer.provideMerge(JobQueue.layer),
+)
 
 const program = Effect.gen(function* () {
+  const queue = yield* JobQueue
+  const enrichment = yield* Enrichment
+  const run = <A, E>(effect: Effect.Effect<A, E, Enrichment>) =>
+    Effect.runPromise(Effect.provideService(effect, Enrichment, enrichment))
+
+  yield* registerEnrichPlaceWorker(queue.boss, run)
   yield* Effect.log("Placard worker started")
   yield* Effect.all(
     [
@@ -43,7 +61,12 @@ const program = Effect.gen(function* () {
 
 if (import.meta.main) {
   const config = Effect.runSync(loadConfigOrExit)
+  const http = config.fakeGoogle ? GoogleFixtureClient : FetchHttpClient.layer
   NodeRuntime.runMain(
-    program.pipe(Effect.provide(WorkerServices), Effect.provide(withConfig(config))),
+    program.pipe(
+      Effect.provide(WorkerServices),
+      Effect.provide(http),
+      Effect.provide(withConfig(config)),
+    ),
   )
 }

@@ -148,15 +148,17 @@ Order follows your priorities: places and browsing first, then search, then impo
 
 ## Phase 4 — Enrichment
 
+**Status:** done.
+
 **Goal:** cards carry real, useful details from Google.
 
 **Build**
 
 - `Enrichment` service: fetch details (hours, phone, website, price level, rating, cuisine/types) into facts with source + `fetched_at`
-- `enrich.place` job with retry/backoff on the worker
-- Refresh button per place; "Force refresh all" in settings with the expected call count and a progress view
-- Manual overrides survive a refresh
-- Google attribution shown where required
+- `enrich.place` job with retry/backoff on the worker (pg-boss `JobQueue`)
+- Facts written synchronously on Google add (same Details call); refresh button per place
+- "Force refresh all" in settings with the expected call count and a progress view
+- Manual overrides survive a refresh; Google attribution on the place page
 
 **You check**
 
@@ -167,9 +169,9 @@ Order follows your priorities: places and browsing first, then search, then impo
 
 **Automated**
 
-- Unit: mapping Google details → facts; override precedence
-- Contract: details fixtures including missing fields
-- Integration: job retries on a simulated rate-limit error, then succeeds
+- Unit: mapping Google details → facts; override precedence; retry policy for rate-limit vs not-found
+- Contract: details fixtures including missing fields (tiergarten sparse)
+- Integration: save → facts; override survives refresh; refresh-all plan/start/busy
 
 ---
 

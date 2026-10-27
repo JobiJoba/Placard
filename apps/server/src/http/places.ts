@@ -2,6 +2,7 @@ import { Api, CurrentUser } from "@placard/domain"
 import { Effect, Option, Redacted } from "effect"
 import { HttpApiBuilder } from "effect/http-api"
 import { GooglePlaces } from "../google/places.ts"
+import { Enrichment } from "../places/enrichment.ts"
 import { Lists } from "../places/lists.ts"
 import { Places } from "../places/places.ts"
 import { Tags } from "../places/tags.ts"
@@ -18,6 +19,7 @@ export const PlacesApiLive = HttpApiBuilder.group(
   Effect.fn(function* (handlers) {
     const places = yield* Places
     const google = yield* GooglePlaces
+    const enrichment = yield* Enrichment
     return handlers
       .handle("list", ({ query }) => withMe((me) => places.list(me.id, query)))
       .handle("deleted", () => withMe((me) => places.listDeleted(me.id)))
@@ -28,7 +30,13 @@ export const PlacesApiLive = HttpApiBuilder.group(
           const existing = yield* places.findByGooglePlaceId(me.id, payload.googlePlaceId)
           if (Option.isSome(existing)) return { place: existing.value, created: false }
           const details = yield* google.details(payload.googlePlaceId, payload.sessionToken)
-          return yield* places.addFromGoogle(me.id, details, payload.source)
+          const saved = yield* places.addFromGoogle(me.id, details, payload.source)
+          if (saved.created) {
+            yield* enrichment.applyDetails(me.id, saved.place.id, details).pipe(Effect.orDie)
+            const place = yield* places.get(me.id, saved.place.id).pipe(Effect.orDie)
+            return { place, created: true }
+          }
+          return saved
         }),
       )
       .handle("addManual", ({ payload }) => withMe((me) => places.addManual(me.id, payload)))
@@ -46,6 +54,27 @@ export const PlacesApiLive = HttpApiBuilder.group(
         withMe((me) => places.bulk(me.id, payload.placeIds, payload.action)),
       )
       .handle("restore", ({ payload }) => withMe((me) => places.restore(me.id, payload.placeIds)))
+      .handle("refresh", ({ params }) =>
+        Effect.gen(function* () {
+          const me = yield* CurrentUser
+          yield* enrichment.enrichPlace(me.id, params.id, { force: true })
+          return yield* places.get(me.id, params.id)
+        }),
+      )
+      .handle("setFact", ({ params, payload }) =>
+        Effect.gen(function* () {
+          const me = yield* CurrentUser
+          yield* enrichment.setOverride(me.id, params.id, params.key, payload.value)
+          return yield* places.get(me.id, params.id)
+        }),
+      )
+      .handle("clearFactOverride", ({ params }) =>
+        Effect.gen(function* () {
+          const me = yield* CurrentUser
+          yield* enrichment.clearOverride(me.id, params.id, params.key)
+          return yield* places.get(me.id, params.id)
+        }),
+      )
   }),
 )
 

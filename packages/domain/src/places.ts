@@ -1,4 +1,5 @@
 import { Schema } from "effect"
+import { PlaceFacts } from "./facts.ts"
 
 export const placeCategories = [
   "restaurant",
@@ -51,6 +52,7 @@ export const Place = Schema.Struct({
   editedFields: Schema.Array(EditableField),
   tags: Schema.Array(TagRef),
   listIds: Schema.Array(Schema.String),
+  facts: PlaceFacts,
   createdAt: Schema.DateTimeUtcFromString,
 })
 export type Place = typeof Place.Type

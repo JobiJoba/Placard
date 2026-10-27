@@ -19,6 +19,7 @@ import { Clock, Context, DateTime, Duration, Effect, Layer, Option } from "effec
 import { SqlClient } from "effect/sql"
 import { v7 as uuidv7 } from "uuid"
 import type { GooglePlaceDetails } from "../google/places.ts"
+import { emptyFacts, loadFactsMap } from "./facts.ts"
 import { applyEdit } from "./overrides.ts"
 import { Tags } from "./tags.ts"
 
@@ -153,9 +154,10 @@ export class Places extends Context.Service<
       const hydrate = (rows: ReadonlyArray<PlaceRow>) =>
         Effect.gen(function* () {
           const ids = rows.map((row) => row.id)
-          const [tagMap, listMap] = yield* Effect.all([loadTags(ids), loadListIds(ids)], {
-            concurrency: 2,
-          })
+          const [tagMap, listMap, factsMap] = yield* Effect.all(
+            [loadTags(ids), loadListIds(ids), loadFactsMap(sql, ids)],
+            { concurrency: 3 },
+          )
           return rows.map(
             (row): Place => ({
               id: row.id,
@@ -170,6 +172,7 @@ export class Places extends Context.Service<
               editedFields: row.manual_fields.filter(isEditable),
               tags: tagMap.get(row.id) ?? [],
               listIds: listMap.get(row.id) ?? [],
+              facts: factsMap.get(row.id) ?? emptyFacts(),
               createdAt: DateTime.fromDateUnsafe(row.created_at),
             }),
           )

@@ -80,6 +80,11 @@ describe("Google response decoding", () => {
         location: { lat: 52.5144951, lng: 13.3500893 },
         category: "park",
         utcOffsetMinutes: 60,
+        enrichment: {
+          types: ["park", "tourist_attraction", "point_of_interest", "establishment"],
+          primaryType: "park",
+          websiteUri: "https://www.berlin.de/en/",
+        },
       })
     }),
   )

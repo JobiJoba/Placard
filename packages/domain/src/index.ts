@@ -18,6 +18,7 @@ export {
   HealthOk,
   HealthReport,
 } from "./health.ts"
+export * from "./facts.ts"
 export * from "./library.ts"
 export * from "./map-links.ts"
 export * from "./places.ts"

@@ -31,6 +31,14 @@ import {
   TagSummary,
 } from "./library.ts"
 import {
+  EnrichmentBusy,
+  EnrichmentRun,
+  FactKey,
+  FactOverrideInput,
+  FactNotFound,
+  RefreshAllPlan,
+} from "./facts.ts"
+import {
   AutocompleteInput,
   DeletedPlace,
   GoogleConfig,
@@ -98,6 +106,14 @@ export class AdminApi extends HttpApiGroup.make("admin")
       params: { id: Schema.String },
       error: InviteNotFound,
     }),
+    HttpApiEndpoint.get("enrichmentPlan", "/enrichment/plan", { success: RefreshAllPlan }),
+    HttpApiEndpoint.get("enrichmentRun", "/enrichment/run", {
+      success: Schema.NullOr(EnrichmentRun),
+    }),
+    HttpApiEndpoint.post("refreshAll", "/enrichment/refresh-all", {
+      success: EnrichmentRun,
+      error: [EnrichmentBusy, GoogleKeyMissing],
+    }),
   )
   .middleware(AdminAuthentication)
   .prefix("/api/admin") {}
@@ -153,6 +169,22 @@ export class PlacesApi extends HttpApiGroup.make("places")
       payload: Schema.Struct({ placeIds: PlaceIds }),
       success: BulkResult,
       error: PlaceNotFound,
+    }),
+    HttpApiEndpoint.post("refresh", "/:id/refresh", {
+      params: { id: Schema.String },
+      success: Place,
+      error: [PlaceNotFound, GoogleKeyMissing, GooglePlacesFailed],
+    }),
+    HttpApiEndpoint.put("setFact", "/:id/facts/:key", {
+      params: { id: Schema.String, key: FactKey },
+      payload: FactOverrideInput,
+      success: Place,
+      error: [PlaceNotFound, FactNotFound],
+    }),
+    HttpApiEndpoint.delete("clearFactOverride", "/:id/facts/:key", {
+      params: { id: Schema.String, key: FactKey },
+      success: Place,
+      error: [PlaceNotFound, FactNotFound],
     }),
   )
   .middleware(Authentication)

@@ -3,6 +3,8 @@ import { Layer } from "effect"
 import { HttpApiBuilder } from "effect/http-api"
 import { AccountsLayer } from "../accounts/layer.ts"
 import { GooglePlaces } from "../google/places.ts"
+import { JobQueue } from "../jobs/queue.ts"
+import { Enrichment } from "../places/enrichment.ts"
 import { Lists } from "../places/lists.ts"
 import { Places } from "../places/places.ts"
 import { Tags } from "../places/tags.ts"
@@ -27,10 +29,13 @@ export const ApiLive = HttpApiBuilder.layer(Api, {
   Layer.provide([AuthenticationLive, AdminAuthenticationLive]),
 )
 
-/** Tags first: Places needs them. Needs an HttpClient for Google. */
-export const ServicesLayer = Layer.mergeAll(Places.layer, Lists.layer, GooglePlaces.layer).pipe(
+/** Enrichment needs Places + Google; Places needs Tags; JobQueue for refresh-all. */
+export const ServicesLayer = Layer.mergeAll(Lists.layer, Enrichment.layer).pipe(
+  Layer.provideMerge(GooglePlaces.layer),
+  Layer.provideMerge(Places.layer),
   Layer.provideMerge(Tags.layer),
   Layer.provideMerge(AccountsLayer),
+  Layer.provideMerge(JobQueue.layer),
 )
 
 /** Every `/api` route, with app services built in. */

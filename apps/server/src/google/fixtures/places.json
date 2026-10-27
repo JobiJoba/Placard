@@ -13,7 +13,31 @@
     "location": { "latitude": 40.8497877, "longitude": 14.2633047 },
     "displayName": { "text": "L'Antica Pizzeria da Michele", "languageCode": "it" },
     "primaryType": "pizza_restaurant",
-    "utcOffsetMinutes": 60
+    "utcOffsetMinutes": 60,
+    "nationalPhoneNumber": "081 553 9204",
+    "internationalPhoneNumber": "+39 081 553 9204",
+    "websiteUri": "https://www.damichele.net/",
+    "rating": 4.5,
+    "priceLevel": "PRICE_LEVEL_MODERATE",
+    "regularOpeningHours": {
+      "periods": [
+        { "open": { "day": 1, "hour": 12, "minute": 0 }, "close": { "day": 1, "hour": 23, "minute": 0 } },
+        { "open": { "day": 2, "hour": 12, "minute": 0 }, "close": { "day": 2, "hour": 23, "minute": 0 } },
+        { "open": { "day": 3, "hour": 12, "minute": 0 }, "close": { "day": 3, "hour": 23, "minute": 0 } },
+        { "open": { "day": 4, "hour": 12, "minute": 0 }, "close": { "day": 4, "hour": 23, "minute": 0 } },
+        { "open": { "day": 5, "hour": 12, "minute": 0 }, "close": { "day": 5, "hour": 23, "minute": 0 } },
+        { "open": { "day": 6, "hour": 12, "minute": 0 }, "close": { "day": 6, "hour": 23, "minute": 0 } }
+      ],
+      "weekdayDescriptions": [
+        "Monday: 12:00 – 11:00 PM",
+        "Tuesday: 12:00 – 11:00 PM",
+        "Wednesday: 12:00 – 11:00 PM",
+        "Thursday: 12:00 – 11:00 PM",
+        "Friday: 12:00 – 11:00 PM",
+        "Saturday: 12:00 – 11:00 PM",
+        "Sunday: Closed"
+      ]
+    }
   },
   "ChIJ-fixture-tiergarten": {
     "id": "ChIJ-fixture-tiergarten",
@@ -22,7 +46,8 @@
     "location": { "latitude": 52.5144951, "longitude": 13.3500893 },
     "displayName": { "text": "Großer Tiergarten", "languageCode": "de" },
     "primaryType": "park",
-    "utcOffsetMinutes": 60
+    "utcOffsetMinutes": 60,
+    "websiteUri": "https://www.berlin.de/en/"
   },
   "ChIJ-fixture-cafe-sperl": {
     "id": "ChIJ-fixture-cafe-sperl",
@@ -31,6 +56,26 @@
     "location": { "latitude": 48.2008946, "longitude": 16.3600893 },
     "displayName": { "text": "Café Sperl", "languageCode": "de" },
     "primaryType": "cafe",
-    "utcOffsetMinutes": 60
+    "utcOffsetMinutes": 60,
+    "nationalPhoneNumber": "01 5864158",
+    "internationalPhoneNumber": "+43 1 5864158",
+    "websiteUri": "https://www.cafesperl.at/",
+    "rating": 4.6,
+    "priceLevel": "PRICE_LEVEL_MODERATE",
+    "regularOpeningHours": {
+      "periods": [
+        { "open": { "day": 1, "hour": 7, "minute": 0 }, "close": { "day": 1, "hour": 23, "minute": 0 } },
+        { "open": { "day": 0, "hour": 7, "minute": 0 }, "close": { "day": 0, "hour": 23, "minute": 0 } }
+      ],
+      "weekdayDescriptions": [
+        "Monday: 7:00 AM – 11:00 PM",
+        "Tuesday: 7:00 AM – 11:00 PM",
+        "Wednesday: 7:00 AM – 11:00 PM",
+        "Thursday: 7:00 AM – 11:00 PM",
+        "Friday: 7:00 AM – 11:00 PM",
+        "Saturday: 7:00 AM – 11:00 PM",
+        "Sunday: 7:00 AM – 11:00 PM"
+      ]
+    }
   }
 }

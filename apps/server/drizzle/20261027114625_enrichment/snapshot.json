@@ -1,0 +1,523 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "c8fd8b13-515c-48ea-9ca2-422210ba276e",
+  "prevIds": [
+    "55a2dd35-8b7d-4401-93ac-f18ec2b7ac72"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "enrichment_runs"
+      ],
+      "writes": [
+        "s|tbl|public.enrichment_runs",
+        "n|tbl|public.enrichment_runs",
+        "e|tbl|public.enrichment_runs",
+        "n|rel|public.enrichment_runs",
+        "n|type|public.enrichment_runs",
+        "n|rel|public.enrichment_runs_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "place_facts"
+      ],
+      "writes": [
+        "s|tbl|public.place_facts",
+        "n|tbl|public.place_facts",
+        "e|tbl|public.place_facts",
+        "n|rel|public.place_facts",
+        "n|type|public.place_facts",
+        "n|rel|public.place_facts_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "enrichment_runs",
+        "enrichment_runs_owner_created_idx"
+      ],
+      "writes": [
+        "s|idx|public.enrichment_runs_owner_created_idx",
+        "n|idx|public.enrichment_runs_owner_created_idx",
+        "e|idx|public.enrichment_runs_owner_created_idx",
+        "n|rel|public.enrichment_runs_owner_created_idx"
+      ],
+      "reads": [
+        "n|tbl|public.enrichment_runs",
+        "n|sch|public",
+        "n|col|public.enrichment_runs.owner_id",
+        "n|col|public.enrichment_runs.created_at"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "place_facts",
+        "place_facts_place_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.place_facts_place_id_idx",
+        "n|idx|public.place_facts_place_id_idx",
+        "e|idx|public.place_facts_place_id_idx",
+        "n|rel|public.place_facts_place_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.place_facts",
+        "n|sch|public",
+        "n|col|public.place_facts.place_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "enrichment_runs"
+      ],
+      "writes": [
+        "s|fk|public.enrichment_runs.enrichment_runs_owner_id_users_id_fkey",
+        "n|fk|public.enrichment_runs.enrichment_runs_owner_id_users_id_fkey",
+        "e|fk|public.enrichment_runs.enrichment_runs_owner_id_users_id_fkey",
+        "n|con|public.enrichment_runs.enrichment_runs_owner_id_users_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.enrichment_runs",
+        "n|sch|public",
+        "n|tbl|public.users",
+        "n|sch|public",
+        "n|col|public.enrichment_runs.owner_id",
+        "n|col|public.users.id",
+        "e|uniqueness|public.users.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "place_facts"
+      ],
+      "writes": [
+        "s|fk|public.place_facts.place_facts_place_id_places_id_fkey",
+        "n|fk|public.place_facts.place_facts_place_id_places_id_fkey",
+        "e|fk|public.place_facts.place_facts_place_id_places_id_fkey",
+        "n|con|public.place_facts.place_facts_place_id_places_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.place_facts",
+        "n|sch|public",
+        "n|tbl|public.places",
+        "n|sch|public",
+        "n|col|public.place_facts.place_id",
+        "n|col|public.places.id",
+        "e|uniqueness|public.places.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "enrichment_runs",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "place_facts",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "enrichment_runs",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "enrichment_runs",
+        "name": "owner_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "enrichment_runs",
+        "name": "status",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'running'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "enrichment_runs",
+        "name": "total",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "enrichment_runs",
+        "name": "completed",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "enrichment_runs",
+        "name": "failed",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "enrichment_runs",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "enrichment_runs",
+        "name": "finished_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "place_facts",
+        "name": "place_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "place_facts",
+        "name": "key",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "place_facts",
+        "name": "value",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "place_facts",
+        "name": "source",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "place_facts",
+        "name": "is_override",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "place_facts",
+        "name": "fetched_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "enrichment_runs",
+        "name": "enrichment_runs_owner_created_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "owner_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "created_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "place_facts",
+        "name": "place_facts_place_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "place_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "enrichment_runs",
+        "name": "enrichment_runs_owner_id_users_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "owner_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "users",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "place_facts",
+        "name": "place_facts_place_id_places_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "place_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "places",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "place_facts",
+        "name": "place_facts_pkey",
+        "columns": [
+          "place_id",
+          "key",
+          "source"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "enrichment_runs",
+        "name": "enrichment_runs_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "enrichment_runs",
+        "name": "enrichment_runs_status_check",
+        "value": "\"status\" in ('running', 'done', 'failed')",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "place_facts",
+        "name": "place_facts_source_check",
+        "value": "\"source\" in ('google', 'manual', 'takeout')",
+        "entityType": "checks"
+      }
+    }
+  ]
+}

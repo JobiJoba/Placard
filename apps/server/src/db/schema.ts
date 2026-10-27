@@ -6,6 +6,7 @@ import {
   customType,
   index,
   integer,
+  jsonb,
   pgTable,
   primaryKey,
   text,
@@ -234,5 +235,44 @@ export const listItems = pgTable(
   (table) => [
     primaryKey({ columns: [table.listId, table.placeId] }),
     index("list_items_place_id_idx").on(table.placeId),
+  ],
+)
+
+export const placeFacts = pgTable(
+  "place_facts",
+  {
+    placeId: text("place_id")
+      .notNull()
+      .references(() => places.id, { onDelete: "cascade" }),
+    key: text("key").notNull(),
+    value: jsonb("value").notNull(),
+    source: text("source").notNull(),
+    isOverride: boolean("is_override").notNull().default(false),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.placeId, table.key, table.source] }),
+    check("place_facts_source_check", sql`${table.source} in ('google', 'manual', 'takeout')`),
+    index("place_facts_place_id_idx").on(table.placeId),
+  ],
+)
+
+export const enrichmentRuns = pgTable(
+  "enrichment_runs",
+  {
+    id: text("id").primaryKey(),
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("running"),
+    total: integer("total").notNull().default(0),
+    completed: integer("completed").notNull().default(0),
+    failed: integer("failed").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+  },
+  (table) => [
+    check("enrichment_runs_status_check", sql`${table.status} in ('running', 'done', 'failed')`),
+    index("enrichment_runs_owner_created_idx").on(table.ownerId, table.createdAt),
   ],
 )
