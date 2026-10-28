@@ -66,6 +66,7 @@ export function LibraryPage() {
   const view = params.get("view") === "map" ? "map" : "grid"
   const cityLat = params.get("lat") ? Number(params.get("lat")) : null
   const cityLng = params.get("lng") ? Number(params.get("lng")) : null
+  const cityName = params.get("city") ?? null
 
   const [near, setNear] = useState<{ lat: number; lng: number } | null>(null)
   const [geoSource, setGeoSource] = useState<"browser" | "ip" | null>(null)
@@ -75,7 +76,13 @@ export function LibraryPage() {
   const [textDraft, setTextDraft] = useState(text)
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
   const [bulkError, setBulkError] = useState<string | null>(null)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [newListName, setNewListName] = useState("")
+  const [newTagName, setNewTagName] = useState("")
+  const [filtersOpen, setFiltersOpen] = useState(() =>
+    Boolean(tag || list || status || category || open),
+  )
 
   const { data: mapsConfig } = useLoad(useCallback(() => api((c) => c.google.config()), []))
   const { data: tags } = useLoad(useCallback(() => api((c) => c.tags.list()), []))
@@ -158,6 +165,9 @@ export function LibraryPage() {
   }, [text, tag, list, status, open, category, scope, near, radiusKm, cityLat, cityLng])
 
   const waitingForGeo = scope === "near" && !near && !geoError
+  const waitingForCity =
+    scope === "city" && (cityLat == null || cityLng == null || Number.isNaN(cityLat))
+  const searchBlocked = waitingForGeo || waitingForCity
 
   const {
     data: hits,
@@ -165,9 +175,9 @@ export function LibraryPage() {
     reload,
   } = useLoad(
     useCallback(() => {
-      if (waitingForGeo) return Promise.resolve([] as SearchHit[])
+      if (searchBlocked) return Promise.resolve([] as SearchHit[])
       return api((c) => c.search.query({ payload: filter }))
-    }, [filter, waitingForGeo]),
+    }, [filter, searchBlocked]),
   )
 
   const setParam = (key: string, value: string | undefined) => {
@@ -192,13 +202,26 @@ export function LibraryPage() {
     const placeIds = [...selected]
     if (placeIds.length === 0) return
     setBulkError(null)
+    setBulkBusy(true)
     api((c) => c.places.bulk({ payload: { placeIds, action } })).then(
       () => {
         clearSelection()
+        setConfirmDelete(false)
+        setBulkBusy(false)
         reload()
       },
-      (cause: unknown) => setBulkError(errorMessage(cause)),
+      (cause: unknown) => {
+        setBulkError(errorMessage(cause))
+        setBulkBusy(false)
+      },
     )
+  }
+
+  const clearFilters = () => {
+    setParams(new URLSearchParams(), { replace: true })
+    setTextDraft("")
+    setSelected(new Set())
+    setFiltersOpen(false)
   }
 
   const createListAndAdd = () => {
@@ -214,11 +237,12 @@ export function LibraryPage() {
   }
 
   const hasFilters = Boolean(text || tag || list || status || open || category || scope !== "all")
-  const filteredEmpty = hits !== null && hits.length === 0 && hasFilters
+  const secondaryFilterCount = [tag, list, status, category, open].filter(Boolean).length
+  const filteredEmpty = hits !== null && hits.length === 0 && hasFilters && !searchBlocked
   const mapCenter = filter.near ?? (hits?.[0] ? hits[0].place.location : null)
 
   if (error) return <ErrorAlert message={error} />
-  if (!hits && !waitingForGeo) {
+  if (!hits && !searchBlocked) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[0, 1, 2].map((i) => (
@@ -228,7 +252,14 @@ export function LibraryPage() {
     )
   }
 
-  if (hits && hits.length === 0 && !filteredEmpty && !waitingForGeo && scope === "all") {
+  if (
+    hits &&
+    hits.length === 0 &&
+    !filteredEmpty &&
+    !searchBlocked &&
+    scope === "all" &&
+    !hasFilters
+  ) {
     return (
       <section className="flex flex-col items-center gap-3 py-16 text-center">
         <h1 className="text-3xl font-semibold tracking-tight">Your library is empty</h1>
@@ -248,21 +279,11 @@ export function LibraryPage() {
     <section className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl font-semibold tracking-tight">Library</h1>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline">
-            <Link to="/lists">Lists</Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link to="/deleted">
-              <Trash2 /> Recently deleted
-            </Link>
-          </Button>
-          <Button asChild>
-            <Link to="/add">
-              <Plus /> Add place
-            </Link>
-          </Button>
-        </div>
+        <Button asChild>
+          <Link to="/add">
+            <Plus /> Add place
+          </Link>
+        </Button>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -279,8 +300,23 @@ export function LibraryPage() {
             spacing={0}
             value={scope}
             onValueChange={(value) => {
-              if (value === "near" || value === "city" || value === "all")
-                setParam("scope", value === "all" ? undefined : value)
+              if (value !== "near" && value !== "city" && value !== "all") return
+              const next = new URLSearchParams(params)
+              if (value === "all") next.delete("scope")
+              else next.set("scope", value)
+              if (value !== "city") {
+                next.delete("lat")
+                next.delete("lng")
+                next.delete("city")
+              } else {
+                // Start empty — user picks a city via autocomplete.
+                next.delete("lat")
+                next.delete("lng")
+                next.delete("city")
+              }
+              if (value === "all") next.delete("radius")
+              setParams(next, { replace: true })
+              setSelected(new Set())
             }}
             aria-label="Search area"
           >
@@ -306,22 +342,11 @@ export function LibraryPage() {
             type="single"
             variant="outline"
             spacing={0}
-            value={open ?? "any"}
-            onValueChange={(value) =>
-              setParam("open", value === "now" || value === "tonight" ? value : undefined)
-            }
-            aria-label="Open filter"
-          >
-            <ToggleGroupItem value="any">Any hours</ToggleGroupItem>
-            <ToggleGroupItem value="now">Open now</ToggleGroupItem>
-            <ToggleGroupItem value="tonight">Open tonight</ToggleGroupItem>
-          </ToggleGroup>
-          <ToggleGroup
-            type="single"
-            variant="outline"
-            spacing={0}
             value={view}
-            onValueChange={(value) => setParam("view", value === "map" ? "map" : undefined)}
+            onValueChange={(value) => {
+              setParam("view", value === "map" ? "map" : undefined)
+              if (value === "map") clearSelection()
+            }}
             aria-label="Result view"
           >
             <ToggleGroupItem value="grid">
@@ -331,17 +356,39 @@ export function LibraryPage() {
               <MapIcon aria-hidden /> Map
             </ToggleGroupItem>
           </ToggleGroup>
+          <Button
+            type="button"
+            size="sm"
+            variant={filtersOpen || secondaryFilterCount > 0 ? "secondary" : "outline"}
+            onClick={() => setFiltersOpen((prev) => !prev)}
+          >
+            Filters{secondaryFilterCount > 0 ? ` (${secondaryFilterCount})` : ""}
+          </Button>
         </div>
         {scope === "city" && (
           <CityCenter
             lat={cityLat}
             lng={cityLng}
-            onSet={(lat, lng) => {
+            cityName={cityName}
+            mapsReady={mapsConfig !== null}
+            hasMapsKey={Boolean(mapsConfig?.mapsApiKey)}
+            onSet={(city) => {
               const next = new URLSearchParams(params)
               next.set("scope", "city")
-              next.set("lat", String(lat))
-              next.set("lng", String(lng))
+              next.set("lat", String(city.lat))
+              next.set("lng", String(city.lng))
+              next.set("city", city.name)
               setParams(next, { replace: true })
+              setSelected(new Set())
+            }}
+            onClear={() => {
+              const next = new URLSearchParams(params)
+              next.set("scope", "city")
+              next.delete("lat")
+              next.delete("lng")
+              next.delete("city")
+              setParams(next, { replace: true })
+              setSelected(new Set())
             }}
           />
         )}
@@ -367,30 +414,48 @@ export function LibraryPage() {
             </Button>
           </div>
         )}
-        <Filters
-          tags={tags ?? []}
-          lists={lists ?? []}
-          tag={tag}
-          list={list}
-          status={status}
-          category={category}
-          onTag={(value) => setParam("tag", value)}
-          onList={(value) => setParam("list", value)}
-          onStatus={(value) => setParam("status", value)}
-          onCategory={(value) => setParam("category", value)}
-        />
+        {filtersOpen && (
+          <div className="flex flex-col gap-2 rounded-xl bg-muted/40 p-3">
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              spacing={0}
+              value={open ?? "any"}
+              onValueChange={(value) =>
+                setParam("open", value === "now" || value === "tonight" ? value : undefined)
+              }
+              aria-label="Open filter"
+            >
+              <ToggleGroupItem value="any">Any hours</ToggleGroupItem>
+              <ToggleGroupItem value="now">Open now</ToggleGroupItem>
+              <ToggleGroupItem value="tonight">Open tonight</ToggleGroupItem>
+            </ToggleGroup>
+            <Filters
+              tags={tags ?? []}
+              lists={lists ?? []}
+              tag={tag}
+              list={list}
+              status={status}
+              category={category}
+              onTag={(value) => setParam("tag", value)}
+              onList={(value) => setParam("list", value)}
+              onStatus={(value) => setParam("status", value)}
+              onCategory={(value) => setParam("category", value)}
+            />
+          </div>
+        )}
       </div>
 
-      {selected.size > 0 && (
+      {view === "grid" && selected.size > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-xl bg-muted/50 p-3">
           <span className="text-sm font-medium">{selected.size} selected</span>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" disabled={bulkBusy}>
                 Tag
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
+            <DropdownMenuContent className="w-56">
               {(tags ?? []).map((t) => (
                 <DropdownMenuItem
                   key={t.id}
@@ -400,19 +465,31 @@ export function LibraryPage() {
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => {
-                  const name = window.prompt("New tag name")
-                  if (name?.trim()) runBulk({ _tag: "addTag", tagName: name.trim() })
-                }}
-              >
-                New tag…
-              </DropdownMenuItem>
+              <div className="flex gap-1 p-2">
+                <Input
+                  value={newTagName}
+                  onChange={(e) => setNewTagName(e.target.value)}
+                  placeholder="New tag"
+                  className="h-8"
+                />
+                <Button
+                  size="sm"
+                  disabled={!newTagName.trim() || bulkBusy}
+                  onClick={() => {
+                    const name = newTagName.trim()
+                    if (!name) return
+                    setNewTagName("")
+                    runBulk({ _tag: "addTag", tagName: name })
+                  }}
+                >
+                  Add
+                </Button>
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" disabled={bulkBusy}>
                 Add to list
               </Button>
             </DropdownMenuTrigger>
@@ -433,7 +510,7 @@ export function LibraryPage() {
                   placeholder="New list"
                   className="h-8"
                 />
-                <Button size="sm" onClick={createListAndAdd}>
+                <Button size="sm" disabled={bulkBusy} onClick={createListAndAdd}>
                   Add
                 </Button>
               </div>
@@ -441,7 +518,7 @@ export function LibraryPage() {
           </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" disabled={bulkBusy}>
                 Status
               </Button>
             </DropdownMenuTrigger>
@@ -461,9 +538,31 @@ export function LibraryPage() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button size="sm" variant="destructive" onClick={() => runBulk({ _tag: "delete" })}>
-            Delete
-          </Button>
+          {confirmDelete ? (
+            <>
+              <span className="text-sm">Delete {selected.size} places?</span>
+              <Button
+                size="sm"
+                variant="destructive"
+                disabled={bulkBusy}
+                onClick={() => runBulk({ _tag: "delete" })}
+              >
+                {bulkBusy ? "Deleting…" : "Confirm"}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(false)}>
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={bulkBusy}
+              onClick={() => setConfirmDelete(true)}
+            >
+              <Trash2 aria-hidden /> Delete
+            </Button>
+          )}
           <Button size="sm" variant="ghost" onClick={clearSelection}>
             Clear
           </Button>
@@ -472,18 +571,51 @@ export function LibraryPage() {
 
       <ErrorAlert message={bulkError} />
 
+      {!searchBlocked && hits && (
+        <p className="text-sm text-muted-foreground">
+          {hits.length} place{hits.length === 1 ? "" : "s"}
+          {hasFilters ? " match" : ""}
+        </p>
+      )}
+
       {waitingForGeo ? (
-        <p className="text-sm text-muted-foreground">Getting your location…</p>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-28 rounded-xl" />
+          ))}
+        </div>
+      ) : waitingForCity ? (
+        <p className="text-sm text-muted-foreground">
+          Pick a city center above to search within {radiusKm} km.
+        </p>
       ) : filteredEmpty ? (
-        <p className="text-sm text-muted-foreground">No places match these filters.</p>
+        <div className="flex flex-col items-start gap-3 rounded-xl bg-muted/40 px-4 py-6">
+          <p className="text-sm text-muted-foreground">No places match these filters.</p>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={clearFilters}>
+              Clear filters
+            </Button>
+            <Button size="sm" asChild>
+              <Link to="/add">
+                <Plus /> Add place
+              </Link>
+            </Button>
+          </div>
+        </div>
       ) : view === "map" ? (
         mapsConfig?.mapsApiKey ? (
-          <Suspense fallback={<Skeleton className="h-[420px] rounded-xl" />}>
+          <Suspense
+            fallback={<Skeleton className="h-[min(60vh,520px)] min-h-[280px] rounded-xl" />}
+          >
             <ResultsMap apiKey={mapsConfig.mapsApiKey} hits={hits ?? []} center={mapCenter} />
           </Suspense>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Add a Google Maps API key in Settings to see results on a map.
+            Add a Google Maps API key in{" "}
+            <Link to="/settings" className="underline underline-offset-2">
+              Settings
+            </Link>{" "}
+            to see results on a map.
           </p>
         )
       ) : (
@@ -505,37 +637,229 @@ export function LibraryPage() {
   )
 }
 
+type CityPick = { readonly name: string; readonly lat: number; readonly lng: number }
+
+const RECENT_CITIES_KEY = "placard.recentCities"
+const MAX_RECENT_CITIES = 5
+
+const readRecentCities = (): CityPick[] => {
+  try {
+    const raw = localStorage.getItem(RECENT_CITIES_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return []
+    return parsed
+      .filter(
+        (item): item is CityPick =>
+          typeof item === "object" &&
+          item !== null &&
+          typeof (item as CityPick).name === "string" &&
+          typeof (item as CityPick).lat === "number" &&
+          typeof (item as CityPick).lng === "number",
+      )
+      .slice(0, MAX_RECENT_CITIES)
+  } catch {
+    return []
+  }
+}
+
+const rememberCity = (city: CityPick) => {
+  const next = [city, ...readRecentCities().filter((c) => c.name !== city.name)].slice(
+    0,
+    MAX_RECENT_CITIES,
+  )
+  localStorage.setItem(RECENT_CITIES_KEY, JSON.stringify(next))
+}
+
 function CityCenter({
   lat,
   lng,
+  cityName,
+  mapsReady,
+  hasMapsKey,
   onSet,
+  onClear,
 }: {
   readonly lat: number | null
   readonly lng: number | null
-  readonly onSet: (lat: number, lng: number) => void
+  readonly cityName: string | null
+  readonly mapsReady: boolean
+  readonly hasMapsKey: boolean
+  readonly onSet: (city: CityPick) => void
+  readonly onClear: () => void
 }) {
-  const presets = [
-    { label: "Naples", lat: 40.8518, lng: 14.2681 },
-    { label: "Berlin", lat: 52.52, lng: 13.405 },
-    { label: "Vienna", lat: 48.2082, lng: 16.3738 },
-  ]
+  const [query, setQuery] = useState("")
+  const [sessionToken] = useState(() => crypto.randomUUID())
+  const [suggestions, setSuggestions] = useState<
+    ReadonlyArray<{ googlePlaceId: string; primaryText: string; secondaryText: string | null }>
+  >([])
+  const [loading, setLoading] = useState(false)
+  const [picking, setPicking] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [recent, setRecent] = useState<CityPick[]>(() =>
+    typeof window === "undefined" ? [] : readRecentCities(),
+  )
+  const selected =
+    lat != null && lng != null
+      ? { name: cityName ?? `${lat.toFixed(2)}, ${lng.toFixed(2)}`, lat, lng }
+      : null
+
+  useEffect(() => {
+    if (!hasMapsKey) return
+    const input = query.trim()
+    if (input.length < 2) {
+      setSuggestions([])
+      setLoading(false)
+      return
+    }
+    let stale = false
+    setLoading(true)
+    const timer = window.setTimeout(() => {
+      api((c) =>
+        c.google.autocomplete({
+          payload: {
+            input,
+            sessionToken,
+            near: null,
+            includedPrimaryTypes: ["(cities)"],
+          },
+        }),
+      ).then(
+        (found) => {
+          if (stale) return
+          setSuggestions(found)
+          setError(null)
+          setLoading(false)
+        },
+        (cause: unknown) => {
+          if (stale) return
+          setError(errorMessage(cause))
+          setLoading(false)
+        },
+      )
+    }, 250)
+    return () => {
+      stale = true
+      window.clearTimeout(timer)
+    }
+  }, [query, sessionToken, hasMapsKey])
+
+  const pickSuggestion = (suggestion: {
+    googlePlaceId: string
+    primaryText: string
+    secondaryText: string | null
+  }) => {
+    setPicking(true)
+    setError(null)
+    api((c) =>
+      c.google.preview({
+        params: { googlePlaceId: suggestion.googlePlaceId },
+        query: { sessionToken },
+      }),
+    ).then(
+      (preview) => {
+        const city: CityPick = {
+          name: suggestion.primaryText,
+          lat: preview.location.lat,
+          lng: preview.location.lng,
+        }
+        rememberCity(city)
+        setRecent(readRecentCities())
+        setQuery("")
+        setSuggestions([])
+        setPicking(false)
+        onSet(city)
+      },
+      (cause: unknown) => {
+        setError(errorMessage(cause))
+        setPicking(false)
+      },
+    )
+  }
+
+  if (!mapsReady) {
+    return <Skeleton className="h-10 w-full max-w-sm rounded-md" />
+  }
+
+  if (!hasMapsKey) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        City search needs a Google Maps API key.{" "}
+        <Link to="/settings" className="underline underline-offset-2">
+          Add one in Settings
+        </Link>
+        .
+      </p>
+    )
+  }
+
   return (
-    <div className="flex flex-wrap items-center gap-2 text-sm">
-      <span className="text-muted-foreground">Center:</span>
-      {presets.map((city) => (
-        <Button
-          key={city.label}
-          size="sm"
-          variant={lat === city.lat && lng === city.lng ? "default" : "outline"}
-          onClick={() => onSet(city.lat, city.lng)}
-        >
-          {city.label}
-        </Button>
-      ))}
-      {lat != null && lng != null && (
-        <span className="tabular-nums text-muted-foreground">
-          {lat.toFixed(3)}, {lng.toFixed(3)}
-        </span>
+    <div className="flex flex-col gap-2">
+      {selected ? (
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-muted-foreground">Center:</span>
+          <Badge variant="secondary">{selected.name}</Badge>
+          <Button type="button" size="sm" variant="ghost" onClick={onClear}>
+            Change city
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search for a city…"
+            aria-label="Search for a city"
+            autoFocus
+          />
+          {loading && <p className="text-xs text-muted-foreground">Searching…</p>}
+          {picking && <p className="text-xs text-muted-foreground">Setting city…</p>}
+          <ErrorAlert message={error} />
+          {suggestions.length > 0 && (
+            <ul className="flex flex-col rounded-xl ring-1 ring-foreground/10">
+              {suggestions.map((suggestion) => (
+                <li key={suggestion.googlePlaceId} className="border-b last:border-b-0">
+                  <button
+                    type="button"
+                    className="flex w-full flex-col items-start gap-0.5 px-3 py-2.5 text-left hover:bg-muted"
+                    disabled={picking}
+                    onClick={() => pickSuggestion(suggestion)}
+                  >
+                    <span className="text-sm font-medium">{suggestion.primaryText}</span>
+                    {suggestion.secondaryText && (
+                      <span className="text-xs text-muted-foreground">
+                        {suggestion.secondaryText}
+                      </span>
+                    )}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {!loading && query.trim().length >= 2 && suggestions.length === 0 && !error && (
+            <p className="text-xs text-muted-foreground">No cities match that name.</p>
+          )}
+          {recent.length > 0 && query.trim().length === 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground">Recent:</span>
+              {recent.map((city) => (
+                <Button
+                  key={city.name}
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    rememberCity(city)
+                    setRecent(readRecentCities())
+                    onSet(city)
+                  }}
+                >
+                  {city.name}
+                </Button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   )

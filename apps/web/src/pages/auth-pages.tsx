@@ -142,7 +142,13 @@ export function LoginPage() {
   const [pending, setPending] = useState(false)
 
   if (state.status === "signedIn") return <Navigate to="/" replace />
-  if (signupOpen === null) return <FullPageMessage>Loading…</FullPageMessage>
+  if (signupOpen === null) {
+    return (
+      <AuthLayout title="Sign in" description="Loading…">
+        <p className="text-sm text-muted-foreground">Checking this Placard…</p>
+      </AuthLayout>
+    )
+  }
   if (signupOpen) return <Navigate to="/setup" replace />
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -178,6 +184,10 @@ export function LoginPage() {
           <Button type="submit" disabled={pending}>
             {pending ? "Signing in…" : "Sign in"}
           </Button>
+          <FieldDescription className="text-center">
+            Forgot your password? Sign in isn't recoverable by email on this install — ask your
+            Placard admin for help, or change it under Settings once you're signed in.
+          </FieldDescription>
           <FieldDescription className="text-center">
             New here? Ask the admin of this Placard for an invite link.
           </FieldDescription>

@@ -10,6 +10,7 @@ import { useLoad } from "@/lib/use-load"
 
 /** Display label for starred Saved Places.json entries (sourceList is null). */
 const SAVED_PLACES = "Saved Places"
+const PAGE_SIZE = 50
 
 const listLabel = (sourceList: string | null) => sourceList ?? SAVED_PLACES
 
@@ -19,17 +20,45 @@ export function ImportPage() {
   return <ImportUploadPage />
 }
 
+const MAX_ZIP_BYTES = 80 * 1024 * 1024
+
+const statusLabel = (status: string) => {
+  switch (status) {
+    case "triage":
+      return "Ready to triage"
+    case "done":
+      return "Committed"
+    case "undone":
+      return "Undone"
+    case "failed":
+      return "Failed"
+    case "parsing":
+      return "Parsing"
+    case "committing":
+      return "Committing"
+    default:
+      return status
+  }
+}
+
 function ImportUploadPage() {
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [progress, setProgress] = useState<string | null>(null)
   const { data: runs, reload } = useLoad(useCallback(() => api((c) => c.import.listRuns()), []))
 
   const onZip = async (file: File) => {
+    if (file.size > MAX_ZIP_BYTES) {
+      setError(`Zip is too large (${(file.size / (1024 * 1024)).toFixed(0)} MB). Max 80 MB.`)
+      return
+    }
     setBusy(true)
     setError(null)
+    setProgress(`Reading ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)…`)
     try {
       const buffer = await file.arrayBuffer()
+      setProgress("Encoding and uploading…")
       const bytes = new Uint8Array(buffer)
       let binary = ""
       for (const b of bytes) binary += String.fromCharCode(b)
@@ -42,6 +71,7 @@ function ImportUploadPage() {
       navigate(`/import/${run.id}`)
     } catch (cause) {
       setError(errorMessage(cause))
+      setProgress(null)
     } finally {
       setBusy(false)
     }
@@ -58,10 +88,11 @@ function ImportUploadPage() {
       {error && <ErrorAlert message={error} />}
       <div className="flex flex-col items-start gap-2 rounded-lg border border-dashed border-border p-6">
         <label htmlFor="takeout-zip" className="font-medium">
-          {busy ? "Uploading…" : "Choose Takeout zip"}
+          {busy ? (progress ?? "Uploading…") : "Choose Takeout zip"}
         </label>
         <p className="text-xs text-muted-foreground">
-          Expects <code>Maps (your places)/Saved Places.json</code> and/or <code>Saved/*.csv</code>
+          Expects <code>Maps (your places)/Saved Places.json</code> and/or <code>Saved/*.csv</code>.
+          Max 80 MB.
         </p>
         <Input
           id="takeout-zip"
@@ -72,12 +103,18 @@ function ImportUploadPage() {
           onChange={(event) => {
             const file = event.target.files?.[0]
             if (file) void onZip(file)
+            event.target.value = ""
           }}
         />
       </div>
       {runs && runs.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h2 className="text-lg font-medium">Recent imports</h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-lg font-medium">Recent imports</h2>
+            <Button size="sm" variant="ghost" onClick={() => void reload()}>
+              Refresh
+            </Button>
+          </div>
           <ul className="divide-y divide-border rounded-md border border-border">
             {runs.map((run) => (
               <li
@@ -89,16 +126,19 @@ function ImportUploadPage() {
                     to={`/import/${run.id}`}
                     className="font-medium underline-offset-4 hover:underline"
                   >
-                    {run.status} · {run.counts.parsed} entries
+                    {statusLabel(run.status)} · {run.counts.parsed} entries
                   </Link>
                   <span className="text-xs text-muted-foreground">
-                    kept {run.counts.kept} · skip {run.counts.skipped} · pending{" "}
-                    {run.counts.pending}
+                    {run.status === "triage"
+                      ? `Continue triage — ${run.counts.pending} pending`
+                      : `kept ${run.counts.kept} · skip ${run.counts.skipped} · pending ${run.counts.pending}`}
                   </span>
                 </div>
-                <Button size="sm" variant="ghost" onClick={() => void reload()}>
-                  Refresh
-                </Button>
+                {run.status === "triage" && (
+                  <Button size="sm" asChild>
+                    <Link to={`/import/${run.id}`}>Continue</Link>
+                  </Button>
+                )}
               </li>
             ))}
           </ul>
@@ -152,9 +192,12 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
   const [error, setError] = useState<string | null>(null)
   const [text, setText] = useState("")
   const [listFilter, setListFilter] = useState<string | null | undefined>(undefined)
-  const [decisionFilter, setDecisionFilter] = useState<ImportDecision | "all">("all")
+  const [decisionFilter, setDecisionFilter] = useState<ImportDecision | "all">("pending")
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
   const [busy, setBusy] = useState(false)
+  const [confirmCommit, setConfirmCommit] = useState(false)
+  const [confirmUndo, setConfirmUndo] = useState(false)
+  const [page, setPage] = useState(0)
 
   const loadRun = useCallback(() => api((c) => c.import.getRun({ params: { id: runId } })), [runId])
   const loadEntries = useCallback(
@@ -181,8 +224,23 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
     })
   }, [allEntries, text, listFilter, decisionFilter])
 
-  const allShownSelected = shown.length > 0 && shown.every((entry) => selected.has(entry.id))
-  const someShownSelected = shown.some((entry) => selected.has(entry.id))
+  // Reset selection when filters change so bulk actions can't hit off-screen rows.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset on filter change
+  useEffect(() => {
+    setSelected(new Set())
+    setPage(0)
+  }, [text, listFilter, decisionFilter])
+
+  const pageCount = Math.max(1, Math.ceil(shown.length / PAGE_SIZE))
+  const pageEntries = useMemo(
+    () => shown.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    [shown, page],
+  )
+
+  const allShownSelected =
+    pageEntries.length > 0 && pageEntries.every((entry) => selected.has(entry.id))
+  const someShownSelected = pageEntries.some((entry) => selected.has(entry.id))
+  const selectedHidden = [...selected].filter((id) => !shown.some((e) => e.id === id)).length
 
   const refresh = async () => {
     await Promise.all([reloadRun(), reloadEntries()])
@@ -218,8 +276,8 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
           payload: { sourceList, decision },
         }),
       )
-      setListFilter(sourceList)
-      setDecisionFilter(decision)
+      setDecisionFilter("pending")
+      setListFilter(undefined)
       setSelected(new Set())
       await refresh()
     } catch (cause) {
@@ -234,6 +292,7 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
     setError(null)
     try {
       await api((c) => c.import.commit({ params: { id: runId } }))
+      setConfirmCommit(false)
       await refresh()
     } catch (cause) {
       setError(errorMessage(cause))
@@ -247,6 +306,7 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
     setError(null)
     try {
       await api((c) => c.import.undo({ params: { id: runId }, payload: { confirmEdited } }))
+      setConfirmUndo(false)
       await refresh()
     } catch (cause) {
       setError(errorMessage(cause))
@@ -258,13 +318,29 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
   const toggleAllShown = () => {
     if (allShownSelected) {
       const next = new Set(selected)
-      for (const entry of shown) next.delete(entry.id)
+      for (const entry of pageEntries) next.delete(entry.id)
       setSelected(next)
       return
     }
     const next = new Set(selected)
-    for (const entry of shown) next.add(entry.id)
+    for (const entry of pageEntries) next.add(entry.id)
     setSelected(next)
+  }
+
+  const keepAllShown = () => {
+    if (shown.length >= 25 && !window.confirm(`Keep all ${shown.length} shown entries?`)) return
+    void decide(
+      shown.map((e) => e.id),
+      "keep",
+    )
+  }
+
+  const skipAllShown = () => {
+    if (shown.length >= 25 && !window.confirm(`Skip all ${shown.length} shown entries?`)) return
+    void decide(
+      shown.map((e) => e.id),
+      "skip",
+    )
   }
 
   if (!run) return <p className="text-sm text-muted-foreground">Loading import…</p>
@@ -294,16 +370,63 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
             </p>
           )}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col items-end gap-2">
           {run.status === "triage" && (
-            <Button disabled={busy || run.counts.pending > 0} onClick={() => void commit()}>
-              Commit kept
-            </Button>
+            <>
+              {confirmCommit ? (
+                <div className="flex max-w-sm flex-col items-end gap-2 text-right">
+                  <p className="text-sm text-muted-foreground">
+                    Commit {run.counts.kept} kept places (~{run.expectedApiCalls} Google API calls)?
+                  </p>
+                  <div className="flex gap-2">
+                    <Button disabled={busy} onClick={() => void commit()}>
+                      {busy ? "Committing…" : "Confirm commit"}
+                    </Button>
+                    <Button variant="ghost" disabled={busy} onClick={() => setConfirmCommit(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-end gap-1">
+                  <Button
+                    disabled={busy || run.counts.pending > 0 || run.counts.kept === 0}
+                    onClick={() => setConfirmCommit(true)}
+                  >
+                    Commit kept
+                  </Button>
+                  {run.counts.pending > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Resolve {run.counts.pending} pending first (filter: Pending only).
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
           )}
           {run.status === "done" && (
-            <Button variant="destructive" disabled={busy} onClick={() => void undo(true)}>
-              Undo import
-            </Button>
+            <>
+              {confirmUndo ? (
+                <div className="flex max-w-sm flex-col items-end gap-2 text-right">
+                  <p className="text-sm text-muted-foreground">
+                    Undo removes places from this import, including ones you've edited since. This
+                    cannot be undone.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button variant="destructive" disabled={busy} onClick={() => void undo(true)}>
+                      {busy ? "Undoing…" : "Confirm undo"}
+                    </Button>
+                    <Button variant="ghost" disabled={busy} onClick={() => setConfirmUndo(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button variant="destructive" disabled={busy} onClick={() => setConfirmUndo(true)}>
+                  Undo import
+                </Button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -391,13 +514,13 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
               <option value="keep">Kept only</option>
               <option value="skip">Skipped only</option>
             </select>
-            {(listFilter !== undefined || decisionFilter !== "all" || text) && (
+            {(listFilter !== undefined || decisionFilter !== "pending" || text) && (
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => {
                   setListFilter(undefined)
-                  setDecisionFilter("all")
+                  setDecisionFilter("pending")
                   setText("")
                 }}
               >
@@ -406,11 +529,14 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
             )}
             <span className="text-xs text-muted-foreground">
               Showing {shown.length}
+              {shown.length > PAGE_SIZE ? ` · page ${page + 1}/${pageCount}` : ""}
               {selected.size > 0 ? ` · ${selected.size} selected` : ""}
+              {selectedHidden > 0 ? ` (${selectedHidden} off this filter)` : ""}
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="sticky bottom-20 z-20 flex flex-wrap items-center gap-2 rounded-xl border bg-background/95 p-3 shadow-sm backdrop-blur md:bottom-4">
+            <span className="text-xs text-muted-foreground">{run.counts.pending} pending left</span>
             <Button
               size="sm"
               variant="outline"
@@ -431,12 +557,7 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
               size="sm"
               variant="secondary"
               disabled={busy || shown.length === 0}
-              onClick={() =>
-                void decide(
-                  shown.map((e) => e.id),
-                  "keep",
-                )
-              }
+              onClick={keepAllShown}
             >
               Keep all shown
             </Button>
@@ -444,19 +565,14 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
               size="sm"
               variant="secondary"
               disabled={busy || shown.length === 0}
-              onClick={() =>
-                void decide(
-                  shown.map((e) => e.id),
-                  "skip",
-                )
-              }
+              onClick={skipAllShown}
             >
               Skip all shown
             </Button>
           </div>
 
           <EntriesTable
-            entries={shown}
+            entries={pageEntries}
             selected={selected}
             allSelected={allShownSelected}
             someSelected={someShownSelected}
@@ -469,6 +585,29 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
             }}
             onDecide={(id, decision) => void decide([id], decision)}
           />
+          {pageCount > 1 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={page === 0}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+              >
+                Previous
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                Page {page + 1} of {pageCount}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={page >= pageCount - 1}
+                onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+              >
+                Next
+              </Button>
+            </div>
+          )}
         </>
       )}
 
@@ -516,6 +655,12 @@ function NeedsReviewSection({
   )
   const { data: reviewEntries, reload } = useLoad(loadReview)
   const [resolvingId, setResolvingId] = useState<string | null>(null)
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
+
+  const entries = reviewEntries ?? []
+  const withPin = entries.filter((e) => e.placeId)
+  const selectedWithPin = withPin.filter((e) => selected.has(e.id))
+  const allSelected = entries.length > 0 && entries.every((e) => selected.has(e.id))
 
   const act = async (action: () => Promise<unknown>) => {
     setBusy(true)
@@ -523,12 +668,48 @@ function NeedsReviewSection({
     try {
       await action()
       setResolvingId(null)
+      setSelected(new Set())
       await Promise.all([reload(), onChanged()])
     } catch (cause) {
       setError(errorMessage(cause))
     } finally {
       setBusy(false)
     }
+  }
+
+  const toggle = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+
+  const toggleAll = () => {
+    if (allSelected) setSelected(new Set())
+    else setSelected(new Set(entries.map((e) => e.id)))
+  }
+
+  const bulkAccept = () => {
+    const ids = selectedWithPin.map((e) => e.id)
+    if (ids.length === 0) return
+    if (!window.confirm(`Accept weak pins for ${ids.length} selected entries?`)) return
+    void act(async () => {
+      for (const entryId of ids) {
+        await api((c) => c.import.acceptReview({ params: { id: runId, entryId } }))
+      }
+    })
+  }
+
+  const bulkSkip = () => {
+    const ids = [...selected]
+    if (ids.length === 0) return
+    if (!window.confirm(`Skip ${ids.length} selected entries?`)) return
+    void act(async () => {
+      for (const entryId of ids) {
+        await api((c) => c.import.dismissReview({ params: { id: runId, entryId } }))
+      }
+    })
   }
 
   return (
@@ -549,28 +730,61 @@ function NeedsReviewSection({
               them, accept a weak pin if one was created, or skip.
             </p>
           </div>
+          {entries.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={allSelected} onChange={toggleAll} />
+                Select all ({entries.length})
+              </label>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={busy || selectedWithPin.length === 0}
+                onClick={bulkAccept}
+              >
+                Accept pins ({selectedWithPin.length})
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={busy || selected.size === 0}
+                onClick={bulkSkip}
+              >
+                Skip selected ({selected.size})
+              </Button>
+            </div>
+          )}
           <ul className="flex flex-col gap-3">
-            {(reviewEntries ?? []).map((entry) => (
+            {entries.map((entry) => (
               <li key={entry.id} className="rounded-md border border-border/70 p-3">
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <p className="font-medium">{entry.name ?? "(no name)"}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {listLabel(entry.sourceList)}
-                      {entry.address ? ` · ${entry.address}` : ""}
-                      {entry.needsLocation ? " · needs location" : ""}
-                      {entry.placeId ? " · weak pin created" : ""}
-                    </p>
-                    {entry.googleMapsUrl && (
-                      <a
-                        href={entry.googleMapsUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs underline underline-offset-2"
-                      >
-                        Open Takeout Maps URL
-                      </a>
-                    )}
+                  <div className="flex min-w-0 items-start gap-2">
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={selected.has(entry.id)}
+                      onChange={() => toggle(entry.id)}
+                      aria-label={`Select ${entry.name ?? "entry"}`}
+                    />
+                    <div>
+                      <p className="font-medium">{entry.name ?? "(no name)"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {listLabel(entry.sourceList)}
+                        {entry.address ? ` · ${entry.address}` : ""}
+                        {entry.needsLocation ? " · needs location" : ""}
+                        {entry.placeId ? " · weak pin created" : ""}
+                      </p>
+                      {entry.googleMapsUrl && (
+                        <a
+                          href={entry.googleMapsUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs underline underline-offset-2"
+                        >
+                          Open Takeout Maps URL
+                        </a>
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {entry.placeId && (
@@ -666,24 +880,31 @@ function ReviewGoogleSearch({
     ReadonlyArray<{ googlePlaceId: string; primaryText: string; secondaryText: string | null }>
   >([])
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const input = query.trim()
     if (input.length < 2) {
       setSuggestions([])
+      setLoading(false)
       return
     }
     let stale = false
+    setLoading(true)
     const timer = window.setTimeout(() => {
       api((c) => c.google.autocomplete({ payload: { input, sessionToken, near: null } })).then(
         (found) => {
           if (!stale) {
             setSuggestions(found)
             setError(null)
+            setLoading(false)
           }
         },
         (cause: unknown) => {
-          if (!stale) setError(errorMessage(cause))
+          if (!stale) {
+            setError(errorMessage(cause))
+            setLoading(false)
+          }
         },
       )
     }, 250)
@@ -692,6 +913,8 @@ function ReviewGoogleSearch({
       window.clearTimeout(timer)
     }
   }, [query, sessionToken])
+
+  const trimmed = query.trim()
 
   return (
     <div className="flex flex-col gap-2">
@@ -702,6 +925,12 @@ function ReviewGoogleSearch({
         placeholder="Search Google Maps…"
       />
       {error && <ErrorAlert message={error} />}
+      {loading && <p className="text-xs text-muted-foreground">Searching…</p>}
+      {!loading && trimmed.length >= 2 && suggestions.length === 0 && !error && (
+        <p className="text-xs text-muted-foreground">
+          No matches. Try the address or a shorter name.
+        </p>
+      )}
       {suggestions.length > 0 && (
         <ul className="flex flex-col rounded-md border border-border">
           {suggestions.map((suggestion) => (
@@ -744,7 +973,43 @@ function EntriesTable({
 }) {
   return (
     <div className="overflow-x-auto rounded-md border border-border">
-      <table className="w-full min-w-[640px] text-left text-sm">
+      <ul className="flex flex-col divide-y md:hidden">
+        {entries.map((entry) => (
+          <li key={entry.id} className="flex flex-col gap-2 p-3">
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={selected.has(entry.id)}
+                onChange={() => onToggle(entry.id)}
+                aria-label={`Select ${entry.name ?? "entry"}`}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">{entry.name ?? "(unnamed)"}</p>
+                <p className="text-xs text-muted-foreground">{listLabel(entry.sourceList)}</p>
+              </div>
+              {decisionBadge(entry.decision)}
+            </div>
+            <div className="flex gap-2 pl-6">
+              <Button
+                size="sm"
+                variant={entry.decision === "keep" ? "default" : "outline"}
+                onClick={() => onDecide(entry.id, "keep")}
+              >
+                Keep
+              </Button>
+              <Button
+                size="sm"
+                variant={entry.decision === "skip" ? "destructive" : "outline"}
+                onClick={() => onDecide(entry.id, "skip")}
+              >
+                Skip
+              </Button>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <table className="hidden w-full min-w-[640px] text-left text-sm md:table">
         <thead className="border-b border-border bg-muted/40 text-xs text-muted-foreground">
           <tr>
             <th className="px-2 py-2">

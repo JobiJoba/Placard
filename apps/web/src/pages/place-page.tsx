@@ -11,7 +11,7 @@ import {
 import { DateTime } from "effect"
 import { ArrowLeft, ExternalLink, RefreshCw } from "lucide-react"
 import { type FormEvent, useCallback, useEffect, useState } from "react"
-import { Link, useLocation, useNavigate, useParams } from "react-router"
+import { useLocation, useNavigate, useParams } from "react-router"
 import { ErrorAlert } from "@/components/error-alert"
 import { PlaceMediaSection } from "@/components/place-media"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -57,13 +57,15 @@ export function PlacePage() {
   } = useLoad(useCallback(() => api((c) => c.places.get({ params: { id } })), [id]))
   const { data: lists } = useLoad(useCallback(() => api((c) => c.lists.list()), []))
   const [confirming, setConfirming] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [alreadyBanner, setAlreadyBanner] = useState(alreadySaved)
   const [removeError, setRemoveError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [refreshError, setRefreshError] = useState<string | null>(null)
 
   const remove = () =>
     api((c) => c.places.remove({ params: { id } })).then(
-      () => navigate("/", { replace: true }),
+      () => navigate("/deleted", { replace: true }),
       (cause: unknown) => setRemoveError(errorMessage(cause)),
     )
 
@@ -104,9 +106,14 @@ export function PlacePage() {
   return (
     <article className="flex flex-col gap-8">
       <BackLink />
-      {alreadySaved && (
+      {alreadyBanner && (
         <Alert>
-          <AlertDescription>This place is already in your library.</AlertDescription>
+          <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+            <span>This place is already in your library.</span>
+            <Button size="sm" variant="ghost" onClick={() => setAlreadyBanner(false)}>
+              Dismiss
+            </Button>
+          </AlertDescription>
         </Alert>
       )}
       <header className="flex flex-col gap-2">
@@ -130,13 +137,24 @@ export function PlacePage() {
       </header>
 
       <div className="flex flex-wrap gap-2">
-        {links.map((link) => (
-          <Button key={link.label} asChild variant="outline">
-            <a href={link.href} target="_blank" rel="noreferrer">
-              {link.label} <ExternalLink aria-hidden />
-            </a>
-          </Button>
-        ))}
+        <Button asChild>
+          <a href={links[0]!.href} target="_blank" rel="noreferrer">
+            Open in Google Maps <ExternalLink aria-hidden />
+          </a>
+        </Button>
+        <Button asChild variant="outline">
+          <a href={links[1]!.href} target="_blank" rel="noreferrer">
+            Apple Maps
+          </a>
+        </Button>
+        <Button asChild variant="outline">
+          <a href={links[2]!.href} target="_blank" rel="noreferrer">
+            Organic Maps
+          </a>
+        </Button>
+        <Button variant="outline" onClick={() => setEditing((v) => !v)}>
+          {editing ? "Close edit" : "Edit"}
+        </Button>
         {place.googlePlaceId && (
           <Button variant="outline" onClick={() => void refresh()} disabled={refreshing}>
             <RefreshCw aria-hidden className={refreshing ? "animate-spin" : undefined} />
@@ -165,26 +183,35 @@ export function PlacePage() {
         </dd>
       </dl>
 
-      <EditPlace
-        place={place}
-        lists={lists ?? []}
-        onSaved={(next) => {
-          setData(next)
-          reload()
-        }}
-      />
+      {editing && (
+        <EditPlace
+          place={place}
+          lists={lists ?? []}
+          onSaved={(next) => {
+            setData(next)
+            reload()
+            setEditing(false)
+          }}
+          onCancel={() => setEditing(false)}
+        />
+      )}
 
       <div className="flex flex-col items-start gap-3 border-t pt-6">
         <ErrorAlert message={removeError} />
         {confirming ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm">Remove {place.name} from your library?</span>
-            <Button variant="destructive" size="sm" onClick={() => void remove()}>
-              Remove
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setConfirming(false)}>
-              Keep it
-            </Button>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm">
+              Remove {place.name}? It moves to Recently deleted for 30 days, then is purged with its
+              photos.
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="destructive" size="sm" onClick={() => void remove()}>
+                Remove
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setConfirming(false)}>
+                Keep it
+              </Button>
+            </div>
           </div>
         ) : (
           <Button variant="ghost" size="sm" onClick={() => setConfirming(true)}>
@@ -355,7 +382,7 @@ function PlaceFactsSection({
               disabled={saving}
               onClick={() => void clearPhone()}
             >
-              Use Google
+              Reset to Google
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
@@ -372,10 +399,12 @@ function EditPlace({
   place,
   lists,
   onSaved,
+  onCancel,
 }: {
   readonly place: Place
   readonly lists: ReadonlyArray<PlaceList>
   readonly onSaved: (place: Place) => void
+  readonly onCancel: () => void
 }) {
   const [name, setName] = useState(place.name)
   const [category, setCategory] = useState<PlaceCategory>(place.category)
@@ -385,7 +414,18 @@ function EditPlace({
   const [tagNames, setTagNames] = useState(place.tags.map((t) => t.name).join(", "))
   const [listIds, setListIds] = useState<ReadonlySet<string>>(new Set(place.listIds))
   const [saving, setSaving] = useState(false)
+  const [savedNote, setSavedNote] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setName(place.name)
+    setCategory(place.category)
+    setAddress(place.address ?? "")
+    setNotes(place.notes ?? "")
+    setStatus(place.status ?? "none")
+    setTagNames(place.tags.map((t) => t.name).join(", "))
+    setListIds(new Set(place.listIds))
+  }, [place])
 
   const toggleList = (id: string) =>
     setListIds((prev) => {
@@ -425,6 +465,7 @@ function EditPlace({
           }),
         )
         onSaved(next)
+        setSavedNote(true)
         setSaving(false)
       } catch (cause) {
         setError(errorMessage(cause))
@@ -435,7 +476,11 @@ function EditPlace({
 
   return (
     <form onSubmit={save} className="flex flex-col gap-4 border-t pt-6">
-      <h2 className="text-lg font-medium">Edit</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-lg font-medium">Edit</h2>
+        {savedNote && <p className="text-sm text-muted-foreground">Saved.</p>}
+      </div>
+
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="place-name">Name</FieldLabel>
@@ -512,19 +557,32 @@ function EditPlace({
         )}
       </FieldGroup>
       <ErrorAlert message={error} />
-      <Button type="submit" className="w-fit" disabled={saving}>
-        {saving ? "Saving…" : "Save changes"}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" className="w-fit" disabled={saving}>
+          {saving ? "Saving…" : "Save changes"}
+        </Button>
+        <Button type="button" variant="ghost" disabled={saving} onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
     </form>
   )
 }
 
 function BackLink() {
+  const navigate = useNavigate()
   return (
-    <Button asChild variant="ghost" size="sm" className="-ml-2 w-fit">
-      <Link to="/">
-        <ArrowLeft /> Library
-      </Link>
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      className="-ml-2 w-fit"
+      onClick={() => {
+        if (window.history.length > 1) navigate(-1)
+        else navigate("/")
+      }}
+    >
+      <ArrowLeft /> Back
     </Button>
   )
 }

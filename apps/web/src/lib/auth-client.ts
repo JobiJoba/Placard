@@ -21,3 +21,16 @@ export const signIn = async (email: string, password: string): Promise<string | 
 }
 
 export const signOut = () => authClient.signOut()
+
+/** Change password for the signed-in user (Better Auth). */
+export const changePassword = async (
+  currentPassword: string,
+  newPassword: string,
+): Promise<string | null> => {
+  const { error } = await authClient.changePassword({
+    currentPassword,
+    newPassword,
+    revokeOtherSessions: false,
+  })
+  return error ? (error.message ?? "Could not change your password.") : null
+}

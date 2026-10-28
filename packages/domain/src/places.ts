@@ -121,6 +121,8 @@ export const AutocompleteInput = Schema.Struct({
   input: Schema.Trim.pipe(Schema.check(Schema.isBetweenLength(1, 200))),
   sessionToken: Schema.NonEmptyString,
   near: Schema.NullOr(LatLng),
+  /** Google Places includedPrimaryTypes, e.g. `["(cities)"]` for city search. */
+  includedPrimaryTypes: Schema.optional(Schema.Array(Schema.String)),
 })
 export type AutocompleteInput = typeof AutocompleteInput.Type
 

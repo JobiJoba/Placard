@@ -1,6 +1,7 @@
 import { Effect, Layer } from "effect"
 import { HttpClient, type HttpClientRequest, HttpClientResponse } from "effect/http"
 import autocompleteFixture from "./fixtures/autocomplete.json" with { type: "json" }
+import citiesAutocompleteFixture from "./fixtures/cities-autocomplete.json" with { type: "json" }
 import placesFixture from "./fixtures/places.json" with { type: "json" }
 
 export const fixturePlaces: Readonly<
@@ -41,8 +42,14 @@ const respond = (request: HttpClientRequest.HttpClientRequest, url: URL): Respon
     })
   }
   if (request.method === "POST" && url.pathname === "/v1/places:autocomplete") {
-    const input = String(jsonBody(request).input ?? "").toLowerCase()
-    const suggestions = autocompleteFixture.suggestions.filter(({ placePrediction }) =>
+    const body = jsonBody(request)
+    const input = String(body.input ?? "").toLowerCase()
+    const types = body.includedPrimaryTypes
+    const source =
+      Array.isArray(types) && types.includes("(cities)")
+        ? citiesAutocompleteFixture
+        : autocompleteFixture
+    const suggestions = source.suggestions.filter(({ placePrediction }) =>
       placePrediction.text.text.toLowerCase().includes(input),
     )
     return Response.json(suggestions.length > 0 ? { suggestions } : {})

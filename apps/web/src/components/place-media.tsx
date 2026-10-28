@@ -192,6 +192,7 @@ function MediaTile({
   readonly onCaption: (caption: string | null) => void
 }) {
   const [editing, setEditing] = useState(false)
+  const [confirmRemove, setConfirmRemove] = useState(false)
   const [draft, setDraft] = useState(item.caption ?? "")
   const src = item.thumbUrl ?? item.url
 
@@ -207,16 +208,39 @@ function MediaTile({
         <div className="absolute top-2 left-2">
           <Badge variant="secondary">{kindLabel[item.kind]}</Badge>
         </div>
-        <Button
-          type="button"
-          size="icon-sm"
-          variant="secondary"
-          className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-          aria-label="Remove photo"
-          onClick={onRemove}
-        >
-          <Trash2 aria-hidden />
-        </Button>
+        {confirmRemove ? (
+          <div className="absolute inset-x-2 bottom-2 flex gap-1">
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              className="flex-1"
+              onClick={onRemove}
+            >
+              Delete
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="flex-1"
+              onClick={() => setConfirmRemove(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        ) : (
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="secondary"
+            className="absolute top-2 right-2"
+            aria-label="Remove photo"
+            onClick={() => setConfirmRemove(true)}
+          >
+            <Trash2 aria-hidden />
+          </Button>
+        )}
       </div>
       {editing ? (
         <form

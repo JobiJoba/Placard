@@ -17,6 +17,7 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { api, errorMessage } from "@/lib/api"
+import { changePassword } from "@/lib/auth-client"
 import { useLoad } from "@/lib/use-load"
 import { useMe, useSession } from "@/session"
 
@@ -25,6 +26,7 @@ export function SettingsPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
+      <AccountCard />
       <DistanceUnitCard />
       {me.role === "admin" && (
         <>
@@ -35,6 +37,96 @@ export function SettingsPage() {
         </>
       )}
     </div>
+  )
+}
+
+function AccountCard() {
+  const me = useMe()
+  const { signOut } = useSession()
+  const [error, setError] = useState<string | null>(null)
+  const [ok, setOk] = useState(false)
+  const [pending, setPending] = useState(false)
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const data = new FormData(event.currentTarget)
+    const currentPassword = String(data.get("currentPassword"))
+    const newPassword = String(data.get("newPassword"))
+    const confirm = String(data.get("confirmPassword"))
+    if (newPassword !== confirm) {
+      setError("New passwords don't match.")
+      setOk(false)
+      return
+    }
+    if (newPassword.length < 8) {
+      setError("New password must be at least 8 characters.")
+      setOk(false)
+      return
+    }
+    setPending(true)
+    setError(null)
+    setOk(false)
+    const message = await changePassword(currentPassword, newPassword)
+    setPending(false)
+    if (message) setError(message)
+    else {
+      setOk(true)
+      event.currentTarget.reset()
+    }
+  }
+
+  return (
+    <SettingsCard
+      title="Account"
+      description={`${me.name} · ${me.email}. Change your password or sign out.`}
+    >
+      <form onSubmit={submit} className="flex flex-col gap-3">
+        <FieldGroup>
+          <Field>
+            <FieldLabel htmlFor="currentPassword">Current password</FieldLabel>
+            <Input
+              id="currentPassword"
+              name="currentPassword"
+              type="password"
+              autoComplete="current-password"
+              required
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="newPassword">New password</FieldLabel>
+            <Input
+              id="newPassword"
+              name="newPassword"
+              type="password"
+              autoComplete="new-password"
+              minLength={8}
+              required
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="confirmPassword">Confirm new password</FieldLabel>
+            <Input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              autoComplete="new-password"
+              minLength={8}
+              required
+            />
+          </Field>
+        </FieldGroup>
+        <ErrorAlert message={error} />
+        {ok && <p className="text-sm text-muted-foreground">Password updated.</p>}
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" disabled={pending}>
+            {pending ? "Updating…" : "Change password"}
+          </Button>
+          <Button type="button" variant="outline" onClick={() => void signOut()}>
+            Sign out
+          </Button>
+        </div>
+      </form>
+    </SettingsCard>
   )
 }
 
@@ -330,6 +422,7 @@ function InvitesCard() {
   }
 
   const revoke = async (invite: Invite) => {
+    if (!window.confirm(`Revoke invite for ${invite.email}?`)) return
     try {
       await api((client) => client.admin.revokeInvite({ params: { id: invite.id } }))
       reload()
@@ -370,6 +463,9 @@ function InvitesCard() {
               </Button>
             </AlertDescription>
           </Alert>
+        )}
+        {invites && invites.length === 0 && (
+          <p className="text-sm text-muted-foreground">No invites yet. Create one above.</p>
         )}
         {invites && invites.length > 0 && (
           <ul className="flex flex-col divide-y">

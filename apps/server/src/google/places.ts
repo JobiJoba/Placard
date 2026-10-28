@@ -221,12 +221,16 @@ export class GooglePlaces extends Context.Service<
           input,
           sessionToken,
           near,
+          includedPrimaryTypes,
         }) {
           const request = HttpClientRequest.post(`${PLACES_BASE_URL}/places:autocomplete`).pipe(
             HttpClientRequest.setHeader("X-Goog-FieldMask", AUTOCOMPLETE_FIELD_MASK),
             HttpClientRequest.bodyJsonUnsafe({
               input,
               sessionToken,
+              ...(includedPrimaryTypes && includedPrimaryTypes.length > 0
+                ? { includedPrimaryTypes: [...includedPrimaryTypes] }
+                : {}),
               ...(near && {
                 locationBias: {
                   circle: {

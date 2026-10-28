@@ -1,0 +1,49 @@
+{
+  "suggestions": [
+    {
+      "placePrediction": {
+        "place": "places/ChIJ-fixture-city-paris",
+        "placeId": "ChIJ-fixture-city-paris",
+        "text": {
+          "text": "Paris, France",
+          "matches": [{ "endOffset": 5 }]
+        },
+        "structuredFormat": {
+          "mainText": { "text": "Paris", "matches": [{ "endOffset": 5 }] },
+          "secondaryText": { "text": "France" }
+        },
+        "types": ["locality", "political"]
+      }
+    },
+    {
+      "placePrediction": {
+        "place": "places/ChIJ-fixture-city-naples",
+        "placeId": "ChIJ-fixture-city-naples",
+        "text": {
+          "text": "Naples, Metropolitan City of Naples, Italy",
+          "matches": [{ "endOffset": 6 }]
+        },
+        "structuredFormat": {
+          "mainText": { "text": "Naples", "matches": [{ "endOffset": 6 }] },
+          "secondaryText": { "text": "Metropolitan City of Naples, Italy" }
+        },
+        "types": ["locality", "political"]
+      }
+    },
+    {
+      "placePrediction": {
+        "place": "places/ChIJ-fixture-city-berlin",
+        "placeId": "ChIJ-fixture-city-berlin",
+        "text": {
+          "text": "Berlin, Germany",
+          "matches": [{ "endOffset": 6 }]
+        },
+        "structuredFormat": {
+          "mainText": { "text": "Berlin", "matches": [{ "endOffset": 6 }] },
+          "secondaryText": { "text": "Germany" }
+        },
+        "types": ["locality", "political"]
+      }
+    }
+  ]
+}

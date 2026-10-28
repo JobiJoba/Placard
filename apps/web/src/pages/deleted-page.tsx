@@ -14,6 +14,7 @@ export function DeletedPage() {
   const { data, error, reload } = useLoad(useCallback(() => api((c) => c.places.deleted()), []))
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
   const [actionError, setActionError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
 
   const toggle = (id: string) =>
     setSelected((prev) => {
@@ -24,18 +25,26 @@ export function DeletedPage() {
     })
 
   const restore = (placeIds: ReadonlyArray<string>) => {
+    if (placeIds.length === 0 || busy) return
     setActionError(null)
+    setBusy(true)
     api((c) => c.places.restore({ payload: { placeIds } })).then(
       () => {
         setSelected(new Set())
+        setBusy(false)
         reload()
       },
-      (cause: unknown) => setActionError(errorMessage(cause)),
+      (cause: unknown) => {
+        setActionError(errorMessage(cause))
+        setBusy(false)
+      },
     )
   }
 
   if (error) return <ErrorAlert message={error} />
   if (!data) return <Skeleton className="h-40 rounded-xl" />
+
+  const allSelected = data.length > 0 && data.every((e) => selected.has(e.place.id))
 
   return (
     <section className="flex flex-col gap-6">
@@ -43,7 +52,7 @@ export function DeletedPage() {
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Recently deleted</h1>
           <p className="text-sm text-muted-foreground">
-            Places stay here for 30 days, then are removed for good.
+            Places stay here for 30 days, then are permanently deleted with their photos.
           </p>
         </div>
         <Button asChild variant="outline">
@@ -51,14 +60,27 @@ export function DeletedPage() {
         </Button>
       </div>
 
-      {selected.size > 0 && (
-        <div className="flex items-center gap-2">
-          <Button size="sm" onClick={() => restore([...selected])}>
-            Restore {selected.size}
+      {data.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              setSelected(allSelected ? new Set() : new Set(data.map((e) => e.place.id)))
+            }
+          >
+            {allSelected ? "Deselect all" : "Select all"}
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
-            Clear
-          </Button>
+          {selected.size > 0 && (
+            <>
+              <Button size="sm" disabled={busy} onClick={() => restore([...selected])}>
+                {busy ? "Restoring…" : `Restore ${selected.size}`}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
+                Clear
+              </Button>
+            </>
+          )}
         </div>
       )}
       <ErrorAlert message={actionError} />
@@ -74,6 +96,7 @@ export function DeletedPage() {
               selected={selected.has(entry.place.id)}
               onToggle={() => toggle(entry.place.id)}
               onRestore={() => restore([entry.place.id])}
+              busy={busy}
             />
           ))}
         </ul>
@@ -87,11 +110,13 @@ function DeletedRow({
   selected,
   onToggle,
   onRestore,
+  busy,
 }: {
   readonly entry: DeletedPlace
   readonly selected: boolean
   readonly onToggle: () => void
   readonly onRestore: () => void
+  readonly busy: boolean
 }) {
   const Icon = categoryIcons[entry.place.category]
   return (
@@ -108,11 +133,11 @@ function DeletedRow({
         </div>
         <span className="truncate font-medium">{entry.place.name}</span>
         <span className="text-xs text-muted-foreground">
-          Deleted {DateTime.formatLocal(entry.deletedAt, { dateStyle: "medium" })} · purge{" "}
-          {DateTime.formatLocal(entry.purgeAt, { dateStyle: "medium" })}
+          Deleted {DateTime.formatLocal(entry.deletedAt, { dateStyle: "medium" })} · permanently
+          deleted on {DateTime.formatLocal(entry.purgeAt, { dateStyle: "medium" })}
         </span>
       </div>
-      <Button size="sm" variant="outline" onClick={onRestore}>
+      <Button size="sm" variant="outline" disabled={busy} onClick={onRestore}>
         Restore
       </Button>
     </li>

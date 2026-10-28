@@ -101,5 +101,32 @@
         "Sunday: 7:00 AM – 11:00 PM"
       ]
     }
+  },
+  "ChIJ-fixture-city-paris": {
+    "id": "ChIJ-fixture-city-paris",
+    "types": ["locality", "political"],
+    "formattedAddress": "Paris, France",
+    "location": { "latitude": 48.8566, "longitude": 2.3522 },
+    "displayName": { "text": "Paris", "languageCode": "en" },
+    "primaryType": "locality",
+    "utcOffsetMinutes": 60
+  },
+  "ChIJ-fixture-city-naples": {
+    "id": "ChIJ-fixture-city-naples",
+    "types": ["locality", "political"],
+    "formattedAddress": "Naples, Metropolitan City of Naples, Italy",
+    "location": { "latitude": 40.8518, "longitude": 14.2681 },
+    "displayName": { "text": "Naples", "languageCode": "en" },
+    "primaryType": "locality",
+    "utcOffsetMinutes": 60
+  },
+  "ChIJ-fixture-city-berlin": {
+    "id": "ChIJ-fixture-city-berlin",
+    "types": ["locality", "political"],
+    "formattedAddress": "Berlin, Germany",
+    "location": { "latitude": 52.52, "longitude": 13.405 },
+    "displayName": { "text": "Berlin", "languageCode": "en" },
+    "primaryType": "locality",
+    "utcOffsetMinutes": 60
   }
 }

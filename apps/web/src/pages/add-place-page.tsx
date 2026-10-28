@@ -20,7 +20,13 @@ export function AddPlacePage() {
 
   return (
     <section className="flex flex-col gap-6">
-      <h1 className="text-3xl font-semibold tracking-tight">Add a place</h1>
+      <div className="flex flex-col gap-1">
+        <h1 className="text-3xl font-semibold tracking-tight">Add a place</h1>
+        <p className="text-sm text-muted-foreground">
+          Prefer Search when you know the name. Use Pick on map for a Google place, or Drop a pin
+          for somewhere Google doesn’t list.
+        </p>
+      </div>
       <ErrorAlert message={error} />
       {config === null ? (
         !error && mapFallback
@@ -28,8 +34,8 @@ export function AddPlacePage() {
         <Tabs defaultValue="search" className="gap-4">
           <TabsList>
             <TabsTrigger value="search">Search</TabsTrigger>
-            <TabsTrigger value="map">Pick on map</TabsTrigger>
-            <TabsTrigger value="pin">Drop a pin</TabsTrigger>
+            <TabsTrigger value="map">Google place</TabsTrigger>
+            <TabsTrigger value="pin">Custom pin</TabsTrigger>
           </TabsList>
           <TabsContent value="search">
             <SearchAdd />
