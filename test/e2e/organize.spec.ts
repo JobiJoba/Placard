@@ -66,6 +66,7 @@ test("create a list, tag a place, edit it, bulk-delete and restore", async ({ pa
   await page.getByRole("checkbox", { name: "Select L'Antica da Michele" }).check()
   await page.getByRole("checkbox", { name: "Select Sorbillo" }).check()
   await page.getByRole("button", { name: "Delete" }).click()
+  await page.getByRole("button", { name: "Confirm" }).click()
   await expect(page.getByRole("link", { name: /Starita/ })).toBeVisible()
   await expect(page.getByRole("link", { name: /Sorbillo/ })).toHaveCount(0)
 

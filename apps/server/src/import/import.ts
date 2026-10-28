@@ -389,9 +389,10 @@ export class Import extends Context.Service<
           if (!hit) return { status: "needs_review" as const, details: null }
 
           const nameOverlap =
-            Boolean(name) &&
-            (hit.name.toLowerCase().includes(name?.toLowerCase()) ||
-              name?.toLowerCase().includes(hit.name.toLowerCase().slice(0, 8)))
+            name !== undefined &&
+            name !== "" &&
+            (hit.name.toLowerCase().includes(name.toLowerCase()) ||
+              name.toLowerCase().includes(hit.name.toLowerCase().slice(0, 8)))
           if (!nameOverlap && !entry.feature_id && !entry.cid) {
             return { status: "needs_review" as const, details: null }
           }

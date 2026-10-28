@@ -111,7 +111,9 @@ export class Lists extends Context.Service<
             returning id`.pipe(Effect.orDie)
           if (inserted[0]) return yield* one(ownerId, inserted[0].id).pipe(Effect.orDie)
           const again = yield* findByName(ownerId, name)
-          return yield* one(ownerId, again?.id).pipe(Effect.orDie)
+          // Concurrent insert won the race; row must exist.
+          if (!again) return yield* Effect.die(new Error(`list race for ${name}`))
+          return yield* one(ownerId, again.id).pipe(Effect.orDie)
         }),
 
         create: Effect.fn("Lists.create")(function* (ownerId, input) {
