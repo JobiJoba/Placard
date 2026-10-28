@@ -66,6 +66,7 @@ const OneSavedPlace = Layer.succeed(
     bulk: unused,
     listDeleted: () => Effect.succeed([]),
     restore: unused,
+    listExpiredDeleted: Effect.succeed([]),
     purgeExpired: Effect.succeed(0),
   }),
 )

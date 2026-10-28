@@ -15,9 +15,16 @@ export interface JsonResponse {
   readonly body: any
 }
 
+export interface RawResponse {
+  readonly status: number
+  readonly body: Uint8Array
+  readonly contentType: string | null
+}
+
 /** A browser-like client: keeps its own cookies and sends the app's Origin. */
 export interface Browser {
   readonly get: (path: string) => Promise<JsonResponse>
+  readonly getRaw: (path: string) => Promise<RawResponse>
   readonly send: (method: string, path: string, body?: unknown) => Promise<JsonResponse>
 }
 
@@ -43,7 +50,7 @@ export class TestApp extends Context.Service<TestApp, { readonly browser: () => 
 
       const browser = (): Browser => {
         const cookies = new Map<string, string>()
-        const send = async (method: string, path: string, body?: unknown) => {
+        const request = async (method: string, path: string, body?: unknown) => {
           const headers = new Headers({ origin: config.publicUrl.origin })
           if (cookies.size > 0) {
             headers.set("cookie", [...cookies].map(([k, v]) => `${k}=${v}`).join("; "))
@@ -64,10 +71,25 @@ export class TestApp extends Context.Service<TestApp, { readonly browser: () => 
             if (value === "" || /max-age=0/i.test(setCookie)) cookies.delete(name)
             else cookies.set(name, value)
           }
+          return response
+        }
+        const send = async (method: string, path: string, body?: unknown) => {
+          const response = await request(method, path, body)
           const text = await response.text()
           return { status: response.status, body: text === "" ? undefined : JSON.parse(text) }
         }
-        return { get: (path) => send("GET", path), send }
+        return {
+          get: (path) => send("GET", path),
+          getRaw: async (path) => {
+            const response = await request("GET", path)
+            return {
+              status: response.status,
+              body: new Uint8Array(await response.arrayBuffer()),
+              contentType: response.headers.get("content-type"),
+            }
+          },
+          send,
+        }
       }
 
       return { browser }

@@ -50,6 +50,13 @@ import {
   TagSummary,
 } from "./library.ts"
 import {
+  MediaCaptionUpdate,
+  MediaItem,
+  MediaNotFound,
+  MediaRejected,
+  MediaUpload,
+} from "./media.ts"
+import {
   AutocompleteInput,
   DeletedPlace,
   GoogleConfig,
@@ -336,6 +343,35 @@ export class ImportApi extends HttpApiGroup.make("import")
   .middleware(Authentication)
   .prefix("/api/import") {}
 
+/** Dish photos and general media on a place. File bytes are served at /api/media/:id/file. */
+export class MediaApi extends HttpApiGroup.make("media")
+  .add(
+    HttpApiEndpoint.get("list", "/places/:placeId", {
+      params: { placeId: Schema.String },
+      success: Schema.Array(MediaItem),
+      error: PlaceNotFound,
+    }),
+    HttpApiEndpoint.post("upload", "/places/:placeId", {
+      params: { placeId: Schema.String },
+      payload: MediaUpload,
+      success: MediaItem,
+      error: [PlaceNotFound, MediaRejected],
+    }),
+    HttpApiEndpoint.patch("update", "/:id", {
+      params: { id: Schema.String },
+      payload: MediaCaptionUpdate,
+      success: MediaItem,
+      error: MediaNotFound,
+    }),
+    HttpApiEndpoint.delete("remove", "/:id", {
+      params: { id: Schema.String },
+      success: Schema.Void,
+      error: MediaNotFound,
+    }),
+  )
+  .middleware(Authentication)
+  .prefix("/api/media") {}
+
 export class Api extends HttpApi.make("placard")
   .add(HealthApi)
   .add(SetupApi)
@@ -347,6 +383,7 @@ export class Api extends HttpApi.make("placard")
   .add(GoogleApi)
   .add(SearchApi)
   .add(ImportApi)
+  .add(MediaApi)
   .annotateMerge(
     OpenApi.annotations({
       title: "Placard API",

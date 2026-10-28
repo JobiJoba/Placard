@@ -1,4 +1,10 @@
-import { placeCategories, placeSources, placeStatuses } from "@placard/domain"
+import {
+  type MediaKind,
+  mediaKinds,
+  placeCategories,
+  placeSources,
+  placeStatuses,
+} from "@placard/domain"
 import { sql } from "drizzle-orm"
 import {
   boolean,
@@ -381,4 +387,33 @@ export const importSkips = pgTable(
     skippedAt: timestamp("skipped_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [primaryKey({ columns: [table.ownerId, table.dedupeKey] })],
+)
+
+/** User-uploaded dish photos, general photos, and attachments on a place. */
+export const media = pgTable(
+  "media",
+  {
+    id: text("id").primaryKey(),
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    placeId: text("place_id")
+      .notNull()
+      .references(() => places.id, { onDelete: "cascade" }),
+    kind: text("kind").$type<MediaKind>().notNull(),
+    path: text("path").notNull(),
+    thumbPath: text("thumb_path"),
+    mimeType: text("mime_type").notNull(),
+    bytes: integer("bytes").notNull(),
+    width: integer("width"),
+    height: integer("height"),
+    caption: text("caption"),
+    takenAt: timestamp("taken_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("media_kind_check", sql`${table.kind} in ${inList(mediaKinds)}`),
+    index("media_place_id_idx").on(table.placeId),
+    index("media_owner_place_idx").on(table.ownerId, table.placeId),
+  ],
 )

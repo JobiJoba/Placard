@@ -16,6 +16,7 @@ import { Import } from "./import/import.ts"
 import { registerEnrichPlaceWorker } from "./jobs/enrich-place.ts"
 import { registerImportWorkers } from "./jobs/import-jobs.ts"
 import { JobQueue } from "./jobs/queue.ts"
+import { Media } from "./media/media.ts"
 import { Enrichment } from "./places/enrichment.ts"
 import { Lists } from "./places/lists.ts"
 import { Places } from "./places/places.ts"
@@ -36,8 +37,9 @@ const beat = Effect.gen(function* () {
   }
 })
 
-/** Places, enrichment, import, and the job queue over the worker's database. */
+/** Places, enrichment, import, media, and the job queue over the worker's database. */
 const WorkerServices = Import.layer.pipe(
+  Layer.provideMerge(Media.layer),
   Layer.provideMerge(Enrichment.layer),
   Layer.provideMerge(Lists.layer),
   Layer.provideMerge(GooglePlaces.layer),

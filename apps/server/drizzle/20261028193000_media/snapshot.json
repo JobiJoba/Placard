@@ -1,0 +1,56 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "5e1f7c3c-91b9-4e8d-a83b-c37de87ee255",
+  "prevIds": [
+    "f5f98771-3b54-424d-8c53-d24180504858"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "places",
+        "places_notes_trgm_idx"
+      ],
+      "writes": [
+        "s|idx|public.places_notes_trgm_idx",
+        "n|idx|public.places_notes_trgm_idx",
+        "e|idx|public.places_notes_trgm_idx",
+        "n|rel|public.places_notes_trgm_idx"
+      ],
+      "reads": [
+        "n|tbl|public.places",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "places",
+        "name": "places_notes_trgm_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "\"notes\" gin_trgm_ops",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "gin",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    }
+  ]
+}

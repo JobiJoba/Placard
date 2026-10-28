@@ -13,6 +13,7 @@ import { ArrowLeft, ExternalLink, RefreshCw } from "lucide-react"
 import { type FormEvent, useCallback, useEffect, useState } from "react"
 import { Link, useLocation, useNavigate, useParams } from "react-router"
 import { ErrorAlert } from "@/components/error-alert"
+import { PlaceMediaSection } from "@/components/place-media"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -151,6 +152,8 @@ export function PlacePage() {
           setData(next)
         }}
       />
+
+      <PlaceMediaSection placeId={place.id} category={place.category} />
 
       <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
         <dt className="text-muted-foreground">Coordinates</dt>

@@ -105,6 +105,8 @@ export class Places extends Context.Service<
       ownerId: string,
       placeIds: ReadonlyArray<string>,
     ) => Effect.Effect<BulkResult, PlaceNotFound>
+    /** Soft-deleted place ids older than {@link PURGE_AFTER} (files should be unlinked first). */
+    readonly listExpiredDeleted: Effect.Effect<ReadonlyArray<string>>
     /** Hard-delete rows whose soft-delete is older than {@link PURGE_AFTER}. */
     readonly purgeExpired: Effect.Effect<number>
   }
@@ -484,6 +486,16 @@ export class Places extends Context.Service<
             returning id`.pipe(Effect.orDie)
           if (restored.length !== placeIds.length) return yield* new PlaceNotFound()
           return { affected: restored.length }
+        }),
+
+        listExpiredDeleted: Effect.gen(function* () {
+          const cutoff = new Date((yield* Clock.currentTimeMillis) - Duration.toMillis(PURGE_AFTER))
+          return yield* sql<{ id: string }>`
+            select id from places
+            where deleted_at is not null and deleted_at < ${cutoff}`.pipe(
+            Effect.map((rows) => rows.map((row) => row.id)),
+            Effect.orDie,
+          )
         }),
 
         purgeExpired: Effect.gen(function* () {

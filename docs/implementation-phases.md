@@ -238,6 +238,8 @@ Order follows your priorities: places and browsing first, then search, then impo
 
 ## Phase 7 — Photos
 
+**Status:** done.
+
 **Goal:** remember what you ate.
 
 **Build**
