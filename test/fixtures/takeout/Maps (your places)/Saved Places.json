@@ -1,0 +1,49 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [16.3600893, 48.2008946]
+      },
+      "properties": {
+        "date": "2024-06-01T12:00:00Z",
+        "google_maps_url": "http://maps.google.com/?cid=1234567890123456789",
+        "location": {
+          "name": "Café Sperl",
+          "address": "Gumpendorfer Str. 11, 1060 Wien, Austria",
+          "country_code": "AT"
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [14.2633047, 40.8497877]
+      },
+      "properties": {
+        "date": "2023-11-15T18:30:00Z",
+        "google_maps_url": "http://maps.google.com/?cid=9876543210987654321",
+        "location": {
+          "name": "L'Antica Pizzeria da Michele",
+          "address": "Via Cesare Sersale, 1, 80139 Napoli NA, Italy",
+          "country_code": "IT"
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [0, 0]
+      },
+      "properties": {
+        "date": "2022-01-10T09:00:00Z",
+        "google_maps_url": "http://maps.google.com/?q=Some+Lost+Address&ftid=0x47abc:0xdef123",
+        "Comment": "No location information is available for this saved place"
+      }
+    }
+  ]
+}

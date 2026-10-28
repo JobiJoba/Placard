@@ -57,6 +57,7 @@ const OneSavedPlace = Layer.succeed(
           created: true,
         }
       }),
+    addFromTakeout: unused,
     addManual: unused,
     update: unused,
     setTags: unused,
@@ -73,6 +74,7 @@ const RecordingGoogle = Layer.succeed(
   GooglePlaces,
   GooglePlaces.of({
     autocomplete: () => Effect.die("not under test"),
+    searchText: () => Effect.succeed([]),
     details: (googlePlaceId) =>
       Effect.sync(() => {
         googleCalls.push(googlePlaceId)

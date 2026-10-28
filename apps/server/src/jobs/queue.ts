@@ -1,7 +1,16 @@
 import { Context, Effect, Layer, Redacted } from "effect"
 import PgBoss from "pg-boss"
 import { AppConfig } from "../config.ts"
-import { ENRICH_PLACE, type EnrichPlaceJob, enrichPlaceOptions } from "./names.ts"
+import {
+  ENRICH_PLACE,
+  type EnrichPlaceJob,
+  enrichPlaceOptions,
+  IMPORT_COMMIT,
+  IMPORT_PARSE,
+  type ImportCommitJob,
+  type ImportParseJob,
+  importJobOptions,
+} from "./names.ts"
 
 export interface EnqueueEnrichOptions {
   /** Soft rate-limit: delay this many seconds before the job becomes eligible. */
@@ -16,6 +25,8 @@ export class JobQueue extends Context.Service<
       payload: EnrichPlaceJob,
       options?: EnqueueEnrichOptions,
     ) => Effect.Effect<void>
+    readonly enqueueImportParse: (payload: ImportParseJob) => Effect.Effect<void>
+    readonly enqueueImportCommit: (payload: ImportCommitJob) => Effect.Effect<void>
     readonly boss: PgBoss
   }
 >()("placard/JobQueue") {
@@ -29,7 +40,6 @@ export class JobQueue extends Context.Service<
             const instance = new PgBoss({
               connectionString: Redacted.value(databaseUrl),
               application_name: "placard-jobs",
-              // API process only enqueues; worker starts its own consumers.
               supervise: false,
               schedule: false,
             })
@@ -40,6 +50,14 @@ export class JobQueue extends Context.Service<
             await instance.createQueue(ENRICH_PLACE, {
               name: ENRICH_PLACE,
               ...enrichPlaceOptions,
+            })
+            await instance.createQueue(IMPORT_PARSE, {
+              name: IMPORT_PARSE,
+              ...importJobOptions,
+            })
+            await instance.createQueue(IMPORT_COMMIT, {
+              name: IMPORT_COMMIT,
+              ...importJobOptions,
             })
             return instance
           },
@@ -67,6 +85,24 @@ export class JobQueue extends Context.Service<
                   : payload.placeId,
               }),
             catch: (cause) => new Error(`Failed to enqueue enrich.place: ${String(cause)}`),
+          }).pipe(Effect.asVoid, Effect.orDie),
+        enqueueImportParse: (payload: ImportParseJob) =>
+          Effect.tryPromise({
+            try: () =>
+              boss.send(IMPORT_PARSE, payload, {
+                ...importJobOptions,
+                singletonKey: payload.runId,
+              }),
+            catch: (cause) => new Error(`Failed to enqueue import.parse: ${String(cause)}`),
+          }).pipe(Effect.asVoid, Effect.orDie),
+        enqueueImportCommit: (payload: ImportCommitJob) =>
+          Effect.tryPromise({
+            try: () =>
+              boss.send(IMPORT_COMMIT, payload, {
+                ...importJobOptions,
+                singletonKey: payload.runId,
+              }),
+            catch: (cause) => new Error(`Failed to enqueue import.commit: ${String(cause)}`),
           }).pipe(Effect.asVoid, Effect.orDie),
       }
     }),

@@ -32,6 +32,12 @@ export class Lists extends Context.Service<
     readonly list: (ownerId: string) => Effect.Effect<ReadonlyArray<PlaceList>>
     readonly get: (ownerId: string, id: string) => Effect.Effect<PlaceList, ListNotFound>
     readonly create: (ownerId: string, input: ListInput) => Effect.Effect<PlaceList, NameTaken>
+    /** Find by name or create; used when committing Takeout lists. */
+    readonly ensure: (
+      ownerId: string,
+      name: string,
+      options?: { readonly importRunId?: string },
+    ) => Effect.Effect<PlaceList>
     readonly update: (
       ownerId: string,
       id: string,
@@ -89,6 +95,24 @@ export class Lists extends Context.Service<
           ),
 
         get: one,
+
+        ensure: Effect.fn("Lists.ensure")(function* (ownerId, name, options) {
+          const existing = yield* findByName(ownerId, name)
+          if (existing) return yield* one(ownerId, existing.id).pipe(Effect.orDie)
+          const id = uuidv7()
+          const importRunId = options?.importRunId ?? null
+          const inserted = yield* sql<{ id: string }>`
+            insert into lists (id, owner_id, name, description, import_run_id)
+            select ${id}, ${ownerId}, ${name}, ${null}, ${importRunId}
+            where not exists (
+              select 1 from lists
+              where owner_id = ${ownerId} and lower(name) = lower(${name})
+            )
+            returning id`.pipe(Effect.orDie)
+          if (inserted[0]) return yield* one(ownerId, inserted[0].id).pipe(Effect.orDie)
+          const again = yield* findByName(ownerId, name)
+          return yield* one(ownerId, again!.id).pipe(Effect.orDie)
+        }),
 
         create: Effect.fn("Lists.create")(function* (ownerId, input) {
           const inserted = yield* sql<{ id: string }>`

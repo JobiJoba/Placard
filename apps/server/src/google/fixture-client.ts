@@ -23,7 +23,22 @@ const respond = (request: HttpClientRequest.HttpClientRequest, url: URL): Respon
     return Response.json(INVALID_KEY, { status: 400 })
   }
   if (request.method === "POST" && url.pathname === "/v1/places:searchText") {
-    return Response.json({ places: [{ id: "ChIJ-fixture-da-michele" }] })
+    const query = String(jsonBody(request).textQuery ?? "").toLowerCase()
+    const matches = Object.values(fixturePlaces).filter(
+      (place) =>
+        place.displayName.text.toLowerCase().includes(query) ||
+        query.includes(place.displayName.text.toLowerCase().slice(0, 8)),
+    )
+    return Response.json({
+      places: (matches.length > 0 ? matches : Object.values(fixturePlaces).slice(0, 1)).map(
+        (p) => ({
+          id: p.id,
+          displayName: p.displayName,
+          formattedAddress: p.formattedAddress,
+          location: p.location,
+        }),
+      ),
+    })
   }
   if (request.method === "POST" && url.pathname === "/v1/places:autocomplete") {
     const input = String(jsonBody(request).input ?? "").toLowerCase()

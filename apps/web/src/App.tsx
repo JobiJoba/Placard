@@ -3,6 +3,7 @@ import { AppShell } from "@/components/app-shell"
 import { AddPlacePage } from "@/pages/add-place-page"
 import { InvitePage, LoginPage, SetupPage } from "@/pages/auth-pages"
 import { DeletedPage } from "@/pages/deleted-page"
+import { ImportPage } from "@/pages/import-page"
 import { LibraryPage } from "@/pages/library-page"
 import { ListsPage } from "@/pages/lists-page"
 import { PlacePage } from "@/pages/place-page"
@@ -26,6 +27,8 @@ export function App() {
           >
             <Route index element={<LibraryPage />} />
             <Route path="/add" element={<AddPlacePage />} />
+            <Route path="/import" element={<ImportPage />} />
+            <Route path="/import/:runId" element={<ImportPage />} />
             <Route path="/places/:id" element={<PlacePage />} />
             <Route path="/lists" element={<ListsPage />} />
             <Route path="/deleted" element={<DeletedPage />} />

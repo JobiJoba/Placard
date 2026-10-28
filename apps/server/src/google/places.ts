@@ -142,6 +142,13 @@ export const toDetails = (place: typeof GooglePlaceResponse.Type): GooglePlaceDe
   },
 })
 
+export interface TextSearchHit {
+  readonly googlePlaceId: string
+  readonly name: string
+  readonly address: string | null
+  readonly location: LatLng | null
+}
+
 export class GooglePlaces extends Context.Service<
   GooglePlaces,
   {
@@ -154,6 +161,11 @@ export class GooglePlaces extends Context.Service<
       sessionToken: string | null,
       options?: { readonly force?: boolean },
     ) => Effect.Effect<GooglePlaceDetails, GooglePlacesError>
+    /** Used by Takeout commit to match name (+ optional location bias). */
+    readonly searchText: (
+      query: string,
+      near: LatLng | null,
+    ) => Effect.Effect<ReadonlyArray<TextSearchHit>, GooglePlacesError>
   }
 >()("placard/GooglePlaces") {
   static readonly layer = Layer.effect(
@@ -248,6 +260,52 @@ export class GooglePlaces extends Context.Service<
             return details
           },
         ),
+
+        searchText: Effect.fn("GooglePlaces.searchText")(function* (query, near) {
+          const request = HttpClientRequest.post(`${PLACES_BASE_URL}/places:searchText`).pipe(
+            HttpClientRequest.setHeader(
+              "X-Goog-FieldMask",
+              "places.id,places.displayName,places.formattedAddress,places.location",
+            ),
+            HttpClientRequest.bodyJsonUnsafe({
+              textQuery: query,
+              pageSize: 5,
+              ...(near && {
+                locationBias: {
+                  circle: {
+                    center: { latitude: near.lat, longitude: near.lng },
+                    radius: 5_000,
+                  },
+                },
+              }),
+            }),
+          )
+          const body = yield* send(
+            request,
+            Schema.Struct({
+              places: Schema.optional(
+                Schema.Array(
+                  Schema.Struct({
+                    id: Schema.String,
+                    displayName: Schema.optional(Text),
+                    formattedAddress: Schema.optional(Schema.String),
+                    location: Schema.optional(
+                      Schema.Struct({ latitude: Schema.Number, longitude: Schema.Number }),
+                    ),
+                  }),
+                ),
+              ),
+            }),
+          )
+          return (body.places ?? []).map((place) => ({
+            googlePlaceId: place.id,
+            name: place.displayName?.text ?? place.formattedAddress ?? "Unnamed place",
+            address: place.formattedAddress ?? null,
+            location: place.location
+              ? { lat: place.location.latitude, lng: place.location.longitude }
+              : null,
+          }))
+        }),
       }
     }),
   )

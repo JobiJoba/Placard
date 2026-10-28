@@ -63,9 +63,22 @@ export class Places extends Context.Service<
     readonly addFromGoogle: (
       ownerId: string,
       details: GooglePlaceDetails,
-      source: Extract<PlaceSource, "autocomplete" | "map_pick">,
+      source: Extract<PlaceSource, "autocomplete" | "map_pick" | "takeout">,
+      options?: { readonly importRunId?: string },
     ) => Effect.Effect<SavedPlace>
     readonly addManual: (ownerId: string, input: ManualPlaceInput) => Effect.Effect<SavedPlace>
+    /** Create a Takeout pin without a Google Place ID (coords required). */
+    readonly addFromTakeout: (
+      ownerId: string,
+      input: {
+        readonly name: string
+        readonly category: PlaceCategory
+        readonly location: { readonly lat: number; readonly lng: number }
+        readonly address: string | null
+        readonly notes: string | null
+        readonly importRunId: string
+      },
+    ) => Effect.Effect<SavedPlace>
     readonly update: (
       ownerId: string,
       id: string,
@@ -263,29 +276,33 @@ export class Places extends Context.Service<
 
         findByGooglePlaceId,
 
-        addFromGoogle: Effect.fn("Places.addFromGoogle")(function* (ownerId, details, source) {
-          const inserted = yield* sql<PlaceRow>`
+        addFromGoogle: Effect.fn("Places.addFromGoogle")(
+          function* (ownerId, details, source, options) {
+            const importRunId = options?.importRunId ?? null
+            const inserted = yield* sql<PlaceRow>`
             insert into places (
               id, owner_id, name, category, location, address, google_place_id,
-              utc_offset_minutes, source, last_enriched_at
+              utc_offset_minutes, source, import_run_id, last_enriched_at
             ) values (
               ${uuidv7()}, ${ownerId}, ${details.name}, ${details.category},
               ${point(details.location.lat, details.location.lng)}, ${details.address},
-              ${details.googlePlaceId}, ${details.utcOffsetMinutes}, ${source}, now()
+              ${details.googlePlaceId}, ${details.utcOffsetMinutes}, ${source},
+              ${importRunId}, now()
             )
             on conflict (owner_id, google_place_id)
               where google_place_id is not null and deleted_at is null
               do nothing
             returning ${columns}`.pipe(Effect.orDie)
-          if (inserted[0]) {
-            const [place] = yield* hydrate(inserted)
-            return { place: place!, created: true }
-          }
-          const existing = yield* findByGooglePlaceId(ownerId, details.googlePlaceId)
-          return Option.isSome(existing)
-            ? { place: existing.value, created: false }
-            : yield* Effect.die(`place ${details.googlePlaceId} conflicted but was not found`)
-        }),
+            if (inserted[0]) {
+              const [place] = yield* hydrate(inserted)
+              return { place: place!, created: true }
+            }
+            const existing = yield* findByGooglePlaceId(ownerId, details.googlePlaceId)
+            return Option.isSome(existing)
+              ? { place: existing.value, created: false }
+              : yield* Effect.die(`place ${details.googlePlaceId} conflicted but was not found`)
+          },
+        ),
 
         addManual: (ownerId, input) =>
           sql<PlaceRow>`
@@ -294,6 +311,21 @@ export class Places extends Context.Service<
               ${uuidv7()}, ${ownerId}, ${input.name}, ${input.category},
               ${point(input.location.lat, input.location.lng)}, ${input.address || null},
               'manual', ${["name", "category", "address"]}
+            )
+            returning ${columns}`.pipe(
+            Effect.orDie,
+            Effect.flatMap(hydrate),
+            Effect.map((places) => ({ place: places[0]!, created: true })),
+          ),
+
+        addFromTakeout: (ownerId, input) =>
+          sql<PlaceRow>`
+            insert into places (
+              id, owner_id, name, category, location, address, notes, source, import_run_id, manual_fields
+            ) values (
+              ${uuidv7()}, ${ownerId}, ${input.name}, ${input.category},
+              ${point(input.location.lat, input.location.lng)}, ${input.address},
+              ${input.notes}, 'takeout', ${input.importRunId}, ${["name", "category", "address"]}
             )
             returning ${columns}`.pipe(
             Effect.orDie,

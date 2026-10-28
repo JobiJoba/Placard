@@ -204,6 +204,8 @@ Order follows your priorities: places and browsing first, then search, then impo
 
 ## Phase 6 — Takeout import
 
+**Status:** done.
+
 **Goal:** bring your ~500 saved places in, deciding what to keep before spending API calls.
 
 **Build** (format reference: [takeout-format.md](takeout-format.md), fixtures in `test/fixtures/takeout/`)

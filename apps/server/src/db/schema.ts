@@ -153,6 +153,7 @@ export const places = pgTable(
     notes: text("notes"),
     utcOffsetMinutes: integer("utc_offset_minutes"),
     source: text("source").notNull(),
+    importRunId: text("import_run_id"),
     manualFields: text("manual_fields").array().notNull().default(sql`'{}'::text[]`),
     lastEnrichedAt: timestamp("last_enriched_at", { withTimezone: true }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -168,6 +169,7 @@ export const places = pgTable(
     index("places_notes_trgm_idx").using("gin", sql`${table.notes} gin_trgm_ops`),
     index("places_owner_deleted_idx").on(table.ownerId, table.deletedAt),
     index("places_deleted_at_idx").on(table.deletedAt).where(sql`${table.deletedAt} is not null`),
+    index("places_import_run_id_idx").on(table.importRunId),
     uniqueIndex("places_owner_google_place_id_idx")
       .on(table.ownerId, table.googlePlaceId)
       .where(sql`${table.googlePlaceId} is not null and ${table.deletedAt} is null`),
@@ -213,11 +215,13 @@ export const lists = pgTable(
     visibility: text("visibility").notNull().default("private"),
     name: text("name").notNull(),
     description: text("description"),
+    importRunId: text("import_run_id"),
     ...timestamps,
   },
   (table) => [
     check("lists_visibility_check", sql`${table.visibility} in ('private')`),
     uniqueIndex("lists_owner_name_idx").on(table.ownerId, sql`lower(${table.name})`),
+    index("lists_import_run_id_idx").on(table.importRunId),
   ],
 )
 
@@ -276,4 +280,105 @@ export const enrichmentRuns = pgTable(
     check("enrichment_runs_status_check", sql`${table.status} in ('running', 'done', 'failed')`),
     index("enrichment_runs_owner_created_idx").on(table.ownerId, table.createdAt),
   ],
+)
+
+export const importRunStatuses = [
+  "parsing",
+  "triage",
+  "committing",
+  "done",
+  "undone",
+  "failed",
+] as const
+export type ImportRunStatus = (typeof importRunStatuses)[number]
+
+export const importDecisions = ["pending", "keep", "skip"] as const
+export type ImportDecision = (typeof importDecisions)[number]
+
+export const importMatchStatuses = ["unmatched", "matched", "needs_review", "failed"] as const
+export type ImportMatchStatus = (typeof importMatchStatuses)[number]
+
+export const importRuns = pgTable(
+  "import_runs",
+  {
+    id: text("id").primaryKey(),
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: text("status").$type<ImportRunStatus>().notNull().default("parsing"),
+    sourceFingerprint: text("source_fingerprint").notNull(),
+    counts: jsonb("counts")
+      .$type<{
+        parsed: number
+        kept: number
+        skipped: number
+        matched: number
+        needsReview: number
+        pending: number
+      }>()
+      .notNull(),
+    errorMessage: text("error_message"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    committedAt: timestamp("committed_at", { withTimezone: true }),
+    undoneAt: timestamp("undone_at", { withTimezone: true }),
+  },
+  (table) => [
+    check(
+      "import_runs_status_check",
+      sql`${table.status} in ('parsing', 'triage', 'committing', 'done', 'undone', 'failed')`,
+    ),
+    index("import_runs_owner_created_idx").on(table.ownerId, table.createdAt),
+    index("import_runs_owner_fingerprint_idx").on(table.ownerId, table.sourceFingerprint),
+  ],
+)
+
+export const importEntries = pgTable(
+  "import_entries",
+  {
+    id: text("id").primaryKey(),
+    runId: text("run_id")
+      .notNull()
+      .references(() => importRuns.id, { onDelete: "cascade" }),
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    dedupeKey: text("dedupe_key").notNull(),
+    sourceFile: text("source_file").notNull(),
+    sourceList: text("source_list"),
+    name: text("name"),
+    address: text("address"),
+    countryCode: text("country_code"),
+    note: text("note"),
+    location: geographyPoint("location"),
+    googleMapsUrl: text("google_maps_url"),
+    cid: text("cid"),
+    featureId: text("feature_id"),
+    savedAt: timestamp("saved_at", { withTimezone: true }),
+    decision: text("decision").$type<ImportDecision>().notNull().default("pending"),
+    matchStatus: text("match_status").$type<ImportMatchStatus>().notNull().default("unmatched"),
+    placeId: text("place_id").references(() => places.id, { onDelete: "set null" }),
+  },
+  (table) => [
+    check("import_entries_decision_check", sql`${table.decision} in ('pending', 'keep', 'skip')`),
+    check(
+      "import_entries_match_status_check",
+      sql`${table.matchStatus} in ('unmatched', 'matched', 'needs_review', 'failed')`,
+    ),
+    index("import_entries_run_id_idx").on(table.runId),
+    index("import_entries_owner_dedupe_idx").on(table.ownerId, table.dedupeKey),
+    uniqueIndex("import_entries_run_dedupe_idx").on(table.runId, table.dedupeKey, table.sourceFile),
+  ],
+)
+
+/** Remembered skip decisions across re-imports of the same Takeout entry. */
+export const importSkips = pgTable(
+  "import_skips",
+  {
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    dedupeKey: text("dedupe_key").notNull(),
+    skippedAt: timestamp("skipped_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.ownerId, table.dedupeKey] })],
 )

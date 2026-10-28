@@ -12,9 +12,12 @@ import { loadConfigOrExit } from "./config.ts"
 import { GoogleFixtureClient } from "./google/fixture-client.ts"
 import { GooglePlaces } from "./google/places.ts"
 import { Health } from "./health.ts"
+import { Import } from "./import/import.ts"
 import { registerEnrichPlaceWorker } from "./jobs/enrich-place.ts"
+import { registerImportWorkers } from "./jobs/import-jobs.ts"
 import { JobQueue } from "./jobs/queue.ts"
 import { Enrichment } from "./places/enrichment.ts"
+import { Lists } from "./places/lists.ts"
 import { Places } from "./places/places.ts"
 import { purgeDeletedPlaces, purgeSchedule } from "./places/purge.ts"
 import { Tags } from "./places/tags.ts"
@@ -33,8 +36,10 @@ const beat = Effect.gen(function* () {
   }
 })
 
-/** Places, enrichment, and the job queue over the worker's database. */
-const WorkerServices = Enrichment.layer.pipe(
+/** Places, enrichment, import, and the job queue over the worker's database. */
+const WorkerServices = Import.layer.pipe(
+  Layer.provideMerge(Enrichment.layer),
+  Layer.provideMerge(Lists.layer),
   Layer.provideMerge(GooglePlaces.layer),
   Layer.provideMerge(Places.layer),
   Layer.provideMerge(Tags.layer),
@@ -45,10 +50,14 @@ const WorkerServices = Enrichment.layer.pipe(
 const program = Effect.gen(function* () {
   const queue = yield* JobQueue
   const enrichment = yield* Enrichment
-  const run = <A, E>(effect: Effect.Effect<A, E, Enrichment>) =>
+  const imports = yield* Import
+  const runEnrich = <A, E>(effect: Effect.Effect<A, E, Enrichment>) =>
     Effect.runPromise(Effect.provideService(effect, Enrichment, enrichment))
+  const runImport = <A, E>(effect: Effect.Effect<A, E, Import>) =>
+    Effect.runPromise(Effect.provideService(effect, Import, imports))
 
-  yield* registerEnrichPlaceWorker(queue.boss, run)
+  yield* registerEnrichPlaceWorker(queue.boss, runEnrich)
+  yield* registerImportWorkers(queue.boss, runImport)
   yield* Effect.log("Placard worker started")
   yield* Effect.all(
     [

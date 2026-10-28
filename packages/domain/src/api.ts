@@ -26,6 +26,17 @@ import {
 } from "./facts.ts"
 import { HealthError, HealthOk } from "./health.ts"
 import {
+  ImportDecisionUpdate,
+  ImportEntry,
+  ImportEntryFilter,
+  ImportInvalidState,
+  ImportNotFound,
+  ImportRun,
+  ImportUndoPreview,
+  ImportUpload,
+  TakeoutParseError,
+} from "./import.ts"
+import {
   BulkInput,
   BulkResult,
   ListInput,
@@ -270,6 +281,61 @@ export class SearchApi extends HttpApiGroup.make("search")
   .middleware(Authentication)
   .prefix("/api/search") {}
 
+/** Google Takeout import: free triage, then commit / undo. */
+export class ImportApi extends HttpApiGroup.make("import")
+  .add(
+    HttpApiEndpoint.get("listRuns", "/runs", { success: Schema.Array(ImportRun) }),
+    HttpApiEndpoint.post("start", "/runs", {
+      payload: ImportUpload,
+      success: ImportRun,
+      error: TakeoutParseError,
+    }),
+    HttpApiEndpoint.get("getRun", "/runs/:id", {
+      params: { id: Schema.String },
+      success: ImportRun,
+      error: ImportNotFound,
+    }),
+    HttpApiEndpoint.post("listEntries", "/runs/:id/entries", {
+      params: { id: Schema.String },
+      payload: ImportEntryFilter,
+      success: Schema.Array(ImportEntry),
+      error: ImportNotFound,
+    }),
+    HttpApiEndpoint.post("setDecisions", "/runs/:id/decisions", {
+      params: { id: Schema.String },
+      payload: ImportDecisionUpdate,
+      success: ImportRun,
+      error: [ImportNotFound, ImportInvalidState],
+    }),
+    HttpApiEndpoint.post("setListDecision", "/runs/:id/lists", {
+      params: { id: Schema.String },
+      payload: Schema.Struct({
+        sourceList: Schema.String,
+        decision: Schema.Literals(["pending", "keep", "skip"]),
+      }),
+      success: ImportRun,
+      error: [ImportNotFound, ImportInvalidState],
+    }),
+    HttpApiEndpoint.post("commit", "/runs/:id/commit", {
+      params: { id: Schema.String },
+      success: ImportRun,
+      error: [ImportNotFound, ImportInvalidState],
+    }),
+    HttpApiEndpoint.get("undoPreview", "/runs/:id/undo", {
+      params: { id: Schema.String },
+      success: ImportUndoPreview,
+      error: [ImportNotFound, ImportInvalidState],
+    }),
+    HttpApiEndpoint.post("undo", "/runs/:id/undo", {
+      params: { id: Schema.String },
+      payload: Schema.Struct({ confirmEdited: Schema.Boolean }),
+      success: ImportRun,
+      error: [ImportNotFound, ImportInvalidState],
+    }),
+  )
+  .middleware(Authentication)
+  .prefix("/api/import") {}
+
 export class Api extends HttpApi.make("placard")
   .add(HealthApi)
   .add(SetupApi)
@@ -280,6 +346,7 @@ export class Api extends HttpApi.make("placard")
   .add(ListsApi)
   .add(GoogleApi)
   .add(SearchApi)
+  .add(ImportApi)
   .annotateMerge(
     OpenApi.annotations({
       title: "Placard API",
