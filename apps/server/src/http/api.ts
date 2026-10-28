@@ -38,11 +38,11 @@ export const ApiLive = HttpApiBuilder.layer(Api, {
   Layer.provide([AuthenticationLive, AdminAuthenticationLive]),
 )
 
-/** Enrichment needs Places + Google; Import needs Enrichment + Lists; Media needs Places. */
+/** Enrichment needs Places + Google + Media; Import needs Enrichment + Lists; Media needs Places. */
 export const ServicesLayer = Import.layer.pipe(
-  Layer.provideMerge(Media.layer),
   Layer.provideMerge(Search.layer),
-  Layer.provideMerge(Enrichment.layer),
+  Layer.provideMerge(Enrichment.layer.pipe(Layer.provide(Media.layer))),
+  Layer.provideMerge(Media.layer),
   Layer.provideMerge(Lists.layer),
   Layer.provideMerge(GooglePlaces.layer),
   Layer.provideMerge(Places.layer),

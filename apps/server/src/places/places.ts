@@ -43,9 +43,17 @@ interface PlaceRow {
   readonly notes: string | null
   readonly source: PlaceSource
   readonly manual_fields: ReadonlyArray<string>
+  readonly cover_media_id: string | null
   readonly created_at: Date
   readonly deleted_at: Date | null
 }
+
+const coverThumbUrl = (coverMediaId: string | null, thumbPath: string | null) =>
+  coverMediaId && thumbPath
+    ? `/api/media/${coverMediaId}/thumb`
+    : coverMediaId
+      ? `/api/media/${coverMediaId}/file`
+      : null
 
 const isEditable = (field: string): field is EditableField =>
   (editableFields as ReadonlyArray<string>).includes(field)
@@ -119,7 +127,8 @@ export class Places extends Context.Service<
       const columns = sql`
         id, name, category,
         st_y(location::geometry) as lat, st_x(location::geometry) as lng,
-        address, google_place_id, status, notes, source, manual_fields, created_at, deleted_at`
+        address, google_place_id, status, notes, source, manual_fields, cover_media_id,
+        created_at, deleted_at`
       const point = (lat: number, lng: number) =>
         sql`st_setsrid(st_makepoint(${lng}, ${lat}), 4326)::geography`
       const alive = (ownerId: string) =>
@@ -147,6 +156,20 @@ export class Places extends Context.Service<
               Effect.orDie,
             )
 
+      const loadCoverThumbs = (coverIds: ReadonlyArray<string>) =>
+        coverIds.length === 0
+          ? Effect.succeed(new Map<string, string | null>())
+          : sql<{ id: string; thumb_path: string | null }>`
+              select id, thumb_path from media
+              where ${sql.in("id", coverIds)}`.pipe(
+              Effect.map((rows) => {
+                const map = new Map<string, string | null>()
+                for (const row of rows) map.set(row.id, row.thumb_path)
+                return map
+              }),
+              Effect.orDie,
+            )
+
       const loadListIds = (placeIds: ReadonlyArray<string>) =>
         placeIds.length === 0
           ? Effect.succeed(new Map<string, string[]>())
@@ -169,9 +192,14 @@ export class Places extends Context.Service<
       const hydrate = (rows: ReadonlyArray<PlaceRow>) =>
         Effect.gen(function* () {
           const ids = rows.map((row) => row.id)
-          const [tagMap, listMap, factsMap] = yield* Effect.all(
-            [loadTags(ids), loadListIds(ids), loadFactsMap(sql, ids)],
-            { concurrency: 3 },
+          const coverIds = [
+            ...new Set(
+              rows.map((row) => row.cover_media_id).filter((id): id is string => id != null),
+            ),
+          ]
+          const [tagMap, listMap, factsMap, thumbMap] = yield* Effect.all(
+            [loadTags(ids), loadListIds(ids), loadFactsMap(sql, ids), loadCoverThumbs(coverIds)],
+            { concurrency: 4 },
           )
           return rows.map(
             (row): Place => ({
@@ -188,6 +216,11 @@ export class Places extends Context.Service<
               tags: tagMap.get(row.id) ?? [],
               listIds: listMap.get(row.id) ?? [],
               facts: factsMap.get(row.id) ?? emptyFacts(),
+              coverMediaId: row.cover_media_id,
+              coverThumbUrl: coverThumbUrl(
+                row.cover_media_id,
+                row.cover_media_id ? (thumbMap.get(row.cover_media_id) ?? null) : null,
+              ),
               createdAt: DateTime.fromDateUnsafe(row.created_at),
             }),
           )

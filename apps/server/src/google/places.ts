@@ -16,7 +16,7 @@ export const PLACES_BASE_URL = "https://places.googleapis.com/v1"
 
 /** Only the fields Placard stores, which keeps Place Details in the cheapest SKU that has them. */
 export const DETAILS_FIELD_MASK =
-  "id,displayName,formattedAddress,location,types,primaryType,utcOffsetMinutes,nationalPhoneNumber,internationalPhoneNumber,websiteUri,rating,priceLevel,regularOpeningHours"
+  "id,displayName,formattedAddress,location,types,primaryType,utcOffsetMinutes,nationalPhoneNumber,internationalPhoneNumber,websiteUri,rating,priceLevel,regularOpeningHours,photos"
 
 export const AUTOCOMPLETE_FIELD_MASK =
   "suggestions.placePrediction.placeId,suggestions.placePrediction.text,suggestions.placePrediction.structuredFormat"
@@ -77,6 +77,15 @@ export const GooglePlaceResponse = Schema.Struct({
       weekdayDescriptions: Schema.optional(Schema.Array(Schema.String)),
     }),
   ),
+  photos: Schema.optional(
+    Schema.Array(
+      Schema.Struct({
+        name: Schema.String,
+        widthPx: Schema.optional(Schema.Number),
+        heightPx: Schema.optional(Schema.Number),
+      }),
+    ),
+  ),
 })
 
 const GoogleErrorBody = Schema.Struct({
@@ -90,6 +99,8 @@ export interface GooglePlaceDetails {
   readonly location: LatLng
   readonly category: PlaceCategory
   readonly utcOffsetMinutes: number | null
+  /** First Places photo resource name (`places/.../photos/...`), when Google returned any. */
+  readonly photoName: string | null
   readonly enrichment: {
     readonly nationalPhoneNumber?: string
     readonly internationalPhoneNumber?: string
@@ -124,6 +135,7 @@ export const toDetails = (place: typeof GooglePlaceResponse.Type): GooglePlaceDe
   location: { lat: place.location.latitude, lng: place.location.longitude },
   category: categoryFromGoogleTypes(place.primaryType, place.types ?? []),
   utcOffsetMinutes: place.utcOffsetMinutes ?? null,
+  photoName: place.photos?.[0]?.name ?? null,
   enrichment: {
     ...(place.nationalPhoneNumber !== undefined
       ? { nationalPhoneNumber: place.nationalPhoneNumber }
@@ -166,6 +178,11 @@ export class GooglePlaces extends Context.Service<
       query: string,
       near: LatLng | null,
     ) => Effect.Effect<ReadonlyArray<TextSearchHit>, GooglePlacesError>
+    /** Download a Places photo (JPEG/PNG/WebP bytes). */
+    readonly photoBytes: (
+      photoName: string,
+      maxWidthPx?: number,
+    ) => Effect.Effect<Uint8Array, GooglePlacesError>
   }
 >()("placard/GooglePlaces") {
   static readonly layer = Layer.effect(
@@ -309,6 +326,35 @@ export class GooglePlaces extends Context.Service<
               ? { lat: place.location.latitude, lng: place.location.longitude }
               : null,
           }))
+        }),
+
+        photoBytes: Effect.fn("GooglePlaces.photoBytes")(function* (photoName, maxWidthPx = 1200) {
+          const key = yield* apiKey
+          const request = HttpClientRequest.get(`${PLACES_BASE_URL}/${photoName}/media`).pipe(
+            HttpClientRequest.setUrlParam("maxWidthPx", String(maxWidthPx)),
+            HttpClientRequest.setUrlParam("skipHttpRedirect", "false"),
+            HttpClientRequest.setHeader("X-Goog-Api-Key", Redacted.value(key)),
+          )
+          const response = yield* client.execute(request).pipe(
+            Effect.timeout("20 seconds"),
+            Effect.mapError(
+              (error) =>
+                new GooglePlacesFailed({ message: `Could not reach Google: ${error.message}` }),
+            ),
+          )
+          if (response.status < 200 || response.status >= 300) {
+            return yield* failureFrom(response)
+          }
+          const buffer = yield* response.arrayBuffer.pipe(
+            Effect.mapError(
+              () => new GooglePlacesFailed({ message: "Google sent a photo Placard can't read." }),
+            ),
+          )
+          const bytes = new Uint8Array(buffer)
+          if (bytes.byteLength === 0) {
+            return yield* new GooglePlacesFailed({ message: "Google returned an empty photo." })
+          }
+          return bytes
         }),
       }
     }),

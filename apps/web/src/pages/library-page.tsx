@@ -244,9 +244,9 @@ export function LibraryPage() {
   if (error) return <ErrorAlert message={error} />
   if (!hits && !searchBlocked) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[0, 1, 2].map((i) => (
-          <Skeleton key={i} className="h-28 rounded-xl" />
+      <div className="crate-grid">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <Skeleton key={i} className="aspect-square rounded-sm" />
         ))}
       </div>
     )
@@ -261,29 +261,45 @@ export function LibraryPage() {
     !hasFilters
   ) {
     return (
-      <section className="flex flex-col items-center gap-3 py-16 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight">Your library is empty</h1>
+      <section className="flex flex-col items-center gap-4 py-16 text-center">
+        <h1 className="font-catalog text-4xl font-semibold tracking-wide uppercase sm:text-5xl">
+          Start your crate
+        </h1>
         <p className="max-w-md text-muted-foreground">
-          Welcome, {me.name}. Places you save will show up here, and only you can see them.
+          Welcome, {me.name}. Import a Takeout export or add places by hand — once the collection is
+          here, you can browse it for inspiration (and modules later).
         </p>
-        <Button asChild className="mt-2">
-          <Link to="/add">
-            <Plus /> Add your first place
-          </Link>
-        </Button>
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+          <Button asChild>
+            <Link to="/import">Import places</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/add">
+              <Plus /> Add a place
+            </Link>
+          </Button>
+        </div>
       </section>
     )
   }
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl font-semibold tracking-tight">Library</h1>
-        <Button asChild>
-          <Link to="/add">
-            <Plus /> Add place
-          </Link>
-        </Button>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="font-catalog text-4xl font-semibold tracking-wide uppercase">Library</h1>
+          <p className="text-sm text-muted-foreground">Your places — browse the crate, open one.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link to="/import">Import</Link>
+          </Button>
+          <Button asChild>
+            <Link to="/add">
+              <Plus /> Add place
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -415,7 +431,7 @@ export function LibraryPage() {
           </div>
         )}
         {filtersOpen && (
-          <div className="flex flex-col gap-2 rounded-xl bg-muted/40 p-3">
+          <div className="filter-sheet flex flex-col gap-2 rounded-md p-3">
             <ToggleGroup
               type="single"
               variant="outline"
@@ -579,9 +595,9 @@ export function LibraryPage() {
       )}
 
       {waitingForGeo ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[0, 1, 2].map((i) => (
-            <Skeleton key={i} className="h-28 rounded-xl" />
+        <div className="crate-grid">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="aspect-square rounded-sm" />
           ))}
         </div>
       ) : waitingForCity ? (
@@ -589,7 +605,7 @@ export function LibraryPage() {
           Pick a city center above to search within {radiusKm} km.
         </p>
       ) : filteredEmpty ? (
-        <div className="flex flex-col items-start gap-3 rounded-xl bg-muted/40 px-4 py-6">
+        <div className="filter-sheet flex flex-col items-start gap-3 rounded-md px-4 py-6">
           <p className="text-sm text-muted-foreground">No places match these filters.</p>
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" onClick={clearFilters}>
@@ -605,7 +621,7 @@ export function LibraryPage() {
       ) : view === "map" ? (
         mapsConfig?.mapsApiKey ? (
           <Suspense
-            fallback={<Skeleton className="h-[min(60vh,520px)] min-h-[280px] rounded-xl" />}
+            fallback={<Skeleton className="h-[min(60vh,520px)] min-h-[280px] rounded-sm" />}
           >
             <ResultsMap apiKey={mapsConfig.mapsApiKey} hits={hits ?? []} center={mapCenter} />
           </Suspense>
@@ -619,9 +635,9 @@ export function LibraryPage() {
           </p>
         )
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="crate-grid list-none p-0">
           {(hits ?? []).map(({ place, distanceMeters }) => (
-            <li key={place.id}>
+            <li key={place.id} className="min-w-0">
               <PlaceCard
                 place={place}
                 distanceMeters={distanceMeters}
@@ -950,6 +966,18 @@ function Filters({
   )
 }
 
+const sleeveTone: Record<PlaceCategory, string> = {
+  restaurant: "oklch(0.72 0.06 55)",
+  cafe: "oklch(0.78 0.05 85)",
+  bar: "oklch(0.55 0.06 30)",
+  park: "oklch(0.72 0.07 145)",
+  museum: "oklch(0.7 0.04 250)",
+  cinema: "oklch(0.58 0.05 320)",
+  hotel: "oklch(0.74 0.04 220)",
+  trail: "oklch(0.68 0.07 130)",
+  other: "oklch(0.7 0.03 70)",
+}
+
 function PlaceCard({
   place,
   distanceMeters,
@@ -964,46 +992,76 @@ function PlaceCard({
   readonly onToggle: () => void
 }) {
   const Icon = categoryIcons[place.category]
+  const coverSrc = place.coverThumbUrl
   return (
-    <div
-      className={`relative flex h-full flex-col gap-3 rounded-xl bg-card p-4 ring-1 transition-shadow ${
-        selected ? "ring-2 ring-foreground" : "ring-foreground/10 hover:ring-foreground/25"
+    <article
+      className={`place-cover relative aspect-square h-full overflow-hidden rounded-sm bg-[var(--crate)] text-[var(--parchment)] ${
+        selected ? "outline outline-2 outline-offset-2 outline-[var(--spine-gold)]" : ""
       }`}
     >
-      <div className="absolute top-3 right-3 z-10">
+      {coverSrc ? (
+        <>
+          <img
+            src={coverSrc}
+            alt=""
+            className="absolute inset-0 size-full object-cover"
+            loading="lazy"
+          />
+          <div
+            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[var(--crate)] via-[color-mix(in_srgb,var(--crate)_45%,transparent)] to-transparent"
+            aria-hidden
+          />
+        </>
+      ) : (
+        <div
+          className="pointer-events-none absolute inset-0 opacity-90"
+          style={{
+            background: `linear-gradient(160deg, ${sleeveTone[place.category]} 0%, color-mix(in srgb, var(--crate) 55%, ${sleeveTone[place.category]}) 55%, var(--crate) 100%)`,
+          }}
+          aria-hidden
+        />
+      )}
+      {place.status && (
+        <span
+          role="img"
+          className={`absolute top-0 left-0 z-[1] h-1.5 w-full ${
+            place.status === "been_there" ? "status-density-been" : "status-density-want"
+          }`}
+          aria-label={statusLabels[place.status]}
+        />
+      )}
+      <div className="cover-check absolute top-2 right-2 z-10">
         <Checkbox
           checked={selected}
           onCheckedChange={onToggle}
           aria-label={`Select ${place.name}`}
+          className="border-[var(--parchment)] data-[state=checked]:bg-[var(--action)] data-[state=checked]:text-[var(--action-fg)]"
         />
       </div>
       <Link
         to={`/places/${place.id}`}
-        className="flex flex-col gap-3 pr-8 focus-visible:outline-none"
+        className="cover-face relative z-[1] flex h-full flex-col justify-between gap-2 p-3 pr-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spine-gold)]"
       >
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Icon className="size-4" aria-hidden />
-          {categoryLabels[place.category]}
-          {place.status && (
-            <>
-              <span aria-hidden>·</span>
-              {statusLabels[place.status]}
-            </>
-          )}
+        <div className="cover-meta flex items-center gap-1.5 text-[0.65rem] font-medium tracking-wide text-[color-mix(in_srgb,var(--parchment)_78%,transparent)] uppercase">
+          <Icon className="size-3.5 shrink-0" aria-hidden />
+          <span className="truncate">{categoryLabels[place.category]}</span>
           {distanceMeters != null && (
-            <>
-              <span aria-hidden>·</span>
-              <span className="tabular-nums">{formatDistance(distanceMeters, distanceUnit)}</span>
-            </>
+            <span className="ml-auto tabular-nums">
+              {formatDistance(distanceMeters, distanceUnit)}
+            </span>
           )}
         </div>
-        <div className="flex flex-col gap-1">
-          <h2 className="font-medium leading-snug">{place.name}</h2>
+        <div className="flex min-h-0 flex-1 flex-col justify-end gap-1">
+          <h2 className="cover-title font-catalog text-xl font-semibold leading-tight tracking-wide uppercase">
+            {place.name}
+          </h2>
           {place.address && (
-            <p className="line-clamp-2 text-sm text-muted-foreground">{place.address}</p>
+            <p className="cover-address line-clamp-2 text-xs text-[color-mix(in_srgb,var(--parchment)_70%,transparent)]">
+              {place.address}
+            </p>
           )}
           {(place.facts.cuisine || place.facts.rating != null) && (
-            <p className="text-xs text-muted-foreground">
+            <p className="cover-meta text-xs text-[color-mix(in_srgb,var(--spine-gold)_90%,white)]">
               {[
                 place.facts.cuisine,
                 place.facts.rating != null ? `${place.facts.rating.toFixed(1)}★` : null,
@@ -1013,16 +1071,7 @@ function PlaceCard({
             </p>
           )}
         </div>
-        {place.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {place.tags.map((t) => (
-              <Badge key={t.id} variant="secondary">
-                {t.name}
-              </Badge>
-            ))}
-          </div>
-        )}
       </Link>
-    </div>
+    </article>
   )
 }

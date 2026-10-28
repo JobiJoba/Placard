@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "name": "Placard",
+  "world": "Vinyl Crate Library",
+  "seed": "57434aa7",
+  "mode": "operate",
+  "buildPath": "code",
+  "colors": {
+    "crate": "#1a1612",
+    "crateRaised": "#2c2620",
+    "crateEdge": "#3d342c",
+    "parchment": "#f2ebe0",
+    "parchmentInk": "#1a1612",
+    "spineGold": "#c4a574",
+    "action": "#8b3a2a",
+    "actionFg": "#f2ebe0"
+  },
+  "typography": {
+    "catalog": "Barlow Condensed",
+    "body": "system-ui"
+  },
+  "signature": "dense-square-cover-grid",
+  "surfaces": ["apps/web/src/pages/library-page.tsx", "apps/web/src/components/app-shell.tsx"]
+}

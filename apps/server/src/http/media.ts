@@ -25,6 +25,7 @@ export const MediaApiLive = HttpApiBuilder.group(
         withMe((me) => media.updateCaption(me.id, params.id, payload.caption)),
       )
       .handle("remove", ({ params }) => withMe((me) => media.remove(me.id, params.id)))
+      .handle("setCover", ({ params }) => withMe((me) => media.setCover(me.id, params.id)))
   }),
 )
 

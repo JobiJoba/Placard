@@ -4,10 +4,15 @@ export const mediaKinds = ["dish", "photo", "attachment"] as const
 export const MediaKind = Schema.Literals(mediaKinds)
 export type MediaKind = typeof MediaKind.Type
 
+export const mediaOrigins = ["user", "google"] as const
+export const MediaOrigin = Schema.Literals(mediaOrigins)
+export type MediaOrigin = typeof MediaOrigin.Type
+
 export const MediaItem = Schema.Struct({
   id: Schema.String,
   placeId: Schema.String,
   kind: MediaKind,
+  origin: MediaOrigin,
   mimeType: Schema.String,
   bytes: Schema.Number,
   width: Schema.NullOr(Schema.Number),
@@ -15,6 +20,8 @@ export const MediaItem = Schema.Struct({
   caption: Schema.NullOr(Schema.String),
   takenAt: Schema.NullOr(Schema.DateTimeUtcFromString),
   createdAt: Schema.DateTimeUtcFromString,
+  /** True when this item is the place's library cover. */
+  isCover: Schema.Boolean,
   /** Authenticated URLs (session cookie required). */
   url: Schema.String,
   thumbUrl: Schema.NullOr(Schema.String),

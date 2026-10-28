@@ -39,8 +39,8 @@ const beat = Effect.gen(function* () {
 
 /** Places, enrichment, import, media, and the job queue over the worker's database. */
 const WorkerServices = Import.layer.pipe(
+  Layer.provideMerge(Enrichment.layer.pipe(Layer.provide(Media.layer))),
   Layer.provideMerge(Media.layer),
-  Layer.provideMerge(Enrichment.layer),
   Layer.provideMerge(Lists.layer),
   Layer.provideMerge(GooglePlaces.layer),
   Layer.provideMerge(Places.layer),

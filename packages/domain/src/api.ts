@@ -386,6 +386,11 @@ export class MediaApi extends HttpApiGroup.make("media")
       success: Schema.Void,
       error: MediaNotFound,
     }),
+    HttpApiEndpoint.post("setCover", "/:id/cover", {
+      params: { id: Schema.String },
+      success: MediaItem,
+      error: [MediaNotFound, PlaceNotFound],
+    }),
   )
   .middleware(Authentication)
   .prefix("/api/media") {}

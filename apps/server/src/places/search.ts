@@ -27,10 +27,18 @@ interface SearchRow {
   readonly notes: string | null
   readonly source: PlaceSource
   readonly manual_fields: ReadonlyArray<string>
+  readonly cover_media_id: string | null
   readonly utc_offset_minutes: number | null
   readonly created_at: Date
   readonly distance_meters: number | null
 }
+
+const coverThumbUrl = (coverMediaId: string | null, thumbPath: string | null) =>
+  coverMediaId && thumbPath
+    ? `/api/media/${coverMediaId}/thumb`
+    : coverMediaId
+      ? `/api/media/${coverMediaId}/file`
+      : null
 
 const isEditable = (field: string): field is EditableField =>
   (editableFields as ReadonlyArray<string>).includes(field)
@@ -184,7 +192,7 @@ export class Search extends Context.Service<
               p.id, p.name, p.category,
               st_y(p.location::geometry) as lat, st_x(p.location::geometry) as lng,
               p.address, p.google_place_id, p.status, p.notes, p.source,
-              p.manual_fields, p.utc_offset_minutes, p.created_at,
+              p.manual_fields, p.cover_media_id, p.utc_offset_minutes, p.created_at,
               ${distanceSelect}
             from places p
             where ${sql.and(clauses)}
@@ -192,9 +200,34 @@ export class Search extends Context.Service<
             limit 500`.pipe(Effect.orDie)
 
           const ids = rows.map((row) => row.id)
-          const [tagMap, listMap, factsMap, hoursMap] = yield* Effect.all(
-            [loadTags(ids), loadListIds(ids), loadFactsMap(sql, ids), loadHours(ids)],
-            { concurrency: 4 },
+          const coverIds = [
+            ...new Set(
+              rows.map((row) => row.cover_media_id).filter((id): id is string => id != null),
+            ),
+          ]
+          const loadCoverThumbs =
+            coverIds.length === 0
+              ? Effect.succeed(new Map<string, string | null>())
+              : sql<{ id: string; thumb_path: string | null }>`
+                  select id, thumb_path from media
+                  where ${sql.in("id", coverIds)}`.pipe(
+                  Effect.map((thumbRows) => {
+                    const map = new Map<string, string | null>()
+                    for (const thumb of thumbRows) map.set(thumb.id, thumb.thumb_path)
+                    return map
+                  }),
+                  Effect.orDie,
+                )
+
+          const [tagMap, listMap, factsMap, hoursMap, thumbMap] = yield* Effect.all(
+            [
+              loadTags(ids),
+              loadListIds(ids),
+              loadFactsMap(sql, ids),
+              loadHours(ids),
+              loadCoverThumbs,
+            ],
+            { concurrency: 5 },
           )
 
           const hits: SearchHit[] = []
@@ -220,6 +253,11 @@ export class Search extends Context.Service<
               tags: tagMap.get(row.id) ?? [],
               listIds: listMap.get(row.id) ?? [],
               facts,
+              coverMediaId: row.cover_media_id,
+              coverThumbUrl: coverThumbUrl(
+                row.cover_media_id,
+                row.cover_media_id ? (thumbMap.get(row.cover_media_id) ?? null) : null,
+              ),
               createdAt: DateTime.fromDateUnsafe(row.created_at),
             }
             hits.push({

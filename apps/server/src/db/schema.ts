@@ -1,6 +1,8 @@
 import {
   type MediaKind,
+  type MediaOrigin,
   mediaKinds,
+  mediaOrigins,
   placeCategories,
   placeSources,
   placeStatuses,
@@ -161,6 +163,8 @@ export const places = pgTable(
     source: text("source").notNull(),
     importRunId: text("import_run_id"),
     manualFields: text("manual_fields").array().notNull().default(sql`'{}'::text[]`),
+    /** Active library cover; FK added in SQL (media ↔ places cycle). */
+    coverMediaId: text("cover_media_id"),
     lastEnrichedAt: timestamp("last_enriched_at", { withTimezone: true }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     ...timestamps,
@@ -176,6 +180,7 @@ export const places = pgTable(
     index("places_owner_deleted_idx").on(table.ownerId, table.deletedAt),
     index("places_deleted_at_idx").on(table.deletedAt).where(sql`${table.deletedAt} is not null`),
     index("places_import_run_id_idx").on(table.importRunId),
+    index("places_cover_media_id_idx").on(table.coverMediaId),
     uniqueIndex("places_owner_google_place_id_idx")
       .on(table.ownerId, table.googlePlaceId)
       .where(sql`${table.googlePlaceId} is not null and ${table.deletedAt} is null`),
@@ -389,7 +394,7 @@ export const importSkips = pgTable(
   (table) => [primaryKey({ columns: [table.ownerId, table.dedupeKey] })],
 )
 
-/** User-uploaded dish photos, general photos, and attachments on a place. */
+/** Dish photos, general photos, attachments; Google covers use origin = google. */
 export const media = pgTable(
   "media",
   {
@@ -401,6 +406,7 @@ export const media = pgTable(
       .notNull()
       .references(() => places.id, { onDelete: "cascade" }),
     kind: text("kind").$type<MediaKind>().notNull(),
+    origin: text("origin").$type<MediaOrigin>().notNull().default("user"),
     path: text("path").notNull(),
     thumbPath: text("thumb_path"),
     mimeType: text("mime_type").notNull(),
@@ -413,7 +419,11 @@ export const media = pgTable(
   },
   (table) => [
     check("media_kind_check", sql`${table.kind} in ${inList(mediaKinds)}`),
+    check("media_origin_check", sql`${table.origin} in ${inList(mediaOrigins)}`),
     index("media_place_id_idx").on(table.placeId),
     index("media_owner_place_idx").on(table.ownerId, table.placeId),
+    uniqueIndex("media_place_google_origin_idx")
+      .on(table.placeId)
+      .where(sql`${table.origin} = 'google'`),
   ],
 )

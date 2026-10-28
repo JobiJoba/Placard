@@ -25,14 +25,16 @@ const more = [
 
 const navLink = ({ isActive }: { isActive: boolean }) =>
   cn(
-    "rounded-md px-2.5 py-1.5 text-sm transition-colors hover:text-foreground",
-    isActive ? "bg-muted text-foreground" : "text-muted-foreground",
+    "rounded-sm px-2.5 py-1.5 text-sm transition-colors",
+    isActive
+      ? "bg-[color-mix(in_srgb,var(--spine-gold)_22%,transparent)] text-[var(--parchment)]"
+      : "text-[color-mix(in_srgb,var(--parchment)_72%,transparent)] hover:text-[var(--parchment)]",
   )
 
 const bottomLink = ({ isActive }: { isActive: boolean }) =>
   cn(
-    "flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors",
-    isActive ? "text-foreground" : "text-muted-foreground",
+    "flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors",
+    isActive ? "text-[var(--spine-gold)]" : "text-[color-mix(in_srgb,var(--parchment)_65%,transparent)]",
   )
 
 export function AppShell() {
@@ -40,72 +42,84 @@ export function AppShell() {
   const { signOut } = useSession()
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-4xl flex-col px-4 sm:px-6">
-      <header className="flex items-center justify-between gap-3 py-4 sm:py-6">
-        <div className="flex min-w-0 items-center gap-4 sm:gap-6">
-          <Link to="/" className="shrink-0 text-2xl font-semibold tracking-tight">
-            Placard
-          </Link>
-          <nav className="hidden gap-1 md:flex" aria-label="Main">
-            {primary.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={"end" in item ? item.end : false}
-                className={navLink}
-              >
-                {item.label}
-              </NavLink>
-            ))}
-            {more.map((item) => (
-              <NavLink key={item.to} to={item.to} className={navLink}>
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="hidden text-sm text-muted-foreground lg:inline">{me.name}</span>
-          <Button
-            variant="outline"
-            size="sm"
-            className="hidden sm:inline-flex"
-            onClick={() => void signOut()}
-          >
-            Sign out
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" className="md:hidden" aria-label="Menu">
-                <Menu aria-hidden />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-48">
+    <div className="flex min-h-screen flex-col bg-[var(--parchment)]">
+      <header className="sticky top-0 z-40 border-b border-[var(--crate-edge)] bg-[var(--crate)] text-[var(--parchment)]">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <div className="flex min-w-0 items-center gap-4 sm:gap-6">
+            <Link
+              to="/"
+              className="font-catalog shrink-0 text-2xl font-semibold uppercase tracking-[0.04em] text-[var(--parchment)]"
+            >
+              Placard
+            </Link>
+            <nav className="hidden gap-1 md:flex" aria-label="Main">
               {primary.map((item) => (
-                <DropdownMenuItem key={item.to} asChild>
-                  <Link to={item.to}>{item.label}</Link>
-                </DropdownMenuItem>
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={"end" in item ? item.end : false}
+                  className={navLink}
+                >
+                  {item.label}
+                </NavLink>
               ))}
-              <DropdownMenuSeparator />
               {more.map((item) => (
-                <DropdownMenuItem key={item.to} asChild>
-                  <Link to={item.to}>{item.label}</Link>
-                </DropdownMenuItem>
+                <NavLink key={item.to} to={item.to} className={navLink}>
+                  {item.label}
+                </NavLink>
               ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => void signOut()}>Sign out</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </nav>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="hidden text-sm text-[color-mix(in_srgb,var(--parchment)_70%,transparent)] lg:inline">
+              {me.name}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="hidden border-[var(--crate-edge)] bg-transparent text-[var(--parchment)] hover:bg-[var(--crate-raised)] hover:text-[var(--parchment)] sm:inline-flex"
+              onClick={() => void signOut()}
+            >
+              Sign out
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="border-[var(--crate-edge)] bg-transparent text-[var(--parchment)] hover:bg-[var(--crate-raised)] md:hidden"
+                  aria-label="Menu"
+                >
+                  <Menu aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-48">
+                {primary.map((item) => (
+                  <DropdownMenuItem key={item.to} asChild>
+                    <Link to={item.to}>{item.label}</Link>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                {more.map((item) => (
+                  <DropdownMenuItem key={item.to} asChild>
+                    <Link to={item.to}>{item.label}</Link>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => void signOut()}>Sign out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </header>
-      <main className="flex-1 pb-24 md:pb-16">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8 md:pb-16 pb-24">
         <Outlet />
       </main>
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--crate-edge)] bg-[var(--crate)]/95 backdrop-blur md:hidden"
         aria-label="Primary"
       >
-        <div className="mx-auto flex max-w-4xl">
+        <div className="mx-auto flex max-w-6xl">
           <NavLink to="/" end className={bottomLink}>
             Library
           </NavLink>

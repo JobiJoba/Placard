@@ -12,6 +12,7 @@ import { v7 as uuidv7 } from "uuid"
 import { factsFromGoogle } from "../google/enrichment-map.ts"
 import type { GooglePlaceDetails } from "../google/places.ts"
 import { GooglePlaces } from "../google/places.ts"
+import { Media } from "../media/media.ts"
 import { InstanceSettings } from "../settings/instance-settings.ts"
 import { applyFetched } from "./overrides.ts"
 import { Places } from "./places.ts"
@@ -61,6 +62,7 @@ export class Enrichment extends Context.Service<
       const sql = yield* SqlClient.SqlClient
       const google = yield* GooglePlaces
       const places = yield* Places
+      const media = yield* Media
       const settings = yield* InstanceSettings
 
       const requireGoogleKey = settings.googleApiKey.pipe(
@@ -142,6 +144,15 @@ export class Enrichment extends Context.Service<
             updated_at = now()
           where id = ${placeId} and owner_id = ${ownerId} and deleted_at is null`.pipe(Effect.orDie)
           yield* writeGoogleFacts(placeId, details)
+
+          if (details.photoName) {
+            yield* google.photoBytes(details.photoName).pipe(
+              Effect.flatMap((bytes) => media.syncGoogleCover(ownerId, placeId, bytes)),
+              Effect.catchTag("GooglePlacesFailed", () => Effect.void),
+              Effect.catchTag("GoogleKeyMissing", () => Effect.void),
+              Effect.catchTag("MediaRejected", () => Effect.void),
+            )
+          }
         },
       )
 

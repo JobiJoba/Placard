@@ -71,7 +71,10 @@ export function PlaceMediaSection({
           },
         }),
       )
-      setData((prev) => [item, ...(prev ?? [])])
+      setData((prev) => [
+        item,
+        ...(prev ?? []).map((m) => (item.isCover ? { ...m, isCover: false } : m)),
+      ])
       setCaption("")
       if (inputRef.current) inputRef.current.value = ""
     } catch (cause) {
@@ -83,7 +86,7 @@ export function PlaceMediaSection({
 
   const remove = (id: string) => {
     void api((c) => c.media.remove({ params: { id } })).then(
-      () => setData((prev) => (prev ?? []).filter((m) => m.id !== id)),
+      () => reload(),
       (cause: unknown) => setUploadError(errorMessage(cause)),
     )
   }
@@ -91,6 +94,19 @@ export function PlaceMediaSection({
   const saveCaption = (id: string, next: string | null) => {
     void api((c) => c.media.update({ params: { id }, payload: { caption: next } })).then(
       (item) => setData((prev) => (prev ?? []).map((m) => (m.id === id ? item : m))),
+      (cause: unknown) => setUploadError(errorMessage(cause)),
+    )
+  }
+
+  const setCover = (id: string) => {
+    void api((c) => c.media.setCover({ params: { id } })).then(
+      (item) =>
+        setData((prev) =>
+          (prev ?? []).map((m) => ({
+            ...m,
+            isCover: m.id === item.id,
+          })),
+        ),
       (cause: unknown) => setUploadError(errorMessage(cause)),
     )
   }
@@ -168,6 +184,7 @@ export function PlaceMediaSection({
               item={item}
               onRemove={() => remove(item.id)}
               onCaption={(value) => saveCaption(item.id, value)}
+              onSetCover={() => setCover(item.id)}
             />
           ))}
         </ul>
@@ -186,10 +203,12 @@ function MediaTile({
   item,
   onRemove,
   onCaption,
+  onSetCover,
 }: {
   readonly item: MediaItem
   readonly onRemove: () => void
   readonly onCaption: (caption: string | null) => void
+  readonly onSetCover: () => void
 }) {
   const [editing, setEditing] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState(false)
@@ -205,8 +224,10 @@ function MediaTile({
           className="size-full object-cover"
           loading="lazy"
         />
-        <div className="absolute top-2 left-2">
+        <div className="absolute top-2 left-2 flex flex-wrap gap-1">
           <Badge variant="secondary">{kindLabel[item.kind]}</Badge>
+          {item.origin === "google" && <Badge variant="outline">Google</Badge>}
+          {item.isCover && <Badge>Cover</Badge>}
         </div>
         {confirmRemove ? (
           <div className="absolute inset-x-2 bottom-2 flex gap-1">
@@ -230,16 +251,28 @@ function MediaTile({
             </Button>
           </div>
         ) : (
-          <Button
-            type="button"
-            size="icon-sm"
-            variant="secondary"
-            className="absolute top-2 right-2"
-            aria-label="Remove photo"
-            onClick={() => setConfirmRemove(true)}
-          >
-            <Trash2 aria-hidden />
-          </Button>
+          <div className="absolute inset-x-2 bottom-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+            {!item.isCover && (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                className="flex-1"
+                onClick={onSetCover}
+              >
+                Set cover
+              </Button>
+            )}
+            <Button
+              type="button"
+              size="icon-sm"
+              variant="secondary"
+              aria-label="Remove photo"
+              onClick={() => setConfirmRemove(true)}
+            >
+              <Trash2 aria-hidden />
+            </Button>
+          </div>
         )}
       </div>
       {editing ? (

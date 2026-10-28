@@ -53,6 +53,10 @@ export const Place = Schema.Struct({
   tags: Schema.Array(TagRef),
   listIds: Schema.Array(Schema.String),
   facts: PlaceFacts,
+  /** Chosen cover media id (user or Google); null → sleeve fallback in UI. */
+  coverMediaId: Schema.NullOr(Schema.String),
+  /** Session-auth thumb URL for the cover, when one exists. */
+  coverThumbUrl: Schema.NullOr(Schema.String),
   createdAt: Schema.DateTimeUtcFromString,
 })
 export type Place = typeof Place.Type

@@ -34,6 +34,8 @@ const saved: Place = {
   tags: [],
   listIds: [],
   facts: emptyFacts,
+  coverMediaId: null,
+  coverThumbUrl: null,
   createdAt: DateTime.makeUnsafe(0),
 }
 
@@ -76,6 +78,7 @@ const RecordingGoogle = Layer.succeed(
   GooglePlaces.of({
     autocomplete: () => Effect.die("not under test"),
     searchText: () => Effect.succeed([]),
+    photoBytes: () => Effect.die("not under test"),
     details: (googlePlaceId) =>
       Effect.sync(() => {
         googleCalls.push(googlePlaceId)
@@ -86,6 +89,7 @@ const RecordingGoogle = Layer.succeed(
           location: { lat: 48.2, lng: 16.36 },
           category: "cafe" as const,
           utcOffsetMinutes: null,
+          photoName: null,
           enrichment: {},
         }
       }),
