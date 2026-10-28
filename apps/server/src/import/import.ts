@@ -390,8 +390,8 @@ export class Import extends Context.Service<
 
           const nameOverlap =
             Boolean(name) &&
-            (hit.name.toLowerCase().includes(name!.toLowerCase()) ||
-              name!.toLowerCase().includes(hit.name.toLowerCase().slice(0, 8)))
+            (hit.name.toLowerCase().includes(name?.toLowerCase()) ||
+              name?.toLowerCase().includes(hit.name.toLowerCase().slice(0, 8)))
           if (!nameOverlap && !entry.feature_id && !entry.cid) {
             return { status: "needs_review" as const, details: null }
           }
@@ -651,7 +651,7 @@ export class Import extends Context.Service<
             where id = ${entryId} and run_id = ${runId} and owner_id = ${ownerId}`.pipe(
             Effect.orDie,
           )
-          if (!entry || entry.match_status !== "needs_review") {
+          if (entry?.match_status !== "needs_review") {
             return yield* new ImportInvalidState({
               message: "That entry is not waiting for review.",
             })
@@ -692,7 +692,7 @@ export class Import extends Context.Service<
             where id = ${entryId} and run_id = ${runId} and owner_id = ${ownerId}`.pipe(
             Effect.orDie,
           )
-          if (!entry || entry.match_status !== "needs_review" || !entry.place_id) {
+          if (entry?.match_status !== "needs_review" || !entry.place_id) {
             return yield* new ImportInvalidState({
               message: "Only a needs-review entry that already has a place can be accepted as-is.",
             })
@@ -722,7 +722,7 @@ export class Import extends Context.Service<
             where id = ${entryId} and run_id = ${runId} and owner_id = ${ownerId}`.pipe(
               Effect.orDie,
             )
-            if (!entry || entry.match_status !== "needs_review") {
+            if (entry?.match_status !== "needs_review") {
               return yield* new ImportInvalidState({
                 message: "That entry is not waiting for review.",
               })

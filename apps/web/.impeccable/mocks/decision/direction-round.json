@@ -30,13 +30,13 @@
         "cols": 12,
         "rows": 10,
         "regions": [
-          {"label": "nav + Placard", "x": 0, "y": 0, "w": 12, "h": 1, "accent": true},
-          {"label": "city + filters", "x": 0, "y": 1, "w": 12, "h": 1},
-          {"label": "spine", "x": 0, "y": 2, "w": 1, "h": 7},
-          {"label": "cover grid", "x": 1, "y": 2, "w": 7, "h": 7},
-          {"label": "expanded cover", "x": 3, "y": 3, "w": 3, "h": 4, "accent": true},
-          {"label": "map panel", "x": 8, "y": 2, "w": 4, "h": 7},
-          {"label": "bottom nav mobile", "x": 0, "y": 9, "w": 12, "h": 1}
+          { "label": "nav + Placard", "x": 0, "y": 0, "w": 12, "h": 1, "accent": true },
+          { "label": "city + filters", "x": 0, "y": 1, "w": 12, "h": 1 },
+          { "label": "spine", "x": 0, "y": 2, "w": 1, "h": 7 },
+          { "label": "cover grid", "x": 1, "y": 2, "w": 7, "h": 7 },
+          { "label": "expanded cover", "x": 3, "y": 3, "w": 3, "h": 4, "accent": true },
+          { "label": "map panel", "x": 8, "y": 2, "w": 4, "h": 7 },
+          { "label": "bottom nav mobile", "x": 0, "y": 9, "w": 12, "h": 1 }
         ]
       }
     },
@@ -54,12 +54,12 @@
         "cols": 12,
         "rows": 10,
         "regions": [
-          {"label": "nav", "x": 0, "y": 0, "w": 12, "h": 1, "accent": true},
-          {"label": "city plate title", "x": 0, "y": 1, "w": 12, "h": 1},
-          {"label": "legend filters", "x": 0, "y": 2, "w": 3, "h": 7},
-          {"label": "place list", "x": 3, "y": 2, "w": 4, "h": 7},
-          {"label": "map spread", "x": 7, "y": 2, "w": 5, "h": 7, "accent": true},
-          {"label": "status", "x": 0, "y": 9, "w": 12, "h": 1}
+          { "label": "nav", "x": 0, "y": 0, "w": 12, "h": 1, "accent": true },
+          { "label": "city plate title", "x": 0, "y": 1, "w": 12, "h": 1 },
+          { "label": "legend filters", "x": 0, "y": 2, "w": 3, "h": 7 },
+          { "label": "place list", "x": 3, "y": 2, "w": 4, "h": 7 },
+          { "label": "map spread", "x": 7, "y": 2, "w": 5, "h": 7, "accent": true },
+          { "label": "status", "x": 0, "y": 9, "w": 12, "h": 1 }
         ]
       }
     },
@@ -80,11 +80,11 @@
         "cols": 12,
         "rows": 10,
         "regions": [
-          {"label": "nav", "x": 0, "y": 0, "w": 12, "h": 1},
-          {"label": "city lobe", "x": 0, "y": 1, "w": 8, "h": 8, "accent": true},
-          {"label": "filter capsules", "x": 8, "y": 1, "w": 4, "h": 2},
-          {"label": "place list coast", "x": 8, "y": 3, "w": 4, "h": 6},
-          {"label": "bottom nav", "x": 0, "y": 9, "w": 12, "h": 1}
+          { "label": "nav", "x": 0, "y": 0, "w": 12, "h": 1 },
+          { "label": "city lobe", "x": 0, "y": 1, "w": 8, "h": 8, "accent": true },
+          { "label": "filter capsules", "x": 8, "y": 1, "w": 4, "h": 2 },
+          { "label": "place list coast", "x": 8, "y": 3, "w": 4, "h": 6 },
+          { "label": "bottom nav", "x": 0, "y": 9, "w": 12, "h": 1 }
         ]
       }
     },
@@ -105,12 +105,12 @@
         "cols": 12,
         "rows": 10,
         "regions": [
-          {"label": "nav", "x": 0, "y": 0, "w": 12, "h": 1},
-          {"label": "Want rail", "x": 0, "y": 1, "w": 12, "h": 3},
-          {"label": "focused tile", "x": 2, "y": 1, "w": 4, "h": 3, "accent": true},
-          {"label": "Been rail", "x": 0, "y": 4, "w": 12, "h": 2},
-          {"label": "Restaurants rail", "x": 0, "y": 6, "w": 12, "h": 2},
-          {"label": "bottom nav", "x": 0, "y": 9, "w": 12, "h": 1}
+          { "label": "nav", "x": 0, "y": 0, "w": 12, "h": 1 },
+          { "label": "Want rail", "x": 0, "y": 1, "w": 12, "h": 3 },
+          { "label": "focused tile", "x": 2, "y": 1, "w": 4, "h": 3, "accent": true },
+          { "label": "Been rail", "x": 0, "y": 4, "w": 12, "h": 2 },
+          { "label": "Restaurants rail", "x": 0, "y": 6, "w": 12, "h": 2 },
+          { "label": "bottom nav", "x": 0, "y": 9, "w": 12, "h": 1 }
         ]
       }
     },
@@ -131,10 +131,10 @@
         "cols": 12,
         "rows": 10,
         "regions": [
-          {"label": "top bar", "x": 0, "y": 0, "w": 12, "h": 1},
-          {"label": "filters", "x": 0, "y": 1, "w": 12, "h": 1, "accent": true},
-          {"label": "card stack", "x": 1, "y": 2, "w": 10, "h": 6},
-          {"label": "bottom nav", "x": 0, "y": 9, "w": 12, "h": 1, "accent": true}
+          { "label": "top bar", "x": 0, "y": 0, "w": 12, "h": 1 },
+          { "label": "filters", "x": 0, "y": 1, "w": 12, "h": 1, "accent": true },
+          { "label": "card stack", "x": 1, "y": 2, "w": 10, "h": 6 },
+          { "label": "bottom nav", "x": 0, "y": 9, "w": 12, "h": 1, "accent": true }
         ]
       }
     },
@@ -194,11 +194,11 @@
       "cols": 12,
       "rows": 10,
       "regions": [
-        {"label": "top bar", "x": 0, "y": 0, "w": 12, "h": 1, "accent": true},
-        {"label": "filters", "x": 0, "y": 1, "w": 12, "h": 1},
-        {"label": "card grid", "x": 0, "y": 2, "w": 8, "h": 7},
-        {"label": "map", "x": 8, "y": 2, "w": 4, "h": 7},
-        {"label": "footer", "x": 0, "y": 9, "w": 12, "h": 1}
+        { "label": "top bar", "x": 0, "y": 0, "w": 12, "h": 1, "accent": true },
+        { "label": "filters", "x": 0, "y": 1, "w": 12, "h": 1 },
+        { "label": "card grid", "x": 0, "y": 2, "w": 8, "h": 7 },
+        { "label": "map", "x": 8, "y": 2, "w": 4, "h": 7 },
+        { "label": "footer", "x": 0, "y": 9, "w": 12, "h": 1 }
       ]
     }
   },

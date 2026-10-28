@@ -15,7 +15,7 @@ const requireDecide = (ownerId: string) =>
         on p.module_id = i.module_id and p.user_id = ${ownerId}
       where i.module_id = ${RESTAURANTS_DECIDE_ID}`.pipe(Effect.orDie)
     const row = rows[0]
-    const ok = row != null && row.enabled && (row.visible ?? true)
+    const ok = row?.enabled && (row.visible ?? true)
     if (!ok) {
       return yield* new ModuleDisabled({
         message: "Decide is not enabled for you on this instance.",

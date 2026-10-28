@@ -166,6 +166,6 @@ export const extractModuleZip = (
   })
 
 export const removeModuleDir = (destRoot: string, moduleId: string): Effect.Effect<void> =>
-  Effect.promise(() => rm(join(destRoot, moduleId), { recursive: true, force: true }).catch(() => undefined)).pipe(
-    Effect.asVoid,
-  )
+  Effect.promise(() =>
+    rm(join(destRoot, moduleId), { recursive: true, force: true }).catch(() => undefined),
+  ).pipe(Effect.asVoid)

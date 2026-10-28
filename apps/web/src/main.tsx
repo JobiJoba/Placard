@@ -1,7 +1,7 @@
 import * as React from "react"
 import { StrictMode } from "react"
-import { createRoot } from "react-dom/client"
 import * as jsxRuntime from "react/jsx-runtime"
+import { createRoot } from "react-dom/client"
 import { Link } from "react-router"
 import { App } from "./App.tsx"
 import "./index.css"

@@ -124,7 +124,7 @@ export const ModuleFileRoutesLive = HttpRouter.use(
           try: () => stat(asset.absolutePath),
           catch: () => null,
         })
-        if (!fileStat || !fileStat.isFile()) {
+        if (!fileStat?.isFile()) {
           return HttpServerResponse.empty({ status: 404 })
         }
 
@@ -169,7 +169,7 @@ export const ModuleFileRoutesLive = HttpRouter.use(
         const response = yield* Effect.tryPromise({
           try: () =>
             Promise.resolve(
-              plugin.createHttpApp!(webRequest, {
+              plugin.createHttpApp?.(webRequest, {
                 moduleId: id,
                 pathSuffix: suffix,
                 rootDir: plugin.rootDir || join(modulesDir, id),

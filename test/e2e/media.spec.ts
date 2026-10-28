@@ -5,9 +5,9 @@ import { signInAsAdmin } from "./support.ts"
 test.skip(Boolean(process.env.PLAYWRIGHT_BASE_URL), "needs the local stack")
 test.describe.configure({ mode: "serial" })
 
-/** 2×2 PNG */
+/** 1×1 PNG that sharp/libvips can process (tiny truncated fixtures fail on resize). */
 const PNG = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEklEQVR42mNk+M9Qz0AEYBxVSF+FABJADveWkH+aAAAAAElFTkSuQmCC",
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC",
   "base64",
 )
 

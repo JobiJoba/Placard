@@ -371,63 +371,57 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
           )}
         </div>
         <div className="flex flex-col items-end gap-2">
-          {run.status === "triage" && (
-            <>
-              {confirmCommit ? (
-                <div className="flex max-w-sm flex-col items-end gap-2 text-right">
-                  <p className="text-sm text-muted-foreground">
-                    Commit {run.counts.kept} kept places (~{run.expectedApiCalls} Google API calls)?
-                  </p>
-                  <div className="flex gap-2">
-                    <Button disabled={busy} onClick={() => void commit()}>
-                      {busy ? "Committing…" : "Confirm commit"}
-                    </Button>
-                    <Button variant="ghost" disabled={busy} onClick={() => setConfirmCommit(false)}>
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-end gap-1">
-                  <Button
-                    disabled={busy || run.counts.pending > 0 || run.counts.kept === 0}
-                    onClick={() => setConfirmCommit(true)}
-                  >
-                    Commit kept
+          {run.status === "triage" &&
+            (confirmCommit ? (
+              <div className="flex max-w-sm flex-col items-end gap-2 text-right">
+                <p className="text-sm text-muted-foreground">
+                  Commit {run.counts.kept} kept places (~{run.expectedApiCalls} Google API calls)?
+                </p>
+                <div className="flex gap-2">
+                  <Button disabled={busy} onClick={() => void commit()}>
+                    {busy ? "Committing…" : "Confirm commit"}
                   </Button>
-                  {run.counts.pending > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      Resolve {run.counts.pending} pending first (filter: Pending only).
-                    </p>
-                  )}
+                  <Button variant="ghost" disabled={busy} onClick={() => setConfirmCommit(false)}>
+                    Cancel
+                  </Button>
                 </div>
-              )}
-            </>
-          )}
-          {run.status === "done" && (
-            <>
-              {confirmUndo ? (
-                <div className="flex max-w-sm flex-col items-end gap-2 text-right">
-                  <p className="text-sm text-muted-foreground">
-                    Undo removes places from this import, including ones you've edited since. This
-                    cannot be undone.
-                  </p>
-                  <div className="flex gap-2">
-                    <Button variant="destructive" disabled={busy} onClick={() => void undo(true)}>
-                      {busy ? "Undoing…" : "Confirm undo"}
-                    </Button>
-                    <Button variant="ghost" disabled={busy} onClick={() => setConfirmUndo(false)}>
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <Button variant="destructive" disabled={busy} onClick={() => setConfirmUndo(true)}>
-                  Undo import
+              </div>
+            ) : (
+              <div className="flex flex-col items-end gap-1">
+                <Button
+                  disabled={busy || run.counts.pending > 0 || run.counts.kept === 0}
+                  onClick={() => setConfirmCommit(true)}
+                >
+                  Commit kept
                 </Button>
-              )}
-            </>
-          )}
+                {run.counts.pending > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Resolve {run.counts.pending} pending first (filter: Pending only).
+                  </p>
+                )}
+              </div>
+            ))}
+          {run.status === "done" &&
+            (confirmUndo ? (
+              <div className="flex max-w-sm flex-col items-end gap-2 text-right">
+                <p className="text-sm text-muted-foreground">
+                  Undo removes places from this import, including ones you've edited since. This
+                  cannot be undone.
+                </p>
+                <div className="flex gap-2">
+                  <Button variant="destructive" disabled={busy} onClick={() => void undo(true)}>
+                    {busy ? "Undoing…" : "Confirm undo"}
+                  </Button>
+                  <Button variant="ghost" disabled={busy} onClick={() => setConfirmUndo(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button variant="destructive" disabled={busy} onClick={() => setConfirmUndo(true)}>
+                Undo import
+              </Button>
+            ))}
         </div>
       </div>
 

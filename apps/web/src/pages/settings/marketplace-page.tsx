@@ -22,7 +22,9 @@ type MarketplaceCardModel = {
   readonly permissions: ReadonlyArray<string>
 }
 
-const sourceBadge = (source: ModuleSource): { label: string; variant: "default" | "secondary" | "outline" } => {
+const sourceBadge = (
+  source: ModuleSource,
+): { label: string; variant: "default" | "secondary" | "outline" } => {
   if (source === "bundled") return { label: "Preinstalled", variant: "default" }
   if (source === "upload") return { label: "Uploaded", variant: "secondary" }
   if (source === "folder") return { label: "Folder", variant: "outline" }
@@ -97,9 +99,7 @@ export function SettingsMarketplacePage() {
         let binary = ""
         for (const byte of bytes) binary += String.fromCharCode(byte)
         const contentBase64 = btoa(binary)
-        return api((c) =>
-          c.modules.upload({ payload: { filename: file.name, contentBase64 } }),
-        )
+        return api((c) => c.modules.upload({ payload: { filename: file.name, contentBase64 } }))
       })
       .then(() => {
         setUploading(false)
@@ -240,12 +240,7 @@ function ModuleCard({
   readonly onSetEnabled: (enabled: boolean) => void
 }) {
   const badge = sourceBadge(mod.source)
-  const status =
-    !mod.installed
-      ? "Not installed"
-      : mod.enabled
-        ? "Enabled"
-        : "Disabled"
+  const status = !mod.installed ? "Not installed" : mod.enabled ? "Enabled" : "Disabled"
 
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-md border border-[var(--crate-edge)] bg-card shadow-[0_12px_28px_-24px_rgb(26_22_18_/_55%)]">
@@ -281,7 +276,9 @@ function ModuleCard({
             />
           ) : null}
           <div className="min-w-0 flex-1">
-            <h3 className="font-catalog text-xl font-semibold tracking-wide uppercase">{mod.name}</h3>
+            <h3 className="font-catalog text-xl font-semibold tracking-wide uppercase">
+              {mod.name}
+            </h3>
             <p className="mt-1 text-sm text-muted-foreground">{mod.description}</p>
           </div>
         </div>
@@ -293,7 +290,12 @@ function ModuleCard({
 
         <div className="mt-auto flex flex-wrap gap-2 border-t border-[var(--crate-edge)] pt-3">
           {!mod.installed ? (
-            <Button type="button" size="sm" disabled={busy || mod.source !== "bundled"} onClick={onInstall}>
+            <Button
+              type="button"
+              size="sm"
+              disabled={busy || mod.source !== "bundled"}
+              onClick={onInstall}
+            >
               Install
             </Button>
           ) : (

@@ -106,11 +106,7 @@ const emptyMessage = (request: PickRequest) => {
 const parseBody = async (request: Request): Promise<PickRequest> => {
   const body = (await request.json()) as Record<string, unknown>
   const category = body.category
-  if (
-    category != null &&
-    category !== "" &&
-    !placeCategories.includes(category as PlaceCategory)
-  ) {
+  if (category != null && category !== "" && !placeCategories.includes(category as PlaceCategory)) {
     throw new Error("Invalid category")
   }
   const filter: PickRequest = {

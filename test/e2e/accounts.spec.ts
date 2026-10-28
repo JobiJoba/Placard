@@ -7,7 +7,7 @@ test.describe.configure({ mode: "serial" })
 const member = { name: "Ben Member", email: "ben@example.com", password: "another long password" }
 
 const emptyLibrary = (page: Page) =>
-  expect(page.getByRole("heading", { name: "Your library is empty" })).toBeVisible()
+  expect(page.getByRole("heading", { name: "Start your crate" })).toBeVisible()
 
 test("the first visitor creates the admin account, signs out and back in", async ({ page }) => {
   await page.goto("/")

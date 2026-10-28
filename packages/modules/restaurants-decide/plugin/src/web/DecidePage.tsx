@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react"
+import { type CSSProperties, useCallback, useEffect, useMemo, useState } from "react"
 import { Link } from "react-router"
 
 type Place = {
@@ -61,8 +61,12 @@ export function DecidePage() {
   const [spinError, setSpinError] = useState<string | null>(null)
 
   useEffect(() => {
-    void apiJson<ListRow[]>("/api/lists").then(setLists).catch(() => setLists([]))
-    void apiJson<TagRow[]>("/api/tags").then(setTags).catch(() => setTags([]))
+    void apiJson<ListRow[]>("/api/lists")
+      .then(setLists)
+      .catch(() => setLists([]))
+    void apiJson<TagRow[]>("/api/tags")
+      .then(setTags)
+      .catch(() => setTags([]))
   }, [])
 
   useEffect(() => {
@@ -166,12 +170,28 @@ export function DecidePage() {
   }, [avoidRecent, request, spinning])
 
   return (
-    <div style={{ maxWidth: 512, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}>
+    <div
+      style={{ maxWidth: 512, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}
+    >
       <header style={{ textAlign: "center" }}>
-        <p style={{ fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.55 }}>
+        <p
+          style={{
+            fontSize: 12,
+            letterSpacing: "0.2em",
+            textTransform: "uppercase",
+            opacity: 0.55,
+          }}
+        >
           Tonight
         </p>
-        <h1 style={{ fontSize: 36, margin: "8px 0", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+        <h1
+          style={{
+            fontSize: 36,
+            margin: "8px 0",
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+          }}
+        >
           Decide
         </h1>
         <p style={{ fontSize: 14, opacity: 0.7 }}>
@@ -222,7 +242,11 @@ export function DecidePage() {
         {poolSource === "tag" && (
           <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 14 }}>
             Tag
-            <select value={tagName} onChange={(e) => setTagName(e.target.value)} style={selectStyle}>
+            <select
+              value={tagName}
+              onChange={(e) => setTagName(e.target.value)}
+              style={selectStyle}
+            >
               <option value="">{tags ? "Choose a tag" : "Loading…"}</option>
               {(tags ?? []).map((tag) => (
                 <option key={tag.name} value={tag.name}>
@@ -261,7 +285,9 @@ export function DecidePage() {
                 </option>
               ))}
             </select>
-            {geoLoading && <span style={{ fontSize: 12, opacity: 0.7 }}>Getting your location…</span>}
+            {geoLoading && (
+              <span style={{ fontSize: 12, opacity: 0.7 }}>Getting your location…</span>
+            )}
             {geoError && <span style={{ fontSize: 12, color: "#f87171" }}>{geoError}</span>}
           </label>
         )}
@@ -335,7 +361,9 @@ export function DecidePage() {
         {spinning ? (
           <div style={{ height: 192, display: "grid", placeItems: "center", textAlign: "center" }}>
             <div>
-              <p style={{ fontSize: 28, margin: 0, textTransform: "uppercase" }}>{spinLabel || "…"}</p>
+              <p style={{ fontSize: 28, margin: 0, textTransform: "uppercase" }}>
+                {spinLabel || "…"}
+              </p>
               <p
                 style={{
                   fontSize: 11,
@@ -361,8 +389,12 @@ export function DecidePage() {
               >
                 Tonight
               </p>
-              <h2 style={{ margin: "4px 0", fontSize: 24, textTransform: "uppercase" }}>{result.name}</h2>
-              {result.address && <p style={{ margin: 0, fontSize: 14, opacity: 0.75 }}>{result.address}</p>}
+              <h2 style={{ margin: "4px 0", fontSize: 24, textTransform: "uppercase" }}>
+                {result.name}
+              </h2>
+              {result.address && (
+                <p style={{ margin: 0, fontSize: 14, opacity: 0.75 }}>{result.address}</p>
+              )}
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               <Link to={`/places/${result.id}`} style={linkBtn}>
@@ -382,7 +414,15 @@ export function DecidePage() {
             </div>
           </div>
         ) : previewCount === 0 && request ? (
-          <div style={{ height: 192, display: "grid", placeItems: "center", textAlign: "center", padding: 24 }}>
+          <div
+            style={{
+              height: 192,
+              display: "grid",
+              placeItems: "center",
+              textAlign: "center",
+              padding: 24,
+            }}
+          >
             <div>
               <p style={{ fontSize: 20, textTransform: "uppercase", margin: 0 }}>Nothing open</p>
               <p style={{ fontSize: 14, opacity: 0.7 }}>
@@ -391,7 +431,15 @@ export function DecidePage() {
             </div>
           </div>
         ) : (
-          <div style={{ height: 192, display: "grid", placeItems: "center", textAlign: "center", padding: 24 }}>
+          <div
+            style={{
+              height: 192,
+              display: "grid",
+              placeItems: "center",
+              textAlign: "center",
+              padding: 24,
+            }}
+          >
             <div>
               <p
                 style={{

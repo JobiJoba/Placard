@@ -70,11 +70,7 @@ body {
   background-image:
     radial-gradient(ellipse 80% 50% at 0% 0%, rgb(196 165 116 / 10%), transparent 55%),
     linear-gradient(180deg, #f7f1e7 0%, var(--parchment) 40%, #ebe3d6 100%);
-  font-family:
-    "Segoe UI",
-    system-ui,
-    -apple-system,
-    sans-serif;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
 ::selection {

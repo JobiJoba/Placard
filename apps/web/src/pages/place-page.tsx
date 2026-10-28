@@ -138,17 +138,17 @@ export function PlacePage() {
 
       <div className="flex flex-wrap gap-2">
         <Button asChild>
-          <a href={links[0]!.href} target="_blank" rel="noreferrer">
+          <a href={links[0]?.href} target="_blank" rel="noreferrer">
             Open in Google Maps <ExternalLink aria-hidden />
           </a>
         </Button>
         <Button asChild variant="outline">
-          <a href={links[1]!.href} target="_blank" rel="noreferrer">
+          <a href={links[1]?.href} target="_blank" rel="noreferrer">
             Apple Maps
           </a>
         </Button>
         <Button asChild variant="outline">
-          <a href={links[2]!.href} target="_blank" rel="noreferrer">
+          <a href={links[2]?.href} target="_blank" rel="noreferrer">
             Organic Maps
           </a>
         </Button>

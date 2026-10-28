@@ -70,7 +70,10 @@ export const defaultServerEntry = "./server/index.js"
 export const defaultWebEntry = "./web/index.js"
 
 /** True when plugin sdkVersion major matches the host (missing sdkVersion allowed for bundled). */
-export const sdkMajorCompatible = (pluginSdkVersion: string | undefined, host = HOST_SDK_VERSION) => {
+export const sdkMajorCompatible = (
+  pluginSdkVersion: string | undefined,
+  host = HOST_SDK_VERSION,
+) => {
   if (pluginSdkVersion == null || pluginSdkVersion === "") return true
   const pluginMajor = Number.parseInt(pluginSdkVersion.split(".")[0] ?? "", 10)
   const hostMajor = Number.parseInt(host.split(".")[0] ?? "", 10)

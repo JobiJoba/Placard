@@ -157,13 +157,13 @@ export class Search extends Context.Service<
           if (text) {
             clauses.push(sql`(
               p.name % ${text}
-              or p.name ilike ${"%" + text + "%"}
-              or coalesce(p.notes, '') ilike ${"%" + text + "%"}
+              or p.name ilike ${`%${text}%`}
+              or coalesce(p.notes, '') ilike ${`%${text}%`}
               or exists (
                 select 1 from place_facts pf
                 where pf.place_id = p.id
                   and pf.key in ('cuisine', 'types')
-                  and pf.value::text ilike ${"%" + text + "%"}
+                  and pf.value::text ilike ${`%${text}%`}
               )
             )`)
           }

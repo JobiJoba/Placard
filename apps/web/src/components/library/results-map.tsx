@@ -21,7 +21,7 @@ function FitResults({
       return
     }
     if (hits.length === 1) {
-      map.setCenter(hits[0]!.place.location)
+      map.setCenter(hits[0]?.place.location)
       map.setZoom(14)
       return
     }

@@ -35,7 +35,6 @@ export function createModule() {
     }),
   ).toString("base64")
 
-
 const run = <A>(f: (app: TestApp["Service"]) => Promise<A>) =>
   Effect.gen(function* () {
     const app = yield* TestApp
@@ -160,7 +159,9 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("modules marketpla
       })
       expect(demo.nav[0].path).toBe("/m/demo.upload")
 
-      const asset = await admin.browser.getRaw("/api/modules/demo.upload/assets/web/assets/note.txt")
+      const asset = await admin.browser.getRaw(
+        "/api/modules/demo.upload/assets/web/assets/note.txt",
+      )
       expect(asset.status).toBe(200)
       expect(new TextDecoder().decode(asset.body)).toContain("hello-plugin")
 

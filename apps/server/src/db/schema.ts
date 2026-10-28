@@ -401,7 +401,7 @@ export const importSkips = pgTable(
 export const instanceModules = pgTable("instance_modules", {
   moduleId: text("module_id").primaryKey(),
   version: text("version").notNull(),
-    source: text("source").$type<"bundled" | "npm" | "folder" | "upload">().notNull(),
+  source: text("source").$type<"bundled" | "npm" | "folder" | "upload">().notNull(),
   packageName: text("package_name"),
   enabled: boolean("enabled").notNull().default(true),
   config: jsonb("config").$type<Record<string, unknown>>().notNull().default({}),

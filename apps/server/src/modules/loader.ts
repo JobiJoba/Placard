@@ -4,8 +4,8 @@ import { pathToFileURL } from "node:url"
 import {
   defaultServerEntry,
   defaultWebEntry,
-  ModuleManifest,
   type ModuleManifest as Manifest,
+  ModuleManifest,
 } from "@placard/module-sdk"
 import { Context, Effect, Layer, Schema } from "effect"
 
@@ -80,14 +80,14 @@ export class ModuleRuntime extends Context.Service<
             return { ok: false, error: "Missing or invalid placard.module.json on disk." }
           }
 
-            const serverEntry = (manifest.serverEntry ?? defaultServerEntry).replace(/^\.\//, "")
-            const entryPath = join(rootDir, serverEntry)
-            // Bust ESM cache so re-upload / on-disk patch reloads createModule.
-            const href = `${pathToFileURL(entryPath).href}?t=${Date.now()}`
+          const serverEntry = (manifest.serverEntry ?? defaultServerEntry).replace(/^\.\//, "")
+          const entryPath = join(rootDir, serverEntry)
+          // Bust ESM cache so re-upload / on-disk patch reloads createModule.
+          const href = `${pathToFileURL(entryPath).href}?t=${Date.now()}`
 
-            let mod: Record<string, unknown>
-            try {
-              mod = (await import(href)) as Record<string, unknown>
+          let mod: Record<string, unknown>
+          try {
+            mod = (await import(href)) as Record<string, unknown>
           } catch (cause) {
             return {
               ok: false,
@@ -98,8 +98,8 @@ export class ModuleRuntime extends Context.Service<
             }
           }
 
-          const createCandidate = mod["createModule"]
-          const defaultExport = mod["default"] as { createModule?: unknown } | undefined
+          const createCandidate = mod.createModule
+          const defaultExport = mod.default as { createModule?: unknown } | undefined
           const create =
             typeof createCandidate === "function"
               ? (createCandidate as () => { createHttpApp?: PluginHttpHandler })

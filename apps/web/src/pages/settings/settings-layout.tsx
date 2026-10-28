@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { NavLink, Navigate, Outlet, useLocation } from "react-router"
+import { Navigate, NavLink, Outlet, useLocation } from "react-router"
 import { cn } from "@/lib/utils"
 import { useMe } from "@/session"
 
@@ -23,9 +23,7 @@ const staticNavItems: ReadonlyArray<NavItem> = [
   { to: "/settings/people", label: "People", adminOnly: true },
 ]
 
-const adminPaths = new Set(
-  staticNavItems.filter((item) => item.adminOnly).map((item) => item.to),
-)
+const adminPaths = new Set(staticNavItems.filter((item) => item.adminOnly).map((item) => item.to))
 
 const linkClass = (active: boolean) =>
   cn(
@@ -48,7 +46,10 @@ export function SettingsLayout() {
   const isAdmin = me.role === "admin"
   const items = staticNavItems.filter((item) => !item.adminOnly || isAdmin)
 
-  if (!isAdmin && (adminPaths.has(location.pathname) || location.pathname.startsWith("/settings/modules"))) {
+  if (
+    !isAdmin &&
+    (adminPaths.has(location.pathname) || location.pathname.startsWith("/settings/modules"))
+  ) {
     return <Navigate to="/settings/general" replace />
   }
 
@@ -65,7 +66,9 @@ export function SettingsLayout() {
               key={item.to}
               to={item.to}
               end
-              className={({ isActive }) => linkClass(isNavActive(item, location.pathname, isActive))}
+              className={({ isActive }) =>
+                linkClass(isNavActive(item, location.pathname, isActive))
+              }
             >
               {item.label}
             </NavLink>

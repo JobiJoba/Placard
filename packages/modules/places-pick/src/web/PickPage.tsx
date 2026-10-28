@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react"
+import { type CSSProperties, useCallback, useEffect, useMemo, useState } from "react"
 import { Link } from "react-router"
 
 const placeCategories = [
@@ -79,8 +79,12 @@ export function PickPage() {
   const [spinError, setSpinError] = useState<string | null>(null)
 
   useEffect(() => {
-    void apiJson<ListRow[]>("/api/lists").then(setLists).catch(() => setLists([]))
-    void apiJson<TagRow[]>("/api/tags").then(setTags).catch(() => setTags([]))
+    void apiJson<ListRow[]>("/api/lists")
+      .then(setLists)
+      .catch(() => setLists([]))
+    void apiJson<TagRow[]>("/api/tags")
+      .then(setTags)
+      .catch(() => setTags([]))
   }, [])
 
   useEffect(() => {
@@ -187,12 +191,23 @@ export function PickPage() {
   const poolLabel = category ? `All ${categoryLabel(category)}s` : "All places"
 
   return (
-    <div style={{ maxWidth: 512, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}>
+    <div
+      style={{ maxWidth: 512, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}
+    >
       <header style={{ textAlign: "center" }}>
-        <p style={{ fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.6 }}>
+        <p
+          style={{ fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.6 }}
+        >
           Library
         </p>
-        <h1 style={{ fontSize: 36, margin: "8px 0", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+        <h1
+          style={{
+            fontSize: 36,
+            margin: "8px 0",
+            letterSpacing: "0.04em",
+            textTransform: "uppercase",
+          }}
+        >
           Pick
         </h1>
         <p style={{ fontSize: 14, opacity: 0.7 }}>
@@ -258,7 +273,11 @@ export function PickPage() {
         {poolSource === "tag" && (
           <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 14 }}>
             Tag
-            <select value={tagName} onChange={(e) => setTagName(e.target.value)} style={selectStyle}>
+            <select
+              value={tagName}
+              onChange={(e) => setTagName(e.target.value)}
+              style={selectStyle}
+            >
               <option value="">{tags ? "Choose a tag" : "Loading…"}</option>
               {(tags ?? []).map((tag) => (
                 <option key={tag.name} value={tag.name}>
@@ -297,7 +316,9 @@ export function PickPage() {
                 </option>
               ))}
             </select>
-            {geoLoading && <span style={{ fontSize: 12, opacity: 0.7 }}>Getting your location…</span>}
+            {geoLoading && (
+              <span style={{ fontSize: 12, opacity: 0.7 }}>Getting your location…</span>
+            )}
             {geoError && <span style={{ fontSize: 12, color: "#f87171" }}>{geoError}</span>}
           </label>
         )}
@@ -371,8 +392,17 @@ export function PickPage() {
         {spinning ? (
           <div style={{ height: 192, display: "grid", placeItems: "center", textAlign: "center" }}>
             <div>
-              <p style={{ fontSize: 28, margin: 0, textTransform: "uppercase" }}>{spinLabel || "…"}</p>
-              <p style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.7 }}>
+              <p style={{ fontSize: 28, margin: 0, textTransform: "uppercase" }}>
+                {spinLabel || "…"}
+              </p>
+              <p
+                style={{
+                  fontSize: 11,
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  opacity: 0.7,
+                }}
+              >
                 Spinning
               </p>
             </div>
@@ -380,11 +410,22 @@ export function PickPage() {
         ) : result ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 16, padding: 16 }}>
             <div>
-              <p style={{ fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.7 }}>
+              <p
+                style={{
+                  fontSize: 11,
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                  opacity: 0.7,
+                }}
+              >
                 Tonight
               </p>
-              <h2 style={{ margin: "4px 0", fontSize: 24, textTransform: "uppercase" }}>{result.name}</h2>
-              {result.address && <p style={{ margin: 0, fontSize: 14, opacity: 0.75 }}>{result.address}</p>}
+              <h2 style={{ margin: "4px 0", fontSize: 24, textTransform: "uppercase" }}>
+                {result.name}
+              </h2>
+              {result.address && (
+                <p style={{ margin: 0, fontSize: 14, opacity: 0.75 }}>{result.address}</p>
+              )}
               <p style={{ margin: "6px 0 0", fontSize: 12, opacity: 0.6 }}>{result.category}</p>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -405,10 +446,22 @@ export function PickPage() {
             </div>
           </div>
         ) : (
-          <div style={{ height: 192, display: "grid", placeItems: "center", textAlign: "center", padding: 24 }}>
+          <div
+            style={{
+              height: 192,
+              display: "grid",
+              placeItems: "center",
+              textAlign: "center",
+              padding: 24,
+            }}
+          >
             <div>
-              <p style={{ fontSize: 20, textTransform: "uppercase", margin: 0 }}>Ready when you are</p>
-              <p style={{ fontSize: 14, opacity: 0.7 }}>Pick a type, set the pool, then hit choose.</p>
+              <p style={{ fontSize: 20, textTransform: "uppercase", margin: 0 }}>
+                Ready when you are
+              </p>
+              <p style={{ fontSize: 14, opacity: 0.7 }}>
+                Pick a type, set the pool, then hit choose.
+              </p>
             </div>
           </div>
         )}

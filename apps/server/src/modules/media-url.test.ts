@@ -6,9 +6,9 @@ describe("resolveModuleMediaUrl", () => {
     expect(resolveModuleMediaUrl("x", "bundled", "https://cdn.example/cover.png")).toBe(
       "https://cdn.example/cover.png",
     )
-    expect(resolveModuleMediaUrl("restaurants.decide", "bundled", "/module-covers/decide.svg")).toBe(
-      "/module-covers/decide.svg",
-    )
+    expect(
+      resolveModuleMediaUrl("restaurants.decide", "bundled", "/module-covers/decide.svg"),
+    ).toBe("/module-covers/decide.svg")
   })
 
   it("maps relative upload paths to the asset route", () => {

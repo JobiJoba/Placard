@@ -49,14 +49,15 @@ test("create a list, tag a place, edit it, bulk-delete and restore", async ({ pa
   await expect(page.getByText("selected")).toHaveCount(0)
 
   await page.getByRole("link", { name: /Da Michele/ }).click()
+  await page.getByRole("button", { name: "Edit" }).click()
   await page.getByLabel("Tags").fill("date-night")
   await page.getByLabel("Status").click()
   await page.getByRole("option", { name: "Been there" }).click()
   await page.getByLabel("Name").fill("L'Antica da Michele")
   await page.getByRole("button", { name: "Save changes" }).click()
   await expect(page.getByRole("heading", { name: "L'Antica da Michele" })).toBeVisible()
-  await expect(page.getByLabel("Status")).toHaveText(/Been there/)
-  await expect(page.getByLabel("Tags")).toHaveValue(/date-night/)
+  await expect(page.getByText("Been there", { exact: true })).toBeVisible()
+  await expect(page.getByText("date-night", { exact: true })).toBeVisible()
 
   await page
     .getByRole("navigation", { name: "Main" })

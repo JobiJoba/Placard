@@ -1,6 +1,8 @@
-const bridge = (globalThis as unknown as {
-  __PLACARD_PLUGIN__: { React: typeof import("react") }
-}).__PLACARD_PLUGIN__
+const bridge = (
+  globalThis as unknown as {
+    __PLACARD_PLUGIN__: { React: typeof import("react") }
+  }
+).__PLACARD_PLUGIN__
 
 if (!bridge?.React) {
   throw new Error("Placard plugin host bridge missing (React). Rebuild/redeploy the web app.")

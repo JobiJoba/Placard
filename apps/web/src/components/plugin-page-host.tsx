@@ -25,7 +25,8 @@ export function PluginPageHost({
     void import(/* @vite-ignore */ webEntryUrl)
       .then((mod: Record<string, unknown>) => {
         if (cancelled) return
-        const candidate = mod[exportName] ?? (mod.default as Record<string, unknown> | undefined)?.[exportName]
+        const candidate =
+          mod[exportName] ?? (mod.default as Record<string, unknown> | undefined)?.[exportName]
         if (typeof candidate !== "function") {
           setError(`Plugin ${moduleId} does not export ${exportName}.`)
           return

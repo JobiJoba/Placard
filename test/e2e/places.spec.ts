@@ -58,7 +58,7 @@ test("with a key, a restaurant is added by typing its name", async ({ page }) =>
   await preview.getByRole("button", { name: "Add to library" }).click()
 
   await expect(page.getByRole("heading", { name: MICHELE })).toBeVisible()
-  await expect(page.getByLabel("Type")).toHaveText(/Restaurant/)
+  await expect(page.getByText("Restaurant", { exact: true })).toBeVisible()
   await expect(page.getByRole("link", { name: "Open in Google Maps" })).toHaveAttribute(
     "href",
     /^https:\/\/www\.google\.com\/maps\/search\/\?api=1&.*query_place_id=ChIJ-fixture-da-michele/,

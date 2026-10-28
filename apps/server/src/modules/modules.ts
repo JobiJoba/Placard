@@ -1,3 +1,4 @@
+import { join } from "node:path"
 import {
   type CatalogModule,
   type InstalledModule,
@@ -7,11 +8,7 @@ import {
   type ModuleUpload,
   type MyModule,
 } from "@placard/domain"
-import {
-  defaultWebEntry,
-  type ModuleManifest,
-} from "@placard/module-sdk"
-import { join } from "node:path"
+import { defaultWebEntry, type ModuleManifest } from "@placard/module-sdk"
 import { Context, DateTime, Effect, Layer } from "effect"
 import { SqlClient } from "effect/sql"
 import { AppConfig } from "../config.ts"
