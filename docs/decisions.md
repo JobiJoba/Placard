@@ -57,8 +57,8 @@ Resolved choices from product discussion. Update this file when something change
 
 | Topic | Decision |
 | --- | --- |
-| **Modules** | Core stays clean; in-repo modules first; third-party later. Restaurants first. |
-| **Decide wheel** | Core module; optional **“avoid recent picks”** setting. |
+| **Modules** | Trusted same-process plugins; SDK + instance install + per-user show; marketplace catalog UI. Restaurants first. |
+| **Decide wheel** | Reference plugin `@placard/module-restaurants-decide`; optional **“avoid recent picks”** toggle. |
 | **MCP** | **Must-ship** with the product (authenticated). |
 | **Install targets** | Docker Compose / Coolify first; beside Nextcloud, not inside it (v1). |
 | **Backups** | Aim for **one-click backup** (DB + media), Immich-like niceness — not only raw volume docs. |

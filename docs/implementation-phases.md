@@ -264,6 +264,8 @@ Order follows your priorities: places and browsing first, then search, then impo
 
 ## Phase 8 — Decide module
 
+**Status:** done.
+
 **Goal:** "what should I eat tonight?" in one tap.
 
 **Build**

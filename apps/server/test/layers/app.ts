@@ -62,6 +62,7 @@ export class TestApp extends Context.Service<TestApp, { readonly browser: () => 
               headers,
               ...(body === undefined ? {} : { body: JSON.stringify(body) }),
             }),
+            services,
           )
           for (const setCookie of response.headers.getSetCookie()) {
             const [pair = ""] = setCookie.split(";")

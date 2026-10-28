@@ -5,6 +5,7 @@ x-placard-env: &placard-env
   PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3000}
   BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env (openssl rand -base64 32)}
   MEDIA_DIR: /data/media
+  PLACARD_MODULES_DIR: /data/modules
   WEB_DIST_DIR: /app/web-dist
   GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
   MCP_ENABLED: ${MCP_ENABLED:-true}
@@ -35,6 +36,7 @@ services:
       - "${PLACARD_PORT:-3000}:3000"
     volumes:
       - media:/data/media
+      - modules:/data/modules
     depends_on:
       db:
         condition: service_healthy
@@ -58,6 +60,7 @@ services:
       WORKER_HEARTBEAT_FILE: /tmp/placard-worker-heartbeat
     volumes:
       - media:/data/media
+      - modules:/data/modules
     depends_on:
       app:
         condition: service_healthy
@@ -75,3 +78,4 @@ services:
 volumes:
   pgdata:
   media:
+  modules:

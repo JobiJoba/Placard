@@ -16,6 +16,7 @@ import {
   SetupStatus,
   UserSummary,
 } from "./accounts.ts"
+import { DecidePoolEmpty, DecidePreview, DecideRequest, DecideResult } from "./decide.ts"
 import {
   EnrichmentBusy,
   EnrichmentRun,
@@ -57,6 +58,18 @@ import {
   MediaRejected,
   MediaUpload,
 } from "./media.ts"
+import {
+  CatalogModule,
+  InstalledModule,
+  ModuleDisabled,
+  ModuleEnabledUpdate,
+  ModuleInstallFailed,
+  ModuleInstallInput,
+  ModuleNotFound,
+  ModuleUpload,
+  ModuleVisibleUpdate,
+  MyModule,
+} from "./modules.ts"
 import {
   AutocompleteInput,
   DeletedPlace,
@@ -395,6 +408,66 @@ export class MediaApi extends HttpApiGroup.make("media")
   .middleware(Authentication)
   .prefix("/api/media") {}
 
+/** restaurants.decide — pick one restaurant from a filtered pool (plugin). */
+export class DecideApi extends HttpApiGroup.make("decide")
+  .add(
+    HttpApiEndpoint.post("preview", "/preview", {
+      payload: DecideRequest,
+      success: DecidePreview,
+      error: ModuleDisabled,
+    }),
+    HttpApiEndpoint.post("spin", "/spin", {
+      payload: DecideRequest,
+      success: DecideResult,
+      error: [DecidePoolEmpty, ModuleDisabled],
+    }),
+  )
+  .middleware(Authentication)
+  .prefix("/api/decide") {}
+
+/** Trusted plugin catalog, instance install, and per-user visibility. */
+export class ModulesApi extends HttpApiGroup.make("modules")
+  .add(
+    HttpApiEndpoint.get("catalog", "/catalog", {
+      success: Schema.Array(CatalogModule),
+    }),
+    HttpApiEndpoint.get("installed", "/installed", {
+      success: Schema.Array(InstalledModule),
+    }),
+    HttpApiEndpoint.post("install", "/install", {
+      payload: ModuleInstallInput,
+      success: InstalledModule,
+      error: [ModuleNotFound, ModuleInstallFailed],
+    }),
+    HttpApiEndpoint.post("upload", "/upload", {
+      payload: ModuleUpload,
+      success: InstalledModule,
+      error: ModuleInstallFailed,
+    }),
+    HttpApiEndpoint.delete("uninstall", "/installed/:id", {
+      params: { id: Schema.String },
+      success: Schema.Void,
+      error: [ModuleNotFound, ModuleInstallFailed],
+    }),
+    HttpApiEndpoint.patch("setEnabled", "/installed/:id", {
+      params: { id: Schema.String },
+      payload: ModuleEnabledUpdate,
+      success: InstalledModule,
+      error: ModuleNotFound,
+    }),
+    HttpApiEndpoint.get("me", "/me", {
+      success: Schema.Array(MyModule),
+    }),
+    HttpApiEndpoint.patch("setVisible", "/me/:id", {
+      params: { id: Schema.String },
+      payload: ModuleVisibleUpdate,
+      success: MyModule,
+      error: ModuleNotFound,
+    }),
+  )
+  .middleware(Authentication)
+  .prefix("/api/modules") {}
+
 export class Api extends HttpApi.make("placard")
   .add(HealthApi)
   .add(SetupApi)
@@ -407,6 +480,8 @@ export class Api extends HttpApi.make("placard")
   .add(SearchApi)
   .add(ImportApi)
   .add(MediaApi)
+  .add(DecideApi)
+  .add(ModulesApi)
   .annotateMerge(
     OpenApi.annotations({
       title: "Placard API",

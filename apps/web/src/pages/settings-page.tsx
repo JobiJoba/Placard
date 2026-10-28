@@ -1,9 +1,12 @@
 import type {
+  CatalogModule,
   DistanceUnit,
   EnrichmentRun,
+  InstalledModule,
   InstanceSettingsView,
   Invite,
   InviteStatus,
+  MyModule,
   UserSummary,
 } from "@placard/domain"
 import { DateTime } from "effect"
@@ -28,8 +31,10 @@ export function SettingsPage() {
       <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
       <AccountCard />
       <DistanceUnitCard />
+      <MyModulesCard />
       {me.role === "admin" && (
         <>
+          <MarketplaceCard />
           <GoogleKeyCard />
           <EnrichmentCard />
           <InvitesCard />
@@ -491,6 +496,263 @@ function InvitesCard() {
             ))}
           </ul>
         )}
+      </div>
+    </SettingsCard>
+  )
+}
+
+function MyModulesCard() {
+  const {
+    data: modules,
+    error,
+    reload,
+    setData,
+  } = useLoad(useCallback(() => api((c) => c.modules.me()), []))
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  const setVisible = (mod: MyModule, visible: boolean) => {
+    setActionError(null)
+    void api((c) => c.modules.setVisible({ params: { id: mod.id }, payload: { visible } })).then(
+      (updated) => {
+        setData((prev) => (prev ?? []).map((m) => (m.id === updated.id ? updated : m)))
+      },
+      (cause: unknown) => setActionError(errorMessage(cause)),
+    )
+  }
+
+  return (
+    <SettingsCard
+      title="My modules"
+      description="Plugins installed on this instance. Hide one to remove it from your navigation."
+    >
+      <ErrorAlert message={error ?? actionError} />
+      {!modules ? (
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      ) : modules.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No modules installed yet. An admin can install them from the marketplace below.
+        </p>
+      ) : (
+        <ul className="flex flex-col divide-y">
+          {modules.map((mod) => (
+            <li key={mod.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+              <div className="min-w-0">
+                <p className="font-medium">{mod.name}</p>
+                <p className="text-xs text-muted-foreground">{mod.description}</p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant={mod.visible ? "secondary" : "outline"}
+                onClick={() => setVisible(mod, !mod.visible)}
+              >
+                {mod.visible ? "Shown in nav" : "Hidden"}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {modules && (
+        <Button type="button" variant="ghost" size="sm" className="mt-2" onClick={() => reload()}>
+          Refresh
+        </Button>
+      )}
+    </SettingsCard>
+  )
+}
+
+function MarketplaceCard() {
+  const {
+    data: catalog,
+    error: catalogError,
+    reload: reloadCatalog,
+  } = useLoad(useCallback(() => api((c) => c.modules.catalog()), []))
+  const {
+    data: installed,
+    error: installedError,
+    reload: reloadInstalled,
+    setData: setInstalled,
+  } = useLoad(useCallback(() => api((c) => c.modules.installed()), []))
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+
+  const refresh = () => {
+    reloadCatalog()
+    reloadInstalled()
+  }
+
+  const uploadZip = (file: File | undefined) => {
+    if (!file) return
+    setUploading(true)
+    setActionError(null)
+    void file
+      .arrayBuffer()
+      .then((buffer) => {
+        const bytes = new Uint8Array(buffer)
+        let binary = ""
+        for (const byte of bytes) binary += String.fromCharCode(byte)
+        const contentBase64 = btoa(binary)
+        return api((c) =>
+          c.modules.upload({ payload: { filename: file.name, contentBase64 } }),
+        )
+      })
+      .then(() => {
+        setUploading(false)
+        refresh()
+      })
+      .catch((cause: unknown) => {
+        setUploading(false)
+        setActionError(errorMessage(cause))
+      })
+  }
+
+  const install = (mod: CatalogModule) => {
+    setBusyId(mod.id)
+    setActionError(null)
+    void api((c) => c.modules.install({ payload: { moduleId: mod.id } })).then(
+      () => {
+        setBusyId(null)
+        refresh()
+      },
+      (cause: unknown) => {
+        setBusyId(null)
+        setActionError(errorMessage(cause))
+      },
+    )
+  }
+
+  const uninstall = (mod: InstalledModule) => {
+    if (!window.confirm(`Uninstall ${mod.name}? Everyone on this instance loses it.`)) return
+    setBusyId(mod.id)
+    setActionError(null)
+    void api((c) => c.modules.uninstall({ params: { id: mod.id } })).then(
+      () => {
+        setBusyId(null)
+        refresh()
+      },
+      (cause: unknown) => {
+        setBusyId(null)
+        setActionError(errorMessage(cause))
+      },
+    )
+  }
+
+  const setEnabled = (mod: InstalledModule, enabled: boolean) => {
+    setBusyId(mod.id)
+    setActionError(null)
+    void api((c) => c.modules.setEnabled({ params: { id: mod.id }, payload: { enabled } })).then(
+      (updated) => {
+        setBusyId(null)
+        setInstalled((prev) => (prev ?? []).map((m) => (m.id === updated.id ? updated : m)))
+      },
+      (cause: unknown) => {
+        setBusyId(null)
+        setActionError(errorMessage(cause))
+      },
+    )
+  }
+
+  return (
+    <SettingsCard
+      title="Module marketplace"
+      description="Trusted plugins for this instance. Install from the catalog or upload a prebuilt .zip (survives Docker restarts on the modules volume). Disable may need a container restart to fully unload."
+    >
+      <ErrorAlert message={catalogError ?? installedError ?? actionError} />
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center gap-3 rounded-md border p-3">
+          <div className="min-w-0 flex-1">
+            <p className="font-medium">Upload prebuilt plugin</p>
+            <p className="text-xs text-muted-foreground">
+              Zip with placard.module.json + server/ + web/ built against @placard/module-sdk.
+            </p>
+          </div>
+          <Button type="button" size="sm" disabled={uploading} asChild>
+            <label>
+              {uploading ? "Uploading…" : "Choose .zip"}
+              <input
+                type="file"
+                accept=".zip,application/zip,.placard-module"
+                className="sr-only"
+                disabled={uploading}
+                onChange={(e) => {
+                  uploadZip(e.target.files?.[0])
+                  e.target.value = ""
+                }}
+              />
+            </label>
+          </Button>
+        </div>
+        <div>
+          <h3 className="mb-2 text-sm font-medium">Catalog</h3>
+          <ul className="flex flex-col gap-3">
+            {(catalog ?? []).map((mod) => (
+              <li
+                key={mod.id}
+                className="flex flex-wrap items-start justify-between gap-3 rounded-md border p-3"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium">{mod.name}</p>
+                  <p className="text-xs text-muted-foreground">{mod.description}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {mod.version} · {mod.source}
+                    {mod.installed ? " · installed" : ""}
+                  </p>
+                </div>
+                {!mod.installed && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={busyId === mod.id}
+                    onClick={() => install(mod)}
+                  >
+                    Install
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h3 className="mb-2 text-sm font-medium">Installed on this instance</h3>
+          {(installed ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nothing installed yet.</p>
+          ) : (
+            <ul className="flex flex-col divide-y">
+              {(installed ?? []).map((mod) => (
+                <li key={mod.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                  <div className="min-w-0">
+                    <p className="font-medium">{mod.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {mod.source} · {mod.enabled ? "Enabled" : "Disabled"}
+                      {mod.loadError ? ` · ${mod.loadError}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={busyId === mod.id}
+                      onClick={() => setEnabled(mod, !mod.enabled)}
+                    >
+                      {mod.enabled ? "Disable" : "Enable"}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      disabled={busyId === mod.id}
+                      onClick={() => uninstall(mod)}
+                    >
+                      Uninstall
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </SettingsCard>
   )

@@ -24,6 +24,7 @@ export const testConfigFor = (container: StartedPostgreSqlContainer) =>
       DATABASE_URL: container.getConnectionUri(),
       BETTER_AUTH_SECRET: "integration-test-secret-0123456789abcdef",
       MEDIA_DIR: "./data/test-media",
+      PLACARD_MODULES_DIR: "./data/test-modules",
     }),
   )
 

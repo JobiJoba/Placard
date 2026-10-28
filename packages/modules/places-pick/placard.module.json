@@ -1,0 +1,25 @@
+{
+  "id": "places.pick",
+  "name": "Pick",
+  "version": "0.1.0",
+  "description": "Spin one place from your library — any category, open now, near you, or surprise me.",
+  "permissions": ["places.read", "search.query"],
+  "nav": [
+    {
+      "path": "/m/places.pick",
+      "label": "Pick",
+      "slot": "primary"
+    }
+  ],
+  "source": "upload",
+  "packageName": "@placard/module-places-pick",
+  "sdkVersion": "0.1.0",
+  "serverEntry": "./server/index.js",
+  "webEntry": "./web/index.js",
+  "webRoutes": [
+    {
+      "path": "/m/places.pick",
+      "exportName": "PickPage"
+    }
+  ]
+}

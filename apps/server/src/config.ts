@@ -27,6 +27,10 @@ export const appConfig = Config.all({
   authSecret: authSecretConfig,
   publicUrl: Config.URL("PUBLIC_URL").pipe(Config.withDefault(new URL("http://localhost:3000"))),
   mediaDir: Config.NonEmptyString("MEDIA_DIR").pipe(Config.withDefault("./data/media")),
+  /** Trusted prebuilt plugins (upload/folder) extracted here; survives Docker restarts. */
+  modulesDir: Config.NonEmptyString("PLACARD_MODULES_DIR").pipe(
+    Config.withDefault("./data/modules"),
+  ),
   webDistDir: Config.NonEmptyString("WEB_DIST_DIR").pipe(Config.withDefault("./web-dist")),
   port: Config.Number("PORT").pipe(Config.withDefault(3000)),
   googleMapsApiKey: optionalSecret("GOOGLE_MAPS_API_KEY"),

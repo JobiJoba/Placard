@@ -21,7 +21,7 @@ Coolify eats **Docker Compose** (or Dockerfile) from Git very well. Prepare:
    - `app` service (Effect HttpApi server + built SPA + later MCP)
    - `worker` service (same image, runs the background job worker; see [tech-stack.md](tech-stack.md))
    - `db` (Postgres + PostGIS image `imresamu/postgis:18-3.6`)
-   - named **volumes** for uploads / dish photos
+   - named **volumes** for uploads / dish photos (`media`) and uploaded plugins (`modules` → `PLACARD_MODULES_DIR`)
    - **healthchecks** so the proxy waits for readiness
    - documented **ports** (e.g. app `3000`)
 2. **Environment variables** listed in `.env.example`:

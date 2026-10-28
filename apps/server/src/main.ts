@@ -7,6 +7,8 @@ import { AppConfig, loadConfigOrExit } from "./config.ts"
 import { runMigrations } from "./db/migrate.ts"
 import { GoogleFixtureClient } from "./google/fixture-client.ts"
 import { RoutesLive } from "./http/api.ts"
+import { ModuleRuntime } from "./modules/loader.ts"
+import { Modules } from "./modules/modules.ts"
 import { ObservabilityLive } from "./observability.ts"
 import { withConfig } from "./runtime.ts"
 
@@ -35,6 +37,17 @@ const program = Effect.gen(function* () {
   const config = yield* loadConfigOrExit
   yield* Effect.log(`Starting Placard on port ${config.port}`)
   yield* runMigrations.pipe(Effect.provide(withConfig(config)))
+
+  yield* Effect.gen(function* () {
+    const modules = yield* Modules
+    yield* modules.loadDiskModules
+  }).pipe(
+    Effect.provide(Modules.layer.pipe(Layer.provide(ModuleRuntime.layer))),
+    Effect.provide(withConfig(config)),
+    Effect.catchCause((cause) =>
+      Effect.logWarning("Could not load disk modules", { cause: String(cause) }),
+    ),
+  )
 
   const ServerLive = HttpRouter.serve(Layer.mergeAll(RoutesLive, StaticLive)).pipe(
     Layer.provide(config.fakeGoogle ? GoogleFixtureClient : FetchHttpClient.layer),

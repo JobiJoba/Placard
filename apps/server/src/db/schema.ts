@@ -394,6 +394,54 @@ export const importSkips = pgTable(
   (table) => [primaryKey({ columns: [table.ownerId, table.dedupeKey] })],
 )
 
+/**
+ * Instance-installed plugins (trusted marketplace).
+ * Core owns this table; plugin tables stay module-owned.
+ */
+export const instanceModules = pgTable("instance_modules", {
+  moduleId: text("module_id").primaryKey(),
+  version: text("version").notNull(),
+    source: text("source").$type<"bundled" | "npm" | "folder" | "upload">().notNull(),
+  packageName: text("package_name"),
+  enabled: boolean("enabled").notNull().default(true),
+  config: jsonb("config").$type<Record<string, unknown>>().notNull().default({}),
+  loadError: text("load_error"),
+  installedAt: timestamp("installed_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
+/** Per-user visibility / prefs for installed modules. */
+export const userModulePrefs = pgTable(
+  "user_module_prefs",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    moduleId: text("module_id").notNull(),
+    visible: boolean("visible").notNull().default(true),
+    prefs: jsonb("prefs").$type<Record<string, unknown>>().notNull().default({}),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.moduleId] })],
+)
+
+/**
+ * restaurants.decide module-owned pick history (avoid-recent).
+ * Core services must not read this table.
+ */
+export const decidePicks = pgTable(
+  "decide_picks",
+  {
+    id: text("id").primaryKey(),
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    placeId: text("place_id")
+      .notNull()
+      .references(() => places.id, { onDelete: "cascade" }),
+    pickedAt: timestamp("picked_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("decide_picks_owner_picked_at_idx").on(table.ownerId, table.pickedAt)],
+)
+
 /** Dish photos, general photos, attachments; Google covers use origin = google. */
 export const media = pgTable(
   "media",

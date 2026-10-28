@@ -1,0 +1,25 @@
+{
+  "id": "restaurants.decide",
+  "name": "Decide",
+  "version": "0.2.0",
+  "description": "Spin a restaurant from your library — open tonight, near you, or surprise me.",
+  "permissions": ["places.read", "search.query"],
+  "nav": [
+    {
+      "path": "/m/restaurants.decide",
+      "label": "Decide",
+      "slot": "primary"
+    }
+  ],
+  "source": "upload",
+  "packageName": "@placard/module-restaurants-decide",
+  "sdkVersion": "0.1.0",
+  "serverEntry": "./server/index.js",
+  "webEntry": "./web/index.js",
+  "webRoutes": [
+    {
+      "path": "/m/restaurants.decide",
+      "exportName": "DecidePage"
+    }
+  ]
+}

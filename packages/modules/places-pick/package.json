@@ -1,0 +1,16 @@
+{
+  "name": "@placard/module-places-pick",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:zip": "node ./scripts/build.mjs"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "esbuild": "^0.28.2",
+    "react": "^19.2.0",
+    "react-router": "^7.9.0",
+    "typescript": "6.0.3"
+  }
+}

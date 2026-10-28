@@ -23,6 +23,7 @@
     "test:unit": "pnpm --filter @placard/server test:unit",
     "test:integration": "pnpm --filter @placard/server test:integration",
     "test:e2e": "playwright test",
+    "placard:pack": "node scripts/placard-pack.mjs",
     "compose:generate": "node scripts/compose-generate.mjs",
     "aspire:start": "pnpm --dir aspire-apphost run aspire:start",
     "aspire:build": "pnpm --dir aspire-apphost run aspire:build"

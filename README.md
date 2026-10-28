@@ -78,7 +78,8 @@ Placard: **import → enrich → search/browse cards → run modules** — and t
 | [docs/first-user.md](docs/first-user.md) | Founder priorities & scale |
 | [docs/product-overview.md](docs/product-overview.md) | Objects, modes, flows, MVP sketch |
 | [docs/modules-restaurants.md](docs/modules-restaurants.md) | Decide / vote / dish memories |
-| [docs/architecture-modules.md](docs/architecture-modules.md) | Core vs modules; third-party future |
+| [docs/architecture-modules.md](docs/architecture-modules.md) | Core vs modules; trusted plugins |
+| [docs/creating-modules.md](docs/creating-modules.md) | **How to build a module** (step-by-step + Pick example) |
 | [docs/mcp.md](docs/mcp.md) | Agent access (must-ship) |
 | [docs/deployment.md](docs/deployment.md) | Docker, Coolify, Nextcloud adjacency |
 | [docs/feasibility.md](docs/feasibility.md) | Takeout, Google BYOK, what’s realistic |

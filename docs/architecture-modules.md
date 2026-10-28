@@ -60,15 +60,21 @@ Modules may also register:
 
 Detail: [modules-restaurants.md](modules-restaurants.md).
 
-## Third-party modules (future)
+**Authoring guide:** [creating-modules.md](creating-modules.md) — step-by-step, with a generic “Pick any category” example.
 
-Ambition, not day-one delivery:
+## Trusted plugins (current)
 
-- Install from a package / folder / URL (signed or “I trust this zip”)
-- Declared manifest: id, version, core API version range, capabilities, permissions requested
-- Sandbox expectations TBD (start simple: same process, reviewed code; harden later)
+Placard ships a **Module SDK** (`@placard/module-sdk`) and a self-hosted **marketplace UI**:
 
-Until that exists, write first-party modules **as if** they were external: same SDK, no special core privileges. That keeps the door open.
+- **Catalog** — curated first-party (and later remote) manifests of installable plugins
+- **Instance install** — admin installs/uninstalls; `instance_modules` + instance enable kill switch
+- **Per-user show** — `user_module_prefs.visible`; shell nav/routes come from `GET /api/modules/me`
+- **Runtime** — trusted **same-process** JS (no sandbox yet). Bundled reference: `@placard/module-restaurants-decide` (Decide)
+- **Host contract** — plugins use `ModuleHostSearch` (and future host tags), never core SQL helpers
+
+**Phase C-lite (shipped):** admins upload a **prebuilt zip** into `PLACARD_MODULES_DIR` (Compose `modules` volume). The host extracts, registers `instance_modules` (`source: upload`), dynamic-imports the server entry, and serves web assets + optional `/api/m/<id>/*` HTTP. No in-container TypeScript compile; authors build against `@placard/module-sdk` on their machine. See [creating-modules.md](creating-modules.md#distribute--packaging-for-docker-prebuilt-zip).
+
+This is a **self-hosted plugin catalog**, not a consumer SaaS app store.
 
 ## Anti-patterns
 
@@ -81,8 +87,9 @@ Until that exists, write first-party modules **as if** they were external: same 
 
 | Phase | What we deliver |
 | --- | --- |
-| A | Core library + search; restaurant modules **in-repo** behind clear boundaries; MCP tools registered |
-| B | Formal Module SDK + manifest; first-party modules load via registry |
-| C | Documented third-party install path + permission prompts |
+| A | Core library + search; restaurant modules behind clear boundaries |
+| B | Module SDK + manifest; registry; instance install; per-user visibility; marketplace UI |
+| C-lite | Prebuilt zip upload into `PLACARD_MODULES_DIR`; asset + `/api/m/*` routes; marketplace upload UI |
+| C | Optional remote catalog URL; permission prompts; later sandbox; npm install path |
 
-**Decision:** ship **in-repo modules only** first. Do not block MVP on phase C. **Do** avoid painting ourselves into a monolith that cannot split later.
+**Decision:** Phase B + C-lite are in tree (Decide bundled; third-party via trusted admin zip upload). Full Phase C hardens trust UX without requiring a public store.

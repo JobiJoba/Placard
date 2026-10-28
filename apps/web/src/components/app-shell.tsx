@@ -1,3 +1,4 @@
+import type { MyModule } from "@placard/domain"
 import { Menu } from "lucide-react"
 import { Link, NavLink, Outlet } from "react-router"
 import { Button } from "@/components/ui/button"
@@ -11,12 +12,10 @@ import {
 import { cn } from "@/lib/utils"
 import { useMe, useSession } from "@/session"
 
-const primary = [
-  { to: "/", label: "Library", end: true },
-  { to: "/add", label: "Add" },
-] as const
+const corePrimary = [{ to: "/", label: "Library", end: true }] as const
 
 const more = [
+  { to: "/add", label: "Add" },
   { to: "/import", label: "Import" },
   { to: "/lists", label: "Lists" },
   { to: "/deleted", label: "Recently deleted" },
@@ -34,12 +33,26 @@ const navLink = ({ isActive }: { isActive: boolean }) =>
 const bottomLink = ({ isActive }: { isActive: boolean }) =>
   cn(
     "flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors",
-    isActive ? "text-[var(--spine-gold)]" : "text-[color-mix(in_srgb,var(--parchment)_65%,transparent)]",
+    isActive
+      ? "text-[var(--spine-gold)]"
+      : "text-[color-mix(in_srgb,var(--parchment)_65%,transparent)]",
   )
 
-export function AppShell() {
+export function AppShell({ modules }: { readonly modules: ReadonlyArray<MyModule> }) {
   const me = useMe()
   const { signOut } = useSession()
+
+  const pluginNav = modules.flatMap((m) =>
+    m.visible
+      ? m.nav.map((item) => ({
+          to: item.path,
+          label: item.label,
+          slot: item.slot,
+        }))
+      : [],
+  )
+  const primaryPlugins = pluginNav.filter((p) => p.slot === "primary")
+  const morePlugins = pluginNav.filter((p) => p.slot === "more")
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--parchment)]">
@@ -53,7 +66,7 @@ export function AppShell() {
               Placard
             </Link>
             <nav className="hidden gap-1 md:flex" aria-label="Main">
-              {primary.map((item) => (
+              {corePrimary.map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}
@@ -63,7 +76,17 @@ export function AppShell() {
                   {item.label}
                 </NavLink>
               ))}
+              {primaryPlugins.map((item) => (
+                <NavLink key={item.to} to={item.to} className={navLink}>
+                  {item.label}
+                </NavLink>
+              ))}
               {more.map((item) => (
+                <NavLink key={item.to} to={item.to} className={navLink}>
+                  {item.label}
+                </NavLink>
+              ))}
+              {morePlugins.map((item) => (
                 <NavLink key={item.to} to={item.to} className={navLink}>
                   {item.label}
                 </NavLink>
@@ -94,13 +117,23 @@ export function AppShell() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-48">
-                {primary.map((item) => (
+                {corePrimary.map((item) => (
+                  <DropdownMenuItem key={item.to} asChild>
+                    <Link to={item.to}>{item.label}</Link>
+                  </DropdownMenuItem>
+                ))}
+                {primaryPlugins.map((item) => (
                   <DropdownMenuItem key={item.to} asChild>
                     <Link to={item.to}>{item.label}</Link>
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
                 {more.map((item) => (
+                  <DropdownMenuItem key={item.to} asChild>
+                    <Link to={item.to}>{item.label}</Link>
+                  </DropdownMenuItem>
+                ))}
+                {morePlugins.map((item) => (
                   <DropdownMenuItem key={item.to} asChild>
                     <Link to={item.to}>{item.label}</Link>
                   </DropdownMenuItem>
@@ -123,11 +156,13 @@ export function AppShell() {
           <NavLink to="/" end className={bottomLink}>
             Library
           </NavLink>
+          {primaryPlugins[0] ? (
+            <NavLink to={primaryPlugins[0].to} className={bottomLink}>
+              {primaryPlugins[0].label}
+            </NavLink>
+          ) : null}
           <NavLink to="/add" className={bottomLink}>
             Add
-          </NavLink>
-          <NavLink to="/import" className={bottomLink}>
-            Import
           </NavLink>
           <NavLink to="/settings" className={bottomLink}>
             Settings

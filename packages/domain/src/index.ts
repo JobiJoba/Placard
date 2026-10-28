@@ -2,16 +2,20 @@ export * from "./accounts.ts"
 export {
   AdminApi,
   Api,
+  DecideApi,
   GoogleApi,
   HealthApi,
   ImportApi,
   ListsApi,
   MeApi,
+  MediaApi,
+  ModulesApi,
   PlacesApi,
   SearchApi,
   SetupApi,
   TagsApi,
 } from "./api.ts"
+export * from "./decide.ts"
 export * from "./facts.ts"
 export {
   CheckFail,
@@ -22,8 +26,9 @@ export {
   HealthReport,
 } from "./health.ts"
 export * from "./import.ts"
-export * from "./media.ts"
 export * from "./library.ts"
 export * from "./map-links.ts"
+export * from "./media.ts"
+export * from "./modules.ts"
 export * from "./places.ts"
 export * from "./search.ts"

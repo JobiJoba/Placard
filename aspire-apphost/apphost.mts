@@ -41,6 +41,7 @@ const server = await builder
   // withReference injects PLACARD_URI (postgresql://…). App config falls back to it.
   .withEnvironment("BETTER_AUTH_SECRET", authSecret)
   .withEnvironment("MEDIA_DIR", "./data/media")
+  .withEnvironment("PLACARD_MODULES_DIR", "./data/modules")
   .withEnvironment("WEB_DIST_DIR", "./web-dist")
   .withEnvironment("MCP_ENABLED", "true")
 
@@ -51,6 +52,7 @@ await builder
   .waitFor(placardDb)
   .withEnvironment("BETTER_AUTH_SECRET", authSecret)
   .withEnvironment("MEDIA_DIR", "./data/media")
+  .withEnvironment("PLACARD_MODULES_DIR", "./data/modules")
 
 // Stable HTTPS URL for the SPA (geolocation / secure-context browsers). Port stays 5173.
 const web = await builder
