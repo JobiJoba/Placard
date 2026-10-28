@@ -48,6 +48,16 @@ export const ModuleManifest = Schema.Struct({
   serverEntry: Schema.optional(Schema.String),
   /** Relative path to browser ESM entry inside a prebuilt zip. */
   webEntry: Schema.optional(Schema.String),
+  /**
+   * Optional square icon: absolute URL (`https://…` or `/…`) or path relative to the
+   * package root (uploaded modules serve via `/api/modules/:id/assets/…`).
+   */
+  icon: Schema.optional(Schema.String),
+  /**
+   * Optional card cover / hero image — same URL rules as `icon`.
+   * Hosts fall back to a styled placeholder when absent.
+   */
+  cover: Schema.optional(Schema.String),
 })
 export type ModuleManifest = typeof ModuleManifest.Type
 

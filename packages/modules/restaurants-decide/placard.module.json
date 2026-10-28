@@ -16,6 +16,8 @@
   "sdkVersion": "0.1.0",
   "serverEntry": "./server/index.js",
   "webEntry": "./web/index.js",
+  "icon": "/module-covers/decide.svg",
+  "cover": "/module-covers/decide.svg",
   "webRoutes": [
     {
       "path": "/m/restaurants.decide",

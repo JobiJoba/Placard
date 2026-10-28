@@ -13,6 +13,8 @@ export const restaurantsDecideManifest = defineModule({
   sdkVersion: raw.sdkVersion,
   serverEntry: raw.serverEntry,
   webEntry: raw.webEntry,
+  icon: raw.icon,
+  cover: raw.cover,
   webRoutes: raw.webRoutes as [{ path: string; exportName: string }],
 })
 

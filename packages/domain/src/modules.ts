@@ -30,6 +30,8 @@ export const CatalogModule = Schema.Struct({
   packageName: Schema.NullOr(Schema.String),
   installed: Schema.Boolean,
   permissions: Schema.Array(Schema.String),
+  iconUrl: Schema.NullOr(Schema.String),
+  coverUrl: Schema.NullOr(Schema.String),
 })
 export type CatalogModule = typeof CatalogModule.Type
 
@@ -43,6 +45,8 @@ export const InstalledModule = Schema.Struct({
   enabled: Schema.Boolean,
   installedAt: Schema.DateTimeUtcFromString,
   loadError: Schema.NullOr(Schema.String),
+  iconUrl: Schema.NullOr(Schema.String),
+  coverUrl: Schema.NullOr(Schema.String),
 })
 export type InstalledModule = typeof InstalledModule.Type
 

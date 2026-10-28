@@ -40,6 +40,7 @@ test("the admin invites a user who gets their own empty library", async ({ page,
   await signIn(page, admin)
   await emptyLibrary(page)
   await page.getByRole("link", { name: "Settings" }).click()
+  await page.getByRole("link", { name: "People" }).click()
   await page.getByLabel("Email").fill(member.email)
   await page.getByRole("button", { name: "Create invite" }).click()
   const inviteUrl = await page.getByTestId("invite-link").textContent()
@@ -58,7 +59,8 @@ test("the admin invites a user who gets their own empty library", async ({ page,
 
   await memberPage.getByRole("link", { name: "Settings" }).click()
   await expect(memberPage.getByText("Distance unit")).toBeVisible()
-  await expect(memberPage.getByText("Invites")).toHaveCount(0)
+  await expect(memberPage.getByRole("link", { name: "People" })).toHaveCount(0)
+  await expect(memberPage.getByRole("link", { name: "Marketplace" })).toHaveCount(0)
 
   await memberPage.getByRole("radio", { name: "Miles" }).click()
   await expect(memberPage.getByRole("radio", { name: "Miles" })).toBeChecked()
@@ -66,7 +68,8 @@ test("the admin invites a user who gets their own empty library", async ({ page,
   await expect(memberPage.getByRole("radio", { name: "Miles" })).toBeChecked()
   await memberContext.close()
 
-  await page.reload()
+  await page.getByRole("link", { name: "General" }).click()
   await expect(page.getByRole("radio", { name: "Kilometers" })).toBeChecked()
+  await page.getByRole("link", { name: "People" }).click()
   await expect(page.getByText(member.email)).toHaveCount(2)
 })

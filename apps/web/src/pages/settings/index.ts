@@ -1,0 +1,6 @@
+export { SettingsGeneralPage } from "./general-page"
+export { SettingsIntegrationsPage } from "./integrations-page"
+export { SettingsMarketplacePage } from "./marketplace-page"
+export { SettingsModulePage, SettingsModulesIndexRedirect } from "./module-settings-page"
+export { SettingsPeoplePage } from "./people-page"
+export { RequireSettingsAdmin, SettingsLayout } from "./settings-layout"

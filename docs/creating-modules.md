@@ -14,7 +14,7 @@ This guide walks a **generic Pick** module — same idea as Decide, but the user
 | --- | --- |
 | **Catalog** | Declares what *can* be installed (`placard.module.json` + host catalog list) |
 | **Instance** | Admin installs/uninstalls; `instance_modules` + enable kill switch |
-| **User** | Each member shows/hides the module in nav (`user_module_prefs`) |
+| **User** | Nav visibility and other prefs live on the module’s settings page (`/settings/modules/<id>`), opened from Marketplace → **Settings** on an installed card |
 | **Runtime** | Trusted **same-process** JS; first-party modules are **bundled**, or third-party via **prebuilt zip** on the modules volume |
 
 You are writing a first-party (or third-party prebuilt) package that:
@@ -37,6 +37,8 @@ apps/web/src/pages/<your-page>.tsx        # UI (first-party; uses app `@/` UI ki
 ```
 
 Route convention: **`/m/<module.id>`** (e.g. `/m/places.pick`) so core routes stay free.
+
+Module settings: Marketplace card → **Settings** → **`/settings/modules/<module.id>`**. Today that page toggles “show in nav”; later modules can declare extra options (home widgets, enrichment hooks, uploaded `settingsExport`, etc.) on the same route.
 
 ---
 
@@ -309,9 +311,9 @@ Without a seed, admins install it from **Settings → Module marketplace**.
 
 **As any user**
 
-1. Settings → My modules → **Shown in nav**.
+1. Settings → Marketplace → **Pick** → **Settings** → **Shown in nav**.
 2. Open **Pick** → choose category `park` → optional Near me → Choose for me.
-3. Hide the module → nav entry gone; `/api/pick/spin` returns `ModuleDisabled`.
+3. Hide the module on its settings page → nav entry gone; `/api/pick/spin` returns `ModuleDisabled`.
 
 **Automated (recommended)**
 
@@ -370,6 +372,10 @@ Manifest fields for packs (backwards compatible; bundled Decide already sets the
 | `serverEntry` | `./server/index.js` | Server ESM entry inside the zip |
 | `webEntry` | `./web/index.js` | Browser ESM entry (served as `/api/modules/<id>/assets/…`) |
 | `sdkVersion` | (optional for bundled) | Semver of `@placard/module-sdk`; **major must match** the host |
+| `icon` | (optional) | Square icon: `/…` or `https://…`, or relative path in the zip |
+| `cover` | (optional) | Marketplace card hero image — same URL rules as `icon` |
+
+Marketplace cards show **Preinstalled** (`bundled`) vs **Uploaded** badges, description, and cover (or a styled placeholder when `cover` is omitted). Relative `icon`/`cover` paths on uploads are served from `/api/modules/<id>/assets/…`. Bundled modules should use root-relative public URLs (e.g. `/module-covers/decide.svg`).
 
 Set `"source": "upload"` in the packed manifest (the host also records `instance_modules.source = upload`).
 

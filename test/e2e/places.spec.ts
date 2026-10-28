@@ -47,6 +47,7 @@ test("without a Google key, a place is added by dropping a pin", async ({ page }
 
 test("with a key, a restaurant is added by typing its name", async ({ page }) => {
   await nav(page, "Settings")
+  await page.getByRole("link", { name: "Integrations" }).click()
   await page.getByLabel("New key").fill("fake-key")
   await page.getByRole("button", { name: "Test and save" }).click()
   await expect(page.getByText("Key works and is saved.")).toBeVisible()

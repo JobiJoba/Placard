@@ -628,8 +628,8 @@ export function LibraryPage() {
         ) : (
           <p className="text-sm text-muted-foreground">
             Add a Google Maps API key in{" "}
-            <Link to="/settings" className="underline underline-offset-2">
-              Settings
+            <Link to="/settings/integrations" className="underline underline-offset-2">
+              Settings → Integrations
             </Link>{" "}
             to see results on a map.
           </p>
@@ -801,8 +801,8 @@ function CityCenter({
     return (
       <p className="text-sm text-muted-foreground">
         City search needs a Google Maps API key.{" "}
-        <Link to="/settings" className="underline underline-offset-2">
-          Add one in Settings
+        <Link to="/settings/integrations" className="underline underline-offset-2">
+          Add one in Settings → Integrations
         </Link>
         .
       </p>

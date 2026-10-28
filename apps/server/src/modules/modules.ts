@@ -29,9 +29,31 @@ interface InstanceRow {
   readonly installed_at: Date
 }
 
+/** Resolve manifest icon/cover to a browser URL (or null). */
+export const resolveModuleMediaUrl = (
+  moduleId: string,
+  source: ModuleSource,
+  media: string | undefined,
+): string | null => {
+  if (media == null || media.trim() === "") return null
+  const value = media.trim()
+  if (/^https?:\/\//i.test(value) || value.startsWith("/")) return value
+  if (source === "upload" || source === "folder") {
+    const relative = value.replace(/^\.\//, "")
+    return `/api/modules/${encodeURIComponent(moduleId)}/assets/${relative}`
+  }
+  // Bundled relative paths are not served from disk; prefer absolute /public paths in manifests.
+  return null
+}
+
 const toInstalled = (
   row: InstanceRow,
-  meta: { name: string; description: string },
+  meta: {
+    name: string
+    description: string
+    iconUrl: string | null
+    coverUrl: string | null
+  },
 ): InstalledModule => ({
   id: row.module_id,
   name: meta.name,
@@ -42,6 +64,8 @@ const toInstalled = (
   enabled: row.enabled,
   installedAt: DateTime.fromDateUnsafe(row.installed_at),
   loadError: row.load_error,
+  iconUrl: meta.iconUrl,
+  coverUrl: meta.coverUrl,
 })
 
 export class Modules extends Context.Service<
@@ -124,21 +148,57 @@ export class Modules extends Context.Service<
 
       const metaFor = (moduleId: string, row?: InstanceRow) =>
         Effect.gen(function* () {
-          const m = yield* resolveManifest(
-            row ?? {
-              module_id: moduleId,
-              version: "0.0.0",
-              source: "bundled",
-              package_name: null,
-              enabled: true,
-              load_error: null,
-              installed_at: new Date(),
-            },
-          )
-          return m
-            ? { name: m.name, description: m.description, version: m.version }
-            : { name: moduleId, description: "", version: row?.version ?? "0.0.0" }
+          const effectiveRow = row ?? {
+            module_id: moduleId,
+            version: "0.0.0",
+            source: "bundled" as const,
+            package_name: null,
+            enabled: true,
+            load_error: null,
+            installed_at: new Date(),
+          }
+          const m = yield* resolveManifest(effectiveRow)
+          if (!m) {
+            return {
+              name: moduleId,
+              description: "",
+              version: effectiveRow.version,
+              iconUrl: null as string | null,
+              coverUrl: null as string | null,
+            }
+          }
+          return {
+            name: m.name,
+            description: m.description,
+            version: m.version,
+            iconUrl: resolveModuleMediaUrl(moduleId, effectiveRow.source, m.icon),
+            coverUrl: resolveModuleMediaUrl(moduleId, effectiveRow.source, m.cover),
+          }
         })
+
+      const mediaMeta = (m: ModuleManifest, source: ModuleSource) => ({
+        name: m.name,
+        description: m.description,
+        iconUrl: resolveModuleMediaUrl(m.id, source, m.icon),
+        coverUrl: resolveModuleMediaUrl(m.id, source, m.cover),
+      })
+
+      const catalogEntry = (
+        m: ModuleManifest,
+        source: ModuleSource,
+        installed: boolean,
+      ): CatalogModule => ({
+        id: m.id,
+        name: m.name,
+        version: m.version,
+        description: m.description,
+        source,
+        packageName: m.packageName ?? null,
+        installed,
+        permissions: [...m.permissions],
+        iconUrl: resolveModuleMediaUrl(m.id, source, m.icon),
+        coverUrl: resolveModuleMediaUrl(m.id, source, m.cover),
+      })
 
       const setLoadError = (moduleId: string, error: string | null) =>
         sql`
@@ -192,17 +252,8 @@ export class Modules extends Context.Service<
         catalog: Effect.fn("Modules.catalog")(function* (_ownerId) {
           const installed = yield* listRows()
           const installedIds = new Set(installed.map((r) => r.module_id))
-          const fromBundled = allCatalogManifests().map(
-            (m): CatalogModule => ({
-              id: m.id,
-              name: m.name,
-              version: m.version,
-              description: m.description,
-              source: m.source,
-              packageName: m.packageName ?? null,
-              installed: installedIds.has(m.id),
-              permissions: [...m.permissions],
-            }),
+          const fromBundled = allCatalogManifests().map((m) =>
+            catalogEntry(m, m.source, installedIds.has(m.id)),
           )
           const extras: CatalogModule[] = []
           for (const row of installed) {
@@ -211,14 +262,9 @@ export class Modules extends Context.Service<
             const manifest = yield* resolveManifest(row)
             if (!manifest) continue
             extras.push({
-              id: row.module_id,
-              name: manifest.name,
+              ...catalogEntry(manifest, row.source, true),
               version: row.version,
-              description: manifest.description,
-              source: row.source,
               packageName: row.package_name,
-              installed: true,
-              permissions: [...manifest.permissions],
             })
           }
           return [...fromBundled, ...extras]
@@ -244,10 +290,7 @@ export class Modules extends Context.Service<
           }
           const existing = yield* getRow(moduleId)
           if (existing) {
-            return toInstalled(existing, {
-              name: manifest.name,
-              description: manifest.description,
-            })
+            return toInstalled(existing, mediaMeta(manifest, existing.source))
           }
           if (manifest.source !== "bundled") {
             return yield* new ModuleInstallFailed({
@@ -259,10 +302,7 @@ export class Modules extends Context.Service<
           if (!row) {
             return yield* new ModuleInstallFailed({ message: "Could not record the install." })
           }
-          return toInstalled(row, {
-            name: manifest.name,
-            description: manifest.description,
-          })
+          return toInstalled(row, mediaMeta(manifest, "bundled"))
         }),
 
         upload: Effect.fn("Modules.upload")(function* (actorRole, upload) {
@@ -281,10 +321,7 @@ export class Modules extends Context.Service<
           if (!row) {
             return yield* new ModuleInstallFailed({ message: "Could not record the upload." })
           }
-          return toInstalled(row, {
-            name: extracted.manifest.name,
-            description: extracted.manifest.description,
-          })
+          return toInstalled(row, mediaMeta(extracted.manifest, "upload"))
         }),
 
         uninstall: Effect.fn("Modules.uninstall")(function* (actorRole, moduleId) {

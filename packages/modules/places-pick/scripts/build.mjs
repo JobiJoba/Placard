@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs"
+import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import * as esbuild from "esbuild"
@@ -45,6 +45,12 @@ await esbuild.build({
   },
   logLevel: "info",
 })
+
+const webAssets = join(root, "src/web/assets")
+if (existsSync(webAssets)) {
+  mkdirSync(join(packDir, "web/assets"), { recursive: true })
+  cpSync(webAssets, join(packDir, "web/assets"), { recursive: true })
+}
 
 writeFileSync(
   join(packDir, "README.md"),

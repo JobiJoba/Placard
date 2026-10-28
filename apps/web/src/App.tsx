@@ -12,7 +12,16 @@ import { ImportPage } from "@/pages/import-page"
 import { LibraryPage } from "@/pages/library-page"
 import { ListsPage } from "@/pages/lists-page"
 import { PlacePage } from "@/pages/place-page"
-import { SettingsPage } from "@/pages/settings-page"
+import {
+  RequireSettingsAdmin,
+  SettingsGeneralPage,
+  SettingsIntegrationsPage,
+  SettingsLayout,
+  SettingsMarketplacePage,
+  SettingsModulePage,
+  SettingsModulesIndexRedirect,
+  SettingsPeoplePage,
+} from "@/pages/settings"
 import { RequireUser, SessionProvider } from "@/session"
 
 function AuthenticatedRoutes() {
@@ -29,7 +38,50 @@ function AuthenticatedRoutes() {
         <Route path="/places/:id" element={<PlacePage />} />
         <Route path="/lists" element={<ListsPage />} />
         <Route path="/deleted" element={<DeletedPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/settings" element={<SettingsLayout />}>
+          <Route index element={<Navigate to="general" replace />} />
+          <Route path="general" element={<SettingsGeneralPage />} />
+          <Route
+            path="modules"
+            element={
+              <RequireSettingsAdmin>
+                <SettingsModulesIndexRedirect />
+              </RequireSettingsAdmin>
+            }
+          />
+          <Route
+            path="modules/:moduleId"
+            element={
+              <RequireSettingsAdmin>
+                <SettingsModulePage />
+              </RequireSettingsAdmin>
+            }
+          />
+          <Route
+            path="marketplace"
+            element={
+              <RequireSettingsAdmin>
+                <SettingsMarketplacePage />
+              </RequireSettingsAdmin>
+            }
+          />
+          <Route
+            path="integrations"
+            element={
+              <RequireSettingsAdmin>
+                <SettingsIntegrationsPage />
+              </RequireSettingsAdmin>
+            }
+          />
+          <Route
+            path="people"
+            element={
+              <RequireSettingsAdmin>
+                <SettingsPeoplePage />
+              </RequireSettingsAdmin>
+            }
+          />
+        </Route>
         {moduleRouteElements(list)}
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

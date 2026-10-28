@@ -16,6 +16,8 @@
   "sdkVersion": "0.1.0",
   "serverEntry": "./server/index.js",
   "webEntry": "./web/index.js",
+  "icon": "./web/assets/cover.svg",
+  "cover": "./web/assets/cover.svg",
   "webRoutes": [
     {
       "path": "/m/restaurants.decide",

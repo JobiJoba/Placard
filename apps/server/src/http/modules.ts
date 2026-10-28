@@ -73,7 +73,7 @@ const mimeFor = (path: string) => {
     case ".json":
       return "application/json; charset=utf-8"
     case ".svg":
-      return "image/svg+xml"
+      return "image/svg+xml; charset=utf-8"
     case ".png":
       return "image/png"
     case ".jpg":
@@ -111,8 +111,11 @@ export const ModuleFileRoutesLive = HttpRouter.use(
         if (!id || typeof wildcard !== "string") {
           return HttpServerResponse.empty({ status: 404 })
         }
-        const ok = yield* modules.isAvailableToUser(user.value.id, id)
-        if (!ok) return HttpServerResponse.empty({ status: 404 })
+        // Members need the module enabled+visible; admins can fetch covers for marketplace cards.
+        const available = yield* modules.isAvailableToUser(user.value.id, id)
+        if (!available && user.value.role !== "admin") {
+          return HttpServerResponse.empty({ status: 404 })
+        }
 
         const asset = yield* modules.resolveAsset(id, wildcard)
         if (!asset) return HttpServerResponse.empty({ status: 404 })

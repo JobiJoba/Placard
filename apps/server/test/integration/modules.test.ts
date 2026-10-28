@@ -66,6 +66,8 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("modules marketpla
         id: "restaurants.decide",
         installed: true,
         source: "bundled",
+        coverUrl: "/module-covers/decide.svg",
+        iconUrl: "/module-covers/decide.svg",
       })
     }),
   )

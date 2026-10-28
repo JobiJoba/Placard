@@ -58,8 +58,8 @@ export function AddPlacePage() {
               {me.role === "admin" ? (
                 <span>
                   Searching Google and picking places on its map need a Google API key.{" "}
-                  <Link to="/settings" className="underline underline-offset-4">
-                    Add one in Settings
+                  <Link to="/settings/integrations" className="underline underline-offset-4">
+                    Add one in Settings → Integrations
                   </Link>
                   .
                 </span>
