@@ -69,12 +69,19 @@ export type ImportEntry = typeof ImportEntry.Type
 
 export const ImportEntryFilter = Schema.Struct({
   decision: Schema.optional(ImportDecision),
+  matchStatus: Schema.optional(ImportMatchStatus),
   sourceList: Schema.optional(Schema.NullOr(Schema.String)),
   text: Schema.optional(Schema.Trim.pipe(Schema.check(Schema.isBetweenLength(1, 200)))),
   needsLocation: Schema.optional(Schema.Boolean),
   alreadyInLibrary: Schema.optional(Schema.Boolean),
 })
 export type ImportEntryFilter = typeof ImportEntryFilter.Type
+
+export const ImportResolveInput = Schema.Struct({
+  googlePlaceId: Schema.NonEmptyString,
+  sessionToken: Schema.NullOr(Schema.String),
+})
+export type ImportResolveInput = typeof ImportResolveInput.Type
 
 /** Zip bytes as base64, or already-extracted text files. */
 export const ImportUpload = Schema.Union([

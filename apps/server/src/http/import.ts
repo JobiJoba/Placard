@@ -33,5 +33,14 @@ export const ImportApiLive = HttpApiBuilder.group(
       .handle("undo", ({ params, payload }) =>
         withMe((me) => imports.undo(me.id, params.id, payload.confirmEdited)),
       )
+      .handle("dismissReview", ({ params }) =>
+        withMe((me) => imports.dismissReview(me.id, params.id, params.entryId)),
+      )
+      .handle("acceptReview", ({ params }) =>
+        withMe((me) => imports.acceptReview(me.id, params.id, params.entryId)),
+      )
+      .handle("resolveReview", ({ params, payload }) =>
+        withMe((me) => imports.resolveReview(me.id, params.id, params.entryId, payload)),
+      )
   }),
 )

@@ -1,5 +1,5 @@
-import type { ImportDecision, ImportEntry, ImportRun } from "@placard/domain"
-import { useCallback, useMemo, useState } from "react"
+import type { ImportDecision, ImportEntry } from "@placard/domain"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router"
 import { ErrorAlert } from "@/components/error-alert"
 import { Badge } from "@/components/ui/badge"
@@ -7,6 +7,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { api, errorMessage } from "@/lib/api"
 import { useLoad } from "@/lib/use-load"
+
+/** Display label for starred Saved Places.json entries (sourceList is null). */
+const SAVED_PLACES = "Saved Places"
+
+const listLabel = (sourceList: string | null) => sourceList ?? SAVED_PLACES
 
 export function ImportPage() {
   const { runId } = useParams()
@@ -103,34 +108,81 @@ function ImportUploadPage() {
   )
 }
 
+type ListSummary = {
+  readonly key: string | null
+  readonly label: string
+  readonly total: number
+  readonly pending: number
+  readonly kept: number
+  readonly skipped: number
+}
+
+const summarizeLists = (entries: ReadonlyArray<ImportEntry>): ReadonlyArray<ListSummary> => {
+  const map = new Map<string | null, { pending: number; kept: number; skipped: number }>()
+  for (const entry of entries) {
+    const key = entry.sourceList
+    const current = map.get(key) ?? { pending: 0, kept: 0, skipped: 0 }
+    if (entry.decision === "pending") current.pending++
+    else if (entry.decision === "keep") current.kept++
+    else current.skipped++
+    map.set(key, current)
+  }
+  return [...map.entries()]
+    .map(([key, counts]) => ({
+      key,
+      label: listLabel(key),
+      total: counts.pending + counts.kept + counts.skipped,
+      ...counts,
+    }))
+    .sort((a, b) => {
+      // Saved Places first — that's usually the bulk of pending after list skips.
+      if (a.key === null) return -1
+      if (b.key === null) return 1
+      return a.label.localeCompare(b.label)
+    })
+}
+
+const decisionBadge = (decision: ImportDecision) => {
+  if (decision === "keep") return <Badge variant="default">keep</Badge>
+  if (decision === "skip") return <Badge variant="destructive">skip</Badge>
+  return <Badge variant="outline">pending</Badge>
+}
+
 function ImportTriagePage({ runId }: { readonly runId: string }) {
   const [error, setError] = useState<string | null>(null)
   const [text, setText] = useState("")
+  const [listFilter, setListFilter] = useState<string | null | undefined>(undefined)
+  const [decisionFilter, setDecisionFilter] = useState<ImportDecision | "all">("all")
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
   const [busy, setBusy] = useState(false)
 
   const loadRun = useCallback(() => api((c) => c.import.getRun({ params: { id: runId } })), [runId])
   const loadEntries = useCallback(
-    () =>
-      api((c) =>
-        c.import.listEntries({
-          params: { id: runId },
-          payload: text.trim() ? { text: text.trim() } : {},
-        }),
-      ),
-    [runId, text],
+    () => api((c) => c.import.listEntries({ params: { id: runId }, payload: {} })),
+    [runId],
   )
 
   const { data: run, reload: reloadRun } = useLoad(loadRun)
-  const { data: entries, reload: reloadEntries } = useLoad(loadEntries)
+  const { data: allEntries, reload: reloadEntries } = useLoad(loadEntries)
 
-  const lists = useMemo(() => {
-    const names = new Set<string>()
-    for (const entry of entries ?? []) {
-      if (entry.sourceList) names.add(entry.sourceList)
-    }
-    return [...names].sort()
-  }, [entries])
+  const lists = useMemo(() => summarizeLists(allEntries ?? []), [allEntries])
+
+  const shown = useMemo(() => {
+    const q = text.trim().toLowerCase()
+    return (allEntries ?? []).filter((entry) => {
+      if (listFilter !== undefined) {
+        if (listFilter === null && entry.sourceList !== null) return false
+        if (listFilter !== null && entry.sourceList !== listFilter) return false
+      }
+      if (decisionFilter !== "all" && entry.decision !== decisionFilter) return false
+      if (!q) return true
+      const hay = `${entry.name ?? ""} ${entry.address ?? ""} ${entry.note ?? ""}`.toLowerCase()
+      return hay.includes(q)
+    })
+  }, [allEntries, text, listFilter, decisionFilter])
+
+  const allShownSelected = shown.length > 0 && shown.every((entry) => selected.has(entry.id))
+  const someShownSelected = shown.some((entry) => selected.has(entry.id))
 
   const refresh = async () => {
     await Promise.all([reloadRun(), reloadEntries()])
@@ -156,7 +208,7 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
     }
   }
 
-  const decideList = async (sourceList: string, decision: ImportDecision) => {
+  const decideList = async (sourceList: string | null, decision: ImportDecision) => {
     setBusy(true)
     setError(null)
     try {
@@ -166,6 +218,9 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
           payload: { sourceList, decision },
         }),
       )
+      setListFilter(sourceList)
+      setDecisionFilter(decision)
+      setSelected(new Set())
       await refresh()
     } catch (cause) {
       setError(errorMessage(cause))
@@ -200,7 +255,21 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
     }
   }
 
+  const toggleAllShown = () => {
+    if (allShownSelected) {
+      const next = new Set(selected)
+      for (const entry of shown) next.delete(entry.id)
+      setSelected(next)
+      return
+    }
+    const next = new Set(selected)
+    for (const entry of shown) next.add(entry.id)
+    setSelected(next)
+  }
+
   if (!run) return <p className="text-sm text-muted-foreground">Loading import…</p>
+
+  const savedPlaces = lists.find((list) => list.key === null)
 
   return (
     <div className="flex flex-col gap-4">
@@ -218,6 +287,12 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
             {run.counts.kept} keep · {run.counts.skipped} skip · {run.counts.pending} pending · ~
             {run.expectedApiCalls} API calls if you commit kept entries
           </p>
+          {run.counts.pending > 0 && savedPlaces && savedPlaces.pending > 0 && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {savedPlaces.pending} pending are in <strong>Saved Places</strong> (starred pins) —
+              skipping CSV lists does not include them. Use the Saved Places chip below.
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           {run.status === "triage" && (
@@ -237,6 +312,68 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
 
       {run.status === "triage" && (
         <>
+          <div className="flex flex-col gap-2">
+            <p className="text-xs font-medium text-muted-foreground">Lists</p>
+            <div className="flex flex-wrap gap-2">
+              {lists.map((list) => {
+                const state =
+                  list.pending === 0 && list.skipped === list.total
+                    ? "skip"
+                    : list.pending === 0 && list.kept === list.total
+                      ? "keep"
+                      : list.pending === list.total
+                        ? "pending"
+                        : "mixed"
+                const active = listFilter === list.key
+                return (
+                  <div
+                    key={list.label}
+                    className={`flex items-center gap-1 rounded-md border px-2 py-1.5 text-xs ${
+                      active ? "border-foreground bg-muted" : "border-border"
+                    } ${state === "skip" ? "opacity-70" : ""}`}
+                  >
+                    <button
+                      type="button"
+                      className="text-left font-medium underline-offset-2 hover:underline"
+                      onClick={() =>
+                        setListFilter((current) => (current === list.key ? undefined : list.key))
+                      }
+                    >
+                      {list.label}
+                      <span className="ml-1 font-normal text-muted-foreground">({list.total})</span>
+                    </button>
+                    {decisionBadge(
+                      state === "keep" ? "keep" : state === "skip" ? "skip" : "pending",
+                    )}
+                    {state === "mixed" && (
+                      <span className="text-muted-foreground">
+                        {list.kept}k/{list.skipped}s/{list.pending}p
+                      </span>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-1"
+                      disabled={busy || state === "keep"}
+                      onClick={() => void decideList(list.key, "keep")}
+                    >
+                      keep
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-1"
+                      disabled={busy || state === "skip"}
+                      onClick={() => void decideList(list.key, "skip")}
+                    >
+                      skip
+                    </Button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
           <div className="flex flex-wrap items-center gap-2">
             <Input
               placeholder="Filter by text"
@@ -244,10 +381,40 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
               onChange={(e) => setText(e.target.value)}
               className="max-w-xs"
             />
+            <select
+              className="h-8 rounded-md border border-border bg-background px-2 text-sm"
+              value={decisionFilter}
+              onChange={(e) => setDecisionFilter(e.target.value as ImportDecision | "all")}
+            >
+              <option value="all">All decisions</option>
+              <option value="pending">Pending only</option>
+              <option value="keep">Kept only</option>
+              <option value="skip">Skipped only</option>
+            </select>
+            {(listFilter !== undefined || decisionFilter !== "all" || text) && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setListFilter(undefined)
+                  setDecisionFilter("all")
+                  setText("")
+                }}
+              >
+                Clear filters
+              </Button>
+            )}
+            <span className="text-xs text-muted-foreground">
+              Showing {shown.length}
+              {selected.size > 0 ? ` · ${selected.size} selected` : ""}
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               size="sm"
               variant="outline"
-              disabled={busy}
+              disabled={busy || selected.size === 0}
               onClick={() => void decide([...selected], "keep")}
             >
               Keep selected
@@ -255,7 +422,7 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
             <Button
               size="sm"
               variant="outline"
-              disabled={busy}
+              disabled={busy || selected.size === 0}
               onClick={() => void decide([...selected], "skip")}
             >
               Skip selected
@@ -263,52 +430,37 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
             <Button
               size="sm"
               variant="secondary"
-              disabled={busy}
+              disabled={busy || shown.length === 0}
               onClick={() =>
                 void decide(
-                  (entries ?? []).map((e) => e.id),
+                  shown.map((e) => e.id),
                   "keep",
                 )
               }
             >
               Keep all shown
             </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={busy || shown.length === 0}
+              onClick={() =>
+                void decide(
+                  shown.map((e) => e.id),
+                  "skip",
+                )
+              }
+            >
+              Skip all shown
+            </Button>
           </div>
 
-          {lists.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {lists.map((name) => (
-                <div
-                  key={name}
-                  className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs"
-                >
-                  <span>{name}</span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 px-1"
-                    disabled={busy}
-                    onClick={() => void decideList(name, "keep")}
-                  >
-                    keep
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 px-1"
-                    disabled={busy}
-                    onClick={() => void decideList(name, "skip")}
-                  >
-                    skip
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-
           <EntriesTable
-            entries={entries ?? []}
+            entries={shown}
             selected={selected}
+            allSelected={allShownSelected}
+            someSelected={someShownSelected}
+            onToggleAll={toggleAllShown}
             onToggle={(id) => {
               const next = new Set(selected)
               if (next.has(id)) next.delete(id)
@@ -321,12 +473,253 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
       )}
 
       {run.status === "done" && (
-        <p className="text-sm text-muted-foreground">
-          Import finished. Matched {run.counts.matched}, needs review {run.counts.needsReview}.{" "}
-          <Link to="/" className="underline underline-offset-4">
-            Open library
-          </Link>
-        </p>
+        <NeedsReviewSection
+          runId={runId}
+          matched={run.counts.matched}
+          needsReview={run.counts.needsReview}
+          busy={busy}
+          setBusy={setBusy}
+          setError={setError}
+          onChanged={refresh}
+        />
+      )}
+    </div>
+  )
+}
+
+function NeedsReviewSection({
+  runId,
+  matched,
+  needsReview,
+  busy,
+  setBusy,
+  setError,
+  onChanged,
+}: {
+  readonly runId: string
+  readonly matched: number
+  readonly needsReview: number
+  readonly busy: boolean
+  readonly setBusy: (value: boolean) => void
+  readonly setError: (value: string | null) => void
+  readonly onChanged: () => Promise<void>
+}) {
+  const loadReview = useCallback(
+    () =>
+      api((c) =>
+        c.import.listEntries({
+          params: { id: runId },
+          payload: { matchStatus: "needs_review" },
+        }),
+      ),
+    [runId],
+  )
+  const { data: reviewEntries, reload } = useLoad(loadReview)
+  const [resolvingId, setResolvingId] = useState<string | null>(null)
+
+  const act = async (action: () => Promise<unknown>) => {
+    setBusy(true)
+    setError(null)
+    try {
+      await action()
+      setResolvingId(null)
+      await Promise.all([reload(), onChanged()])
+    } catch (cause) {
+      setError(errorMessage(cause))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-sm text-muted-foreground">
+        Import finished. Matched {matched}, needs review {needsReview}.{" "}
+        <Link to="/" className="underline underline-offset-4">
+          Open library
+        </Link>
+      </p>
+
+      {needsReview > 0 && (
+        <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
+          <div>
+            <h2 className="text-lg font-medium">Needs review</h2>
+            <p className="text-xs text-muted-foreground">
+              These kept entries had no reliable location or Google match. Search Google to place
+              them, accept a weak pin if one was created, or skip.
+            </p>
+          </div>
+          <ul className="flex flex-col gap-3">
+            {(reviewEntries ?? []).map((entry) => (
+              <li key={entry.id} className="rounded-md border border-border/70 p-3">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="font-medium">{entry.name ?? "(no name)"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {listLabel(entry.sourceList)}
+                      {entry.address ? ` · ${entry.address}` : ""}
+                      {entry.needsLocation ? " · needs location" : ""}
+                      {entry.placeId ? " · weak pin created" : ""}
+                    </p>
+                    {entry.googleMapsUrl && (
+                      <a
+                        href={entry.googleMapsUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs underline underline-offset-2"
+                      >
+                        Open Takeout Maps URL
+                      </a>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {entry.placeId && (
+                      <>
+                        <Button size="sm" variant="outline" asChild>
+                          <Link to={`/places/${entry.placeId}`}>Open place</Link>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled={busy}
+                          onClick={() =>
+                            void act(() =>
+                              api((c) =>
+                                c.import.acceptReview({
+                                  params: { id: runId, entryId: entry.id },
+                                }),
+                              ),
+                            )
+                          }
+                        >
+                          Accept pin
+                        </Button>
+                      </>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy}
+                      onClick={() =>
+                        setResolvingId((current) => (current === entry.id ? null : entry.id))
+                      }
+                    >
+                      {resolvingId === entry.id ? "Hide search" : "Find on Google"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={busy}
+                      onClick={() =>
+                        void act(() =>
+                          api((c) =>
+                            c.import.dismissReview({
+                              params: { id: runId, entryId: entry.id },
+                            }),
+                          ),
+                        )
+                      }
+                    >
+                      Skip
+                    </Button>
+                  </div>
+                </div>
+                {resolvingId === entry.id && (
+                  <div className="mt-3 border-t border-border pt-3">
+                    <ReviewGoogleSearch
+                      initialQuery={entry.name ?? ""}
+                      disabled={busy}
+                      onPick={(googlePlaceId, sessionToken) =>
+                        void act(() =>
+                          api((c) =>
+                            c.import.resolveReview({
+                              params: { id: runId, entryId: entry.id },
+                              payload: { googlePlaceId, sessionToken },
+                            }),
+                          ),
+                        )
+                      }
+                    />
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ReviewGoogleSearch({
+  initialQuery,
+  disabled,
+  onPick,
+}: {
+  readonly initialQuery: string
+  readonly disabled: boolean
+  readonly onPick: (googlePlaceId: string, sessionToken: string) => void
+}) {
+  const [sessionToken] = useState(() => crypto.randomUUID())
+  const [query, setQuery] = useState(initialQuery)
+  const [suggestions, setSuggestions] = useState<
+    ReadonlyArray<{ googlePlaceId: string; primaryText: string; secondaryText: string | null }>
+  >([])
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const input = query.trim()
+    if (input.length < 2) {
+      setSuggestions([])
+      return
+    }
+    let stale = false
+    const timer = window.setTimeout(() => {
+      api((c) => c.google.autocomplete({ payload: { input, sessionToken, near: null } })).then(
+        (found) => {
+          if (!stale) {
+            setSuggestions(found)
+            setError(null)
+          }
+        },
+        (cause: unknown) => {
+          if (!stale) setError(errorMessage(cause))
+        },
+      )
+    }, 250)
+    return () => {
+      stale = true
+      window.clearTimeout(timer)
+    }
+  }, [query, sessionToken])
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Input
+        value={query}
+        disabled={disabled}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search Google Maps…"
+      />
+      {error && <ErrorAlert message={error} />}
+      {suggestions.length > 0 && (
+        <ul className="flex flex-col rounded-md border border-border">
+          {suggestions.map((suggestion) => (
+            <li key={suggestion.googlePlaceId} className="border-b border-border last:border-b-0">
+              <button
+                type="button"
+                disabled={disabled}
+                className="flex w-full flex-col items-start px-3 py-2 text-left text-sm hover:bg-muted"
+                onClick={() => onPick(suggestion.googlePlaceId, sessionToken)}
+              >
+                <span className="font-medium">{suggestion.primaryText}</span>
+                {suggestion.secondaryText && (
+                  <span className="text-xs text-muted-foreground">{suggestion.secondaryText}</span>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   )
@@ -335,11 +728,17 @@ function ImportTriagePage({ runId }: { readonly runId: string }) {
 function EntriesTable({
   entries,
   selected,
+  allSelected,
+  someSelected,
+  onToggleAll,
   onToggle,
   onDecide,
 }: {
   readonly entries: ReadonlyArray<ImportEntry>
   readonly selected: ReadonlySet<string>
+  readonly allSelected: boolean
+  readonly someSelected: boolean
+  readonly onToggleAll: () => void
   readonly onToggle: (id: string) => void
   readonly onDecide: (id: string, decision: ImportDecision) => void
 }) {
@@ -348,7 +747,17 @@ function EntriesTable({
       <table className="w-full min-w-[640px] text-left text-sm">
         <thead className="border-b border-border bg-muted/40 text-xs text-muted-foreground">
           <tr>
-            <th className="px-2 py-2" />
+            <th className="px-2 py-2">
+              <input
+                type="checkbox"
+                checked={allSelected}
+                ref={(el) => {
+                  if (el) el.indeterminate = !allSelected && someSelected
+                }}
+                onChange={onToggleAll}
+                aria-label="Select all shown"
+              />
+            </th>
             <th className="px-2 py-2">Name</th>
             <th className="px-2 py-2">List</th>
             <th className="px-2 py-2">Flags</th>
@@ -357,19 +766,29 @@ function EntriesTable({
         </thead>
         <tbody>
           {entries.map((entry) => (
-            <tr key={entry.id} className="border-b border-border/60">
+            <tr
+              key={entry.id}
+              className={`border-b border-border/60 ${
+                entry.decision === "skip"
+                  ? "bg-destructive/5 text-muted-foreground"
+                  : entry.decision === "keep"
+                    ? "bg-primary/5"
+                    : ""
+              }`}
+            >
               <td className="px-2 py-2">
                 <input
                   type="checkbox"
                   checked={selected.has(entry.id)}
                   onChange={() => onToggle(entry.id)}
+                  aria-label={`Select ${entry.name ?? "entry"}`}
                 />
               </td>
               <td className="px-2 py-2">
                 <div className="font-medium">{entry.name ?? "(no name)"}</div>
                 <div className="text-xs text-muted-foreground">{entry.address}</div>
               </td>
-              <td className="px-2 py-2 text-xs">{entry.sourceList ?? "Saved Places"}</td>
+              <td className="px-2 py-2 text-xs">{listLabel(entry.sourceList)}</td>
               <td className="px-2 py-2">
                 <div className="flex flex-wrap gap-1">
                   {entry.needsLocation && <Badge variant="outline">needs location</Badge>}
@@ -379,25 +798,27 @@ function EntriesTable({
               </td>
               <td className="px-2 py-2">
                 <div className="flex items-center gap-1">
-                  <Badge variant={entry.decision === "keep" ? "default" : "secondary"}>
-                    {entry.decision}
-                  </Badge>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 px-1"
-                    onClick={() => onDecide(entry.id, "keep")}
-                  >
-                    keep
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 px-1"
-                    onClick={() => onDecide(entry.id, "skip")}
-                  >
-                    skip
-                  </Button>
+                  {decisionBadge(entry.decision)}
+                  {entry.decision !== "keep" && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-1"
+                      onClick={() => onDecide(entry.id, "keep")}
+                    >
+                      keep
+                    </Button>
+                  )}
+                  {entry.decision !== "skip" && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-1"
+                      onClick={() => onDecide(entry.id, "skip")}
+                    >
+                      skip
+                    </Button>
+                  )}
                 </div>
               </td>
             </tr>

@@ -31,6 +31,7 @@ import {
   ImportEntryFilter,
   ImportInvalidState,
   ImportNotFound,
+  ImportResolveInput,
   ImportRun,
   ImportUndoPreview,
   ImportUpload,
@@ -317,7 +318,8 @@ export class ImportApi extends HttpApiGroup.make("import")
     HttpApiEndpoint.post("setListDecision", "/runs/:id/lists", {
       params: { id: Schema.String },
       payload: Schema.Struct({
-        sourceList: Schema.String,
+        /** Null means starred Saved Places (no CSV list). */
+        sourceList: Schema.NullOr(Schema.String),
         decision: Schema.Literals(["pending", "keep", "skip"]),
       }),
       success: ImportRun,
@@ -336,6 +338,22 @@ export class ImportApi extends HttpApiGroup.make("import")
     HttpApiEndpoint.post("undo", "/runs/:id/undo", {
       params: { id: Schema.String },
       payload: Schema.Struct({ confirmEdited: Schema.Boolean }),
+      success: ImportRun,
+      error: [ImportNotFound, ImportInvalidState],
+    }),
+    HttpApiEndpoint.post("dismissReview", "/runs/:id/entries/:entryId/dismiss", {
+      params: { id: Schema.String, entryId: Schema.String },
+      success: ImportRun,
+      error: [ImportNotFound, ImportInvalidState],
+    }),
+    HttpApiEndpoint.post("resolveReview", "/runs/:id/entries/:entryId/resolve", {
+      params: { id: Schema.String, entryId: Schema.String },
+      payload: ImportResolveInput,
+      success: ImportRun,
+      error: [ImportNotFound, ImportInvalidState, GoogleKeyMissing, GooglePlacesFailed],
+    }),
+    HttpApiEndpoint.post("acceptReview", "/runs/:id/entries/:entryId/accept", {
+      params: { id: Schema.String, entryId: Schema.String },
       success: ImportRun,
       error: [ImportNotFound, ImportInvalidState],
     }),

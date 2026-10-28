@@ -1,10 +1,12 @@
 import {
+  type GooglePlacesError,
   type ImportCounts,
   type ImportDecision,
   type ImportEntry,
   type ImportEntryFilter,
   ImportInvalidState,
   ImportNotFound,
+  type ImportResolveInput,
   type ImportRun,
   type ImportUndoPreview,
   type ImportUpload,
@@ -138,7 +140,7 @@ export class Import extends Context.Service<
     readonly setListDecision: (
       ownerId: string,
       runId: string,
-      sourceList: string,
+      sourceList: string | null,
       decision: ImportDecision,
     ) => Effect.Effect<ImportRun, ImportNotFound | ImportInvalidState>
     readonly commit: (
@@ -154,6 +156,25 @@ export class Import extends Context.Service<
       runId: string,
       confirmEdited: boolean,
     ) => Effect.Effect<ImportRun, ImportNotFound | ImportInvalidState>
+    /** Drop a needs-review entry (and soft-delete its import-created place, if any). */
+    readonly dismissReview: (
+      ownerId: string,
+      runId: string,
+      entryId: string,
+    ) => Effect.Effect<ImportRun, ImportNotFound | ImportInvalidState>
+    /** Keep an already-created weak-match place and mark the entry matched. */
+    readonly acceptReview: (
+      ownerId: string,
+      runId: string,
+      entryId: string,
+    ) => Effect.Effect<ImportRun, ImportNotFound | ImportInvalidState>
+    /** Attach a Google Place ID to a needs-review entry (creates/links the place). */
+    readonly resolveReview: (
+      ownerId: string,
+      runId: string,
+      entryId: string,
+      input: ImportResolveInput,
+    ) => Effect.Effect<ImportRun, ImportNotFound | ImportInvalidState | GooglePlacesError>
     readonly runParseJob: (runId: string) => Effect.Effect<void>
     readonly runCommitJob: (runId: string) => Effect.Effect<void>
   }
@@ -508,6 +529,7 @@ export class Import extends Context.Service<
           yield* loadRun(ownerId, runId)
           const clauses = [sql`e.run_id = ${runId}`, sql`e.owner_id = ${ownerId}`]
           if (filter?.decision) clauses.push(sql`e.decision = ${filter.decision}`)
+          if (filter?.matchStatus) clauses.push(sql`e.match_status = ${filter.matchStatus}`)
           if (filter?.sourceList !== undefined) {
             clauses.push(
               filter.sourceList === null
@@ -540,9 +562,11 @@ export class Import extends Context.Service<
 
         setListDecision: Effect.fn("Import.setListDecision")(
           function* (ownerId, runId, sourceList, decision) {
+            const listClause =
+              sourceList === null ? sql`source_list is null` : sql`source_list = ${sourceList}`
             const ids = yield* sql<{ id: string }>`
-            select id from import_entries
-            where run_id = ${runId} and owner_id = ${ownerId} and source_list = ${sourceList}`.pipe(
+              select id from import_entries
+              where run_id = ${runId} and owner_id = ${ownerId} and ${listClause}`.pipe(
               Effect.orDie,
             )
             return yield* applyDecisions(
@@ -610,6 +634,140 @@ export class Import extends Context.Service<
           }),
 
         runCommitJob: executeCommit,
+
+        dismissReview: Effect.fn("Import.dismissReview")(function* (ownerId, runId, entryId) {
+          const run = yield* loadRun(ownerId, runId)
+          if (run.status !== "done") {
+            return yield* new ImportInvalidState({
+              message: "Needs-review actions are only available after commit.",
+            })
+          }
+          const [entry] = yield* sql<{
+            id: string
+            match_status: string
+            place_id: string | null
+          }>`
+            select id, match_status, place_id from import_entries
+            where id = ${entryId} and run_id = ${runId} and owner_id = ${ownerId}`.pipe(
+            Effect.orDie,
+          )
+          if (!entry || entry.match_status !== "needs_review") {
+            return yield* new ImportInvalidState({
+              message: "That entry is not waiting for review.",
+            })
+          }
+          if (entry.place_id) {
+            yield* sql`
+              update places set deleted_at = now()
+              where id = ${entry.place_id} and owner_id = ${ownerId}
+                and import_run_id = ${runId} and deleted_at is null`.pipe(Effect.orDie)
+          }
+          yield* sql`
+            update import_entries set
+              match_status = 'failed',
+              decision = 'skip',
+              place_id = null
+            where id = ${entryId}`.pipe(Effect.orDie)
+          yield* sql`
+            insert into import_skips (owner_id, dedupe_key)
+            select owner_id, dedupe_key from import_entries where id = ${entryId}
+            on conflict do nothing`.pipe(Effect.orDie)
+          yield* recount(runId)
+          return toRun(yield* loadRun(ownerId, runId))
+        }),
+
+        acceptReview: Effect.fn("Import.acceptReview")(function* (ownerId, runId, entryId) {
+          const run = yield* loadRun(ownerId, runId)
+          if (run.status !== "done") {
+            return yield* new ImportInvalidState({
+              message: "Needs-review actions are only available after commit.",
+            })
+          }
+          const [entry] = yield* sql<{
+            id: string
+            match_status: string
+            place_id: string | null
+          }>`
+            select id, match_status, place_id from import_entries
+            where id = ${entryId} and run_id = ${runId} and owner_id = ${ownerId}`.pipe(
+            Effect.orDie,
+          )
+          if (!entry || entry.match_status !== "needs_review" || !entry.place_id) {
+            return yield* new ImportInvalidState({
+              message: "Only a needs-review entry that already has a place can be accepted as-is.",
+            })
+          }
+          yield* sql`
+            update import_entries set match_status = 'matched'
+            where id = ${entryId}`.pipe(Effect.orDie)
+          yield* recount(runId)
+          return toRun(yield* loadRun(ownerId, runId))
+        }),
+
+        resolveReview: Effect.fn("Import.resolveReview")(
+          function* (ownerId, runId, entryId, input) {
+            const run = yield* loadRun(ownerId, runId)
+            if (run.status !== "done") {
+              return yield* new ImportInvalidState({
+                message: "Needs-review actions are only available after commit.",
+              })
+            }
+            const [entry] = yield* sql<{
+              id: string
+              match_status: string
+              place_id: string | null
+              source_list: string | null
+            }>`
+            select id, match_status, place_id, source_list from import_entries
+            where id = ${entryId} and run_id = ${runId} and owner_id = ${ownerId}`.pipe(
+              Effect.orDie,
+            )
+            if (!entry || entry.match_status !== "needs_review") {
+              return yield* new ImportInvalidState({
+                message: "That entry is not waiting for review.",
+              })
+            }
+
+            if (entry.place_id) {
+              yield* sql`
+              update places set deleted_at = now()
+              where id = ${entry.place_id} and owner_id = ${ownerId}
+                and import_run_id = ${runId} and deleted_at is null`.pipe(Effect.orDie)
+            }
+
+            const details = yield* google.details(input.googlePlaceId, input.sessionToken)
+            const existing = yield* places.findByGooglePlaceId(ownerId, details.googlePlaceId)
+            let placeId: string
+            if (Option.isSome(existing)) {
+              placeId = existing.value.id
+            } else {
+              const saved = yield* places.addFromGoogle(ownerId, details, "takeout", {
+                importRunId: runId,
+              })
+              placeId = saved.place.id
+              if (saved.created) {
+                yield* enrichment.applyDetails(ownerId, placeId, details).pipe(Effect.orDie)
+                yield* jobs.enqueueEnrichPlace({ placeId, ownerId })
+              }
+            }
+
+            if (entry.source_list) {
+              const list = yield* lists.ensure(ownerId, entry.source_list, { importRunId: runId })
+              const current = yield* places.get(ownerId, placeId).pipe(Effect.orDie)
+              if (!current.listIds.includes(list.id)) {
+                yield* places
+                  .setLists(ownerId, placeId, [...current.listIds, list.id])
+                  .pipe(Effect.orDie)
+              }
+            }
+
+            yield* sql`
+            update import_entries set match_status = 'matched', place_id = ${placeId}, decision = 'keep'
+            where id = ${entryId}`.pipe(Effect.orDie)
+            yield* recount(runId)
+            return toRun(yield* loadRun(ownerId, runId))
+          },
+        ),
       }
     }),
   )
