@@ -28,7 +28,7 @@ Household-only surfaces (voting) stay invisible in single-user mode. See [decisi
 
 ## Module R1 — “What should we eat tonight?” (Decide)
 
-**Solo-friendly. Core.**
+**Solo-friendly. Shipped** as Marketplace plugin `@placard/module-restaurants-decide` (+ MCP `decide_restaurant`).
 
 ### Intent
 

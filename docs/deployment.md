@@ -70,11 +70,11 @@ Three levels of integration:
 
 ## MCP on deployed instances
 
-Once MCP exists ([mcp.md](mcp.md)):
+MCP is implemented ([mcp.md](mcp.md)):
 
-- Same origin as the app (`https://placard.domain/mcp`) or a dedicated path behind the same auth
+- Same origin as the app (`https://placard.domain/mcp`) behind PAT auth
 - Coolify: no special MCP product support required — it is just HTTPS to the container
-- Document firewall / auth: MCP must not be anonymously open on the internet
+- Firewall / auth: MCP must not be anonymously open on the internet; revoke tokens from Settings → MCP
 
 ## Backups
 
@@ -82,12 +82,13 @@ Target UX: **one-click backup** (database + media/dish photos), Immich-like — 
 
 ## Install checklist (definition of done for “self-host ready”)
 
-- [ ] Official Compose file in repo
-- [ ] `.env.example` + install.md
-- [ ] Healthchecks + restart policies
+- [x] Official Compose file in repo
+- [x] `.env.example` (full install.md still Phase 10)
+- [x] Healthchecks + restart policies
 - [ ] One-click (or guided) backup + restore
 - [ ] Upgrade guidance
-- [ ] MCP enabled behind auth + connect snippet for Cursor/Claude
+- [x] MCP enabled behind auth + connect snippet for Cursor/Claude
+- [ ] Coolify walkthrough verified end-to-end
 - [ ] Optional: Unraid/CasaOS template
 - [ ] Optional: OIDC login
 

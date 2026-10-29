@@ -121,6 +121,9 @@ Households on one instance (family dinner votes, shared lists) — without forci
 
 ## Related docs
 
+- [current-state.md](current-state.md) — idea vs what is shipped today
+- [mvp.md](mvp.md) — v0.1 scope freeze
+- [implementation-phases.md](implementation-phases.md) — build plan + phase status
 - [decisions.md](decisions.md) — resolved product choices
 - [first-user.md](first-user.md) — founder priorities
 - [modules-restaurants.md](modules-restaurants.md) — restaurant tools

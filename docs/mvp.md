@@ -86,17 +86,24 @@ Distances show in km or miles according to a user setting. Results need to feel 
 
 ### 5. Decide module (`restaurants.decide`)
 
-- Pool: a list, a tag, the current search results, or all restaurants.
+- Pool: a list, a tag, or all restaurants (search-results pool optional later).
 - Filters: open tonight and distance.
 - Wheel or spinner reveal, then the result card.
 - Optional "avoid recent picks" toggle.
-- Built as an in-repo module behind the module boundary from [architecture-modules.md](architecture-modules.md).
+- Shipped as a **trusted Marketplace plugin** (`@placard/module-restaurants-decide`) behind the module boundary from [architecture-modules.md](architecture-modules.md).
+
+### 5b. Trusted modules (ahead of original “Later”)
+
+- Module SDK + manifest (`@placard/module-sdk`)
+- In-app Marketplace: install/uninstall/enable; per-user show in nav
+- Admin upload of **prebuilt zip** into `PLACARD_MODULES_DIR` (no in-container compile; no sandbox)
+- Not a public app store — admin-trusted plugins only
 
 ### 6. MCP (must-ship)
 
 - Streamable HTTP endpoint at `/mcp` on the same app.
 - Personal access tokens created in settings.
-- Tools: `search_places`, `get_place`, `create_place` (from a Place ID or coordinates), `add_to_list`, `set_status`, `decide_restaurant`.
+- Tools: `search_places`, `get_place`, `create_place` (from a Place ID or coordinates), `add_to_list`, `list_lists`, `set_status`, `decide_restaurant`.
 - Same permission rules as the web UI.
 - A "Connect MCP" settings page with config snippets for Cursor and Claude.
 
@@ -126,7 +133,7 @@ Distances show in km or miles according to a user setting. Results need to feel 
 | PWA share target ("share to Placard" from Google Maps) | v0.2 |
 | Local LLM for natural-language search | Later |
 | OSM enrichment / fallback search | Later |
-| Third-party modules, module SDK, manifest | Later |
+| Public / sandboxed module store (remote catalog, permission prompts) | Later — trusted zip Marketplace is in v0.1 |
 | Native mobile apps | Later |
 | OIDC / SSO | Later |
 | Hotel, cinema, and park modules | Later |
@@ -135,7 +142,7 @@ Distances show in km or miles according to a user setting. Results need to feel 
 
 ## Definition of done
 
-v0.1 ships when, on a fresh `docker compose up`:
+v0.1 ships when, on a fresh `docker compose up` (items 1–5 are already met in code/CI; 6–7 are Phase 10):
 
 1. Admin signs up, sets the Google key, triages a real Takeout export of ~500 places (skipping some without any API call), and imports the rest with lists preserved. Then bulk-deletes a few imported places.
 2. Admin adds a new place through autocomplete, and another by clicking it on the map.
@@ -144,6 +151,7 @@ v0.1 ships when, on a fresh `docker compose up`:
 5. From Cursor or Claude via MCP: search, add to a list, and decide all work with a token.
 6. Export produces a complete JSON/GeoJSON file.
 7. The same stack deploys on Coolify by following the install guide.
+8. PWA install on a phone home screen works (manifest + icons).
 
 ## Known risks for v0.1
 

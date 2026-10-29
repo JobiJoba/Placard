@@ -43,23 +43,25 @@ Do **not** expose write tools without auth. Reads of private places are also sen
 
 MCP tools should map to **user goals**, not raw CRUD spam.
 
-**Core tools (examples)**
+**Core tools (shipped)**
 
 | Tool | Purpose |
 | --- | --- |
-| `search_places` | Find places by text / tag / list / type |
+| `search_places` | Find places by text / tag / list / type / open / radius |
 | `get_place` | Card-level detail + key facts |
-| `create_place` / `update_place` | Save or edit |
+| `create_place` | Save from Place ID or coordinates |
 | `list_lists` / `add_to_list` | Organization |
-| `list_open_places` | Filter by open now/tonight when hours exist |
+| `set_status` | Want to go / been there |
 
-**Module tools (examples — restaurants)**
+Open now/tonight is a filter on `search_places` (no separate `list_open_places`). `update_place` is not exposed yet.
 
-| Tool | Module |
+**Module tools**
+
+| Tool | Status |
 | --- | --- |
-| `decide_restaurant` | `restaurants.decide` — pool + filters → one pick |
-| `list_dish_memories` / `add_dish_memory` | `restaurants.dishes` |
-| `start_dinner_vote` / `cast_vote` | `restaurants.vote` (household only) |
+| `decide_restaurant` | **Shipped** with `restaurants.decide` |
+| `list_dish_memories` / `add_dish_memory` | Later |
+| `start_dinner_vote` / `cast_vote` | Later (needs household) |
 
 Modules that register MCP tools do so through the module contract ([architecture-modules.md](architecture-modules.md)), so third-party modules can expose tools later too.
 
@@ -87,22 +89,24 @@ Ship a short “Connect MCP” page:
 - Hosting a cloud MCP for all users (each instance is its own server)
 - Exposing every internal admin RPC as a tool
 
-## Implementation sketch (later)
+## Implementation (shipped)
 
 ```
 MCP client (Cursor, …)
-    │  Streamable HTTP + token
+    │  Streamable HTTP + Bearer PAT (`plc_…`)
     ▼
-Placard /mcp
+Placard /mcp  (apps/server; Vite proxies /mcp in Aspire)
     │
     ▼
-Core services + module tool registry
+Core services + Decide tool
     │
     ▼
 DB / media
 ```
 
-`/mcp` lives in-process on `apps/server` (same origin as the SPA). A sidecar container is only needed if we later want process isolation — same Docker Compose file either way.
+`/mcp` lives in-process on `apps/server` (same origin as the SPA in Compose). Settings → MCP creates tokens and shows Cursor/Claude snippets. Disable with `MCP_ENABLED=false`. Optional stdio bridge package remains a later nice-to-have.
+
+Shipped tools: `search_places`, `get_place`, `create_place`, `add_to_list`, `list_lists`, `set_status`, `decide_restaurant`.
 
 ## Success check
 

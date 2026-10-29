@@ -1,6 +1,6 @@
-# Product overview (concept)
+# Product overview
 
-No UI code yet — this is the conceptual shape of **Placard**.
+Shape of **Placard**: objects, modes, and flows. Binding v0.1 scope: [mvp.md](mvp.md). Progress vs idea: [current-state.md](current-state.md).
 
 Resolved choices: [decisions.md](decisions.md).  
 First-user priorities: [first-user.md](first-user.md).  
@@ -11,14 +11,14 @@ Deploy: [deployment.md](deployment.md).
 
 ## Modes: single user vs household
 
-| Mode | Who | What you see |
-| --- | --- | --- |
-| **Solo chrome** (default) | One active person; multi-user accounts still exist in the system | Library, tags, lists, enrichment, **search**, restaurant **Decide**, dish photos. No voting chrome. |
-| **Household** (opt-in) | Multiple full members; **admin invites only** | Shared *and* **private** places; dinner **votes** (in-app only); optional dish attribution. No guest/kid seats. |
+| Mode | Status | Who | What you see |
+| --- | --- | --- | --- |
+| **Solo chrome** (default) | **Shipped** | Multi-user accounts; each private library | Library, tags, lists, enrichment, **search**, restaurant **Decide**, dish photos, **MCP**. No voting chrome. |
+| **Household** (opt-in) | **Planned (v0.2)** | Multiple full members; **admin invites only** | Shared *and* **private** places; dinner **votes** (in-app only); optional dish attribution. No guest/kid seats. |
 
-Household unlocks features; it does not force every place to be shared. Members can keep private places while contributing to shared lists.
+Household will unlock features; it will not force every place to be shared. Today only `private` visibility is allowed.
 
-Privacy: never public on the internet. Visibility = private to a user, or shared within the household.
+Privacy: never public on the internet. Visibility = private to a user, or (later) shared within the household.
 
 ---
 
@@ -56,39 +56,26 @@ Decide spins, dinner votes, etc.
 
 ---
 
-## Views
+## Views (routes today)
 
-### 1. Library (cards) — default home
+| View | Route | Notes |
+| --- | --- | --- |
+| Library (cards / map) | `/` | Near me / City (autocomplete) / All |
+| Add place | `/add` | Autocomplete, Google map, OSM pin |
+| Place detail | `/places/:id` | Facts, media, cover, maps links |
+| Lists | `/lists` | |
+| Import | `/import`, `/import/:runId` | Triage + Needs review |
+| Recently deleted | `/deleted` | |
+| Decide | `/m/restaurants.decide` | Marketplace module |
+| Settings | `/settings/general\|mcp\|marketplace\|…` | Side-nav |
 
-Everyday bias: **near me** / current city. Travel cities stay in the library but aren’t the default flood.
+### Search / filter — **core product**
 
-Cards: cover, name, type, status, tags, “Open now”, cuisine.
+Beat Google Maps Saved search. Structured filters first (text, category, open now/tonight, radius, tag, list, status). Later: optional **local LLM** → same filter AST ([first-user.md](first-user.md)). Agents already drive filters via MCP.
 
-### 2. Place detail
+### Modules
 
-Header → map + open-in-nav → notes/media → dish memories → facts → status/visits → tags/lists.
-
-### 3. Map
-
-Filtered library on a map (radius search belongs here + in search).
-
-### 4. Search / filter — **core product**
-
-Beat Google Maps Saved search. Examples:
-
-- Type = restaurant  
-- Cuisine / text = pizza  
-- Open now / open tonight  
-- Within **N km of me**  
-- Tag / list / want vs been  
-
-Structured filters first. Later: optional **local LLM** that compiles natural language into the same filter AST ([first-user.md](first-user.md)).
-
-### 5. Lists & tags
-
-### 6. Modules
-
-Restaurant Decide / Vote / Dishes; household-only modules hidden in solo chrome. Exposed via UI **and MCP**.
+**Decide** ships as a trusted Marketplace plugin + MCP tool. Dish photos live in core media. **Vote** waits on household (v0.2).
 
 ---
 
@@ -165,30 +152,22 @@ CRUD works without a Google key.
 
 ## MVP sketch
 
-> Superseded by [mvp.md](mvp.md), which is the binding scope. This sketch is kept for context.
+> Binding scope: [mvp.md](mvp.md). Progress: [current-state.md](current-state.md).
 
-**Must have**
+**Shipped for v0.1 (code)** — accounts; library CRUD; cards/map; tags/lists; Takeout triage; search filters; enrichment + force refresh; dish photos + Google covers; Decide (Marketplace); MCP; Compose; trusted zip plugins.
 
-- Multi-user accounts; places CRUD; cards; detail; simple map  
-- Tags + lists; want / been-there  
-- Google Takeout import (hundreds of places)  
-- Near-me + open + type/cuisine/tag/list **search filters**  
-- Notes + images (dish photos supported)  
-- Instance Google BYOK enrichment + **Force refresh**  
-- Restaurant **Decide** (wheel) + open filter; optional avoid-recent  
-- Authenticated **MCP** (core tools + decide)  
-- Docker Compose deploy  
-- AGPL-3.0
+**Still for v0.1 release (Phase 10)** — export JSON/GeoJSON; PWA basics; Coolify DoD; GHCR image.
 
-**Soon after**
+**Soon after (v0.2+)**
 
 - Household (shared/private, admin invites, in-app vote)  
-- PWA polish / share-target  
+- PWA share-target  
 - One-click backup  
 - Per-member Google key override  
 
 **Later**
 
 - Local LLM → filters  
-- More modules; third-party module install  
+- Public/sandboxed module store  
 - Native apps if PWA isn’t enough  
+- Offline mode, public share pages — not planned  

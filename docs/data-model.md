@@ -1,8 +1,8 @@
 # Data model — v0.1
 
-The tables behind [mvp.md](mvp.md). Each table has a matching Effect Schema for its domain type; Drizzle table definitions live in `src/db/schema.ts`.
+The tables behind [mvp.md](mvp.md). Each table has a matching Effect Schema for its domain type; Drizzle table definitions live in `apps/server/src/db/schema.ts`.
 
-Tables are added by the phase that needs them ([implementation-phases.md](implementation-phases.md)). Phase 0 only creates the PostGIS extension and `users`.
+Migrations live under `apps/server/drizzle/`. Phases 0–9 have added the full v0.1 library, import, media, modules, tokens, and MCP audit tables — see [implementation-phases.md](implementation-phases.md).
 
 ## Conventions
 
@@ -21,12 +21,14 @@ Tables are added by the phase that needs them ([implementation-phases.md](implem
 users ─┬─< places ─┬─< place_facts
        │           ├─< place_tags >── tags
        │           ├─< list_items >── lists
-       │           ├─< media
+       │           ├─< media (incl. covers)
        │           └─< decide_picks
        ├─< import_runs ─< import_entries ──> places (once committed)
-       └─< api_tokens
+       ├─< api_tokens / mcp_audit
+       ├─< user_module_prefs
        └─< invitations (invited_by)
 instance_settings (single row)
+instance_modules (Marketplace installs)
 sessions, accounts, verifications   (Better Auth)
 ```
 

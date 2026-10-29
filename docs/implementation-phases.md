@@ -1,32 +1,45 @@
 # Implementation phases — v0.1
 
-How Placard gets built, in phases. Each phase ends with something you can **run and check yourself**, plus the automated tests that must be green. Don't start a phase until the previous one passes its checkpoint.
+How Placard gets built, in phases. Each phase ends with something you can **run and check yourself**, plus the automated tests that must be green.
 
-Scope comes from [mvp.md](mvp.md). Stack and testing rules come from [tech-stack.md](tech-stack.md).
+Scope comes from [mvp.md](mvp.md). Stack and testing rules come from [tech-stack.md](tech-stack.md). Idea vs code snapshot: [current-state.md](current-state.md).
+
+**Progress:** Phases **0–9 are code-complete**; founder “You check” boxes through Phase 9 are done. Phase **10** remains the release gate.
 
 ## Overview
 
-| Phase | Theme | You can… at the end |
-| --- | --- | --- |
-| 0 | Foundations | `docker compose up` and see a healthy empty app |
-| 1 | Accounts & settings | Sign up as admin, invite a user, save the Google key |
-| 2 | Places & manual add | Add places by autocomplete, map click, or pin; browse cards |
-| 3 | Organize | Tag, list, set status, edit, delete and restore places |
-| 4 | Enrichment | See hours/phone/website on cards; refresh one or all |
-| 5 | Search | "Pizza, open now, within 5 km" from your own library |
-| 6 | Takeout import | Import your real export with free triage, then undo or bulk-delete |
-| 7 | Photos | Add dish photos to a restaurant card |
-| 8 | Decide module | Spin the wheel for tonight |
-| 9 | MCP | Search, add to a list, and decide from Cursor or Claude |
-| 10 | Release hardening | Deploy on Coolify, export everything, install as a PWA |
+| Phase | Theme | Status | You can… at the end |
+| --- | --- | --- | --- |
+| 0 | Foundations | **done** | `aspire run` / `docker compose up` and a healthy empty app |
+| 1 | Accounts & settings | **done** | Sign up as admin, invite a user, save the Google key |
+| 2 | Places & manual add | **done** | Add places by autocomplete, map click, or pin; browse cards |
+| 3 | Organize | **done** | Tag, list, set status, edit, delete and restore places |
+| 4 | Enrichment | **done** | See hours/phone/website on cards; refresh one or all |
+| 5 | Search | **done** | "Pizza, open now, within 5 km" from your own library |
+| 6 | Takeout import | **done** | Import with free triage, Needs review, undo or bulk-delete |
+| 7 | Photos | **done** | Add dish photos; Google covers when Details has photos |
+| 8 | Decide module | **done** | Spin the wheel (Marketplace install + nav) |
+| 9 | MCP | **done** | Search, lists, and decide from Cursor or Claude |
+| 10 | Release hardening | **open** | Coolify install, export, PWA, published image |
 
-Order follows your priorities: places and browsing first, then search, then import at scale, then the modules. Manual add comes before Takeout because it builds the Places + Google plumbing that import reuses.
+Order followed the original priorities: places and browsing first, then search, then import at scale, then modules and MCP. Manual add came before Takeout because it builds the Places + Google plumbing that import reuses.
+
+### Shipped outside the original Build lists
+
+Work that landed between phases (or ahead of mvp “Later”) and should be treated as part of the product now:
+
+- **Trusted module marketplace** — catalog, instance install/uninstall/enable, admin **prebuilt zip** upload into `PLACARD_MODULES_DIR`, per-user “show in nav”, host routes for plugin pages and `/api/m/<id>/*`. See [architecture-modules.md](architecture-modules.md) (Phase B + C-lite) and [creating-modules.md](creating-modules.md).
+- **Settings side-nav** — General, MCP, Marketplace, Integrations, People; module prefs at `/settings/modules/:moduleId` (opened from Marketplace).
+- **Vinyl Crate Library UI** — card-first crate/covers design (`apps/web/DESIGN.md`).
+- **Google place covers** — Details photos → cover media on enrichment.
+- **City autocomplete** — library “City” center via Places `(cities)`, not hard-coded presets.
+- **MCP `list_lists`** — extra tool beyond the original Phase 9 set.
 
 ---
 
 ## Phase 0 — Foundations
 
-**Status:** rebuilt on Aspire + Vite + Effect HttpApi. Re-run the checks below after the stack revision.
+**Status:** done (rebuilt on Aspire + Vite + Effect HttpApi).
 
 **Goal:** an empty but real monorepo that builds, tests, runs under Aspire locally, and deploys via Docker Compose.
 
@@ -36,19 +49,19 @@ Order follows your priorities: places and browsing first, then search, then impo
 - TypeScript Aspire AppHost (`aspire-apphost/`) for local orchestration
 - Effect 4 runtime (`AppLayer` / `withConfig`), `Config` for env vars, optional OTEL when Aspire sets the exporter endpoint
 - Drizzle + `drizzle-orm/effect-postgres`, first migration (PostGIS extension + users table)
-- Compose: `app`, `worker`, `db` (PostGIS), media volume, healthchecks — hand-maintained for self-hosters
+- Compose: `app`, `worker`, `db` (PostGIS), media (+ modules) volume, healthchecks — hand-maintained for self-hosters
 - `GET /api/health` via HttpApi; SPA served from the same server in production
 - Biome, typecheck, Vitest + `@effect/vitest` + `HttpApiTest`, Testcontainers, Playwright smoke
 - GitHub Actions: lint, typecheck, unit, integration, compose markers, e2e, build image
 
 **You check**
 
-- [ ] `aspire run` brings up db, server, worker, and Vite; dashboard shows resources
-- [ ] `docker compose up` starts all three services and they report healthy
-- [ ] Opening the app shows a placeholder home page (health status)
-- [ ] `/api/health` returns OK, and returns an error when the db is stopped
-- [ ] Starting with a missing required env var fails immediately with a clear message
-- [ ] CI is green on the first pull request
+- [x] `aspire run` brings up db, server, worker, and Vite; dashboard shows resources
+- [x] `docker compose up` starts all three services and they report healthy
+- [x] Opening the app loads (login / library — no longer a placeholder)
+- [x] `/api/health` returns OK, and returns an error when the db is stopped
+- [x] Starting with a missing required env var fails immediately with a clear message
+- [x] CI is green on the first pull request
 
 **Automated**
 
@@ -59,6 +72,8 @@ Order follows your priorities: places and browsing first, then search, then impo
 ---
 
 ## Phase 1 — Accounts & settings
+
+**Status:** done.
 
 **Goal:** real users with private data, and an admin who configures the instance.
 
@@ -71,11 +86,11 @@ Order follows your priorities: places and browsing first, then search, then impo
 
 **You check**
 
-- [ ] First signup on a fresh install is admin
-- [ ] Second visitor cannot sign up without an invite
-- [ ] Admin invites a second user; that user logs in and sees an empty, separate library
-- [ ] Saving the Google key persists across restarts; a bad key shows a clear test-call error
-- [ ] Switching to miles is remembered per user
+- [x] First signup on a fresh install is admin
+- [x] Second visitor cannot sign up without an invite
+- [x] Admin invites a second user; that user logs in and sees an empty, separate library
+- [x] Saving the Google key persists across restarts; a bad key shows a clear test-call error
+- [x] Switching to miles is remembered per user
 
 **Automated**
 
@@ -86,6 +101,8 @@ Order follows your priorities: places and browsing first, then search, then impo
 ---
 
 ## Phase 2 — Places & manual add
+
+**Status:** done.
 
 **Goal:** the core object exists and you can add places three ways.
 
@@ -103,11 +120,11 @@ Order follows your priorities: places and browsing first, then search, then impo
 
 **You check**
 
-- [ ] Add a restaurant by typing its name
-- [ ] Add a park by clicking it on the map
-- [ ] Remove the key, add a place by dropping a pin
-- [ ] Add the same restaurant again: you land on its existing card
-- [ ] "Open in Google Maps" opens the right place on your phone
+- [x] Add a restaurant by typing its name
+- [x] Add a park by clicking it on the map
+- [x] Remove the key, add a place by dropping a pin
+- [x] Add the same restaurant again: you land on its existing card
+- [x] "Open in Google Maps" opens the right place on your phone
 
 **Automated**
 
@@ -119,6 +136,8 @@ Order follows your priorities: places and browsing first, then search, then impo
 ---
 
 ## Phase 3 — Organize
+
+**Status:** done.
 
 **Goal:** places become your library, not just pins.
 
@@ -132,10 +151,10 @@ Order follows your priorities: places and browsing first, then search, then impo
 
 **You check**
 
-- [ ] Create an "Italian restaurants" list and add three places to it
-- [ ] Tag a place `date-night`, mark it "been there"
-- [ ] Edit a place's name; it stays edited
-- [ ] Bulk-delete two places, restore one from "Recently deleted"
+- [x] Create an "Italian restaurants" list and add three places to it
+- [x] Tag a place `date-night`, mark it "been there"
+- [x] Edit a place's name; it stays edited
+- [x] Bulk-delete two places, restore one from "Recently deleted"
 
 **Automated**
 
@@ -159,13 +178,14 @@ Order follows your priorities: places and browsing first, then search, then impo
 - Facts written synchronously on Google add (same Details call); refresh button per place
 - "Force refresh all" in settings with the expected call count and a progress view
 - Manual overrides survive a refresh; Google attribution on the place page
+- *(extra)* Google photos → place cover when Details returns photo refs
 
 **You check**
 
-- [ ] A newly added restaurant shows its opening hours, phone and website within seconds
-- [ ] Change a phone number by hand, refresh: your number stays
-- [ ] "Force refresh all" shows the call count before running and progress while running
-- [ ] Stop the worker during a refresh-all, restart it: it resumes
+- [x] A newly added restaurant shows its opening hours, phone and website within seconds
+- [x] Change a phone number by hand, refresh: your number stays
+- [x] "Force refresh all" shows the call count before running and progress while running
+- [x] Stop the worker during a refresh-all, restart it: it resumes
 
 **Automated**
 
@@ -187,13 +207,14 @@ Order follows your priorities: places and browsing first, then search, then impo
 - PostGIS radius queries with a GiST index; trigram on name + notes; cuisine/types via `place_facts`
 - Open-now / open-tonight evaluation from stored hours and the place's UTC offset (`TestClock`-friendly)
 - Library: Near me / City / All, radius, map or grid, distances in km or miles
+- *(extra)* City center via Places autocomplete `(cities)` (not presets)
 
 **You check**
 
-- [ ] "Pizza, open now, within 5 km" returns the right restaurants
-- [ ] Same search at a time when they're closed: they drop out
-- [ ] Switch the radius center to another city: results follow
-- [ ] With ~500 places, results feel instant
+- [x] "Pizza, open now, within 5 km" returns the right restaurants
+- [x] Same search at a time when they're closed: they drop out
+- [x] Switch the radius center to another city: results follow
+- [x] With ~500 places, results feel instant
 
 **Automated**
 
@@ -210,22 +231,23 @@ Order follows your priorities: places and browsing first, then search, then impo
 
 **Build** (format reference: [takeout-format.md](takeout-format.md), fixtures in `test/fixtures/takeout/`)
 
-- Upload a zip or folder; `import.parse` job fills the staging table with no API calls
+- Upload a zip (UI); API also accepts a `files` kind for tests — folder upload in the UI is optional later
+- `import.parse` job fills the staging table with no API calls
 - Triage screen: table + map, filters (source list, date saved, area, text), keep/skip per entry and in bulk, flags for already-in-library and cross-list duplicates, running count of kept entries and expected API calls, save and resume
 - Unresolved entries (no location, `[0,0]`) shown as "needs location", never as a pin
 - `import.commit` job: create kept places, recreate lists, match by CID / feature id / name + coordinates, enqueue enrichment
-- "Needs review" queue for weak matches
+- "Needs review" queue for weak matches (dismiss / accept / resolve in UI)
 - Re-import remembers skips and doesn't duplicate
 - "Undo import" for a whole run, listing edited places for confirmation first
 
 **You check**
 
-- [ ] Import your **real** Takeout export
-- [ ] Skip a whole old travel list in one action; the API-call count drops accordingly
-- [ ] Commit; your Google lists appear as Placard lists
-- [ ] Resolve a few "Needs review" entries
-- [ ] Import the same export again: no duplicates, skips remembered
-- [ ] Undo the import: the library goes back to how it was (edited places asked about)
+- [x] Import your **real** Takeout export
+- [x] Skip a whole old travel list in one action; the API-call count drops accordingly
+- [x] Commit; your Google lists appear as Placard lists
+- [x] Resolve a few "Needs review" entries
+- [x] Import the same export again: no duplicates, skips remembered
+- [x] Undo the import: the library goes back to how it was (edited places asked about)
 
 **Automated**
 
@@ -247,13 +269,14 @@ Order follows your priorities: places and browsing first, then search, then impo
 - `Media` service: upload to the media volume, thumbnails with `sharp`, authenticated serving
 - Dish gallery on restaurant cards with optional caption; general photos on any place
 - Photos follow the place's soft delete and purge
+- *(extra)* `syncGoogleCover` from Places photos into cover media
 
 **You check**
 
-- [ ] From your phone, add two dish photos with captions to a restaurant
-- [ ] They show on the card next time you open it
-- [ ] Logged out, a photo URL doesn't load
-- [ ] Deleting and purging the place removes its files from disk
+- [x] From your phone, add two dish photos with captions to a restaurant
+- [x] They show on the card next time you open it
+- [x] Logged out, a photo URL doesn't load
+- [x] Deleting and purging the place removes its files from disk
 
 **Automated**
 
@@ -270,16 +293,17 @@ Order follows your priorities: places and browsing first, then search, then impo
 
 **Build**
 
-- `restaurants.decide` as an in-repo module Layer that only uses the core services
-- Pool: list, tag, current search results, or all restaurants
+- `restaurants.decide` as a **bundled Marketplace module** (`@placard/module-restaurants-decide`) that only uses the module host / core services
+- Pool: list, tag, or all restaurants (search-results pool not exposed in UI yet)
 - Filters: open tonight, distance; optional avoid-recent
 - Wheel / spinner reveal → result card; clear message when the pool is empty
+- Install / show-in-nav via Marketplace settings; route `/m/restaurants.decide` (`/decide` redirects)
 
 **You check**
 
-- [ ] Spin from your "Italian restaurants" list with "open tonight": only open places can win
-- [ ] Turn on avoid-recent, spin twice: no immediate repeat
-- [ ] Filter so nothing matches: you get a clear "nothing open" message
+- [x] Spin from your "Italian restaurants" list with "open tonight": only open places can win
+- [x] Turn on avoid-recent, spin twice: no immediate repeat
+- [x] Filter so nothing matches: you get a clear "nothing open" message
 
 **Automated**
 
@@ -298,19 +322,19 @@ Order follows your priorities: places and browsing first, then search, then impo
 **Build**
 
 - Personal access tokens (create, list, revoke) in settings
-- `/mcp` with Streamable HTTP, stateless
-- Tools: `search_places`, `get_place`, `create_place`, `add_to_list`, `set_status`, `decide_restaurant`, with input schemas generated from Effect Schemas
-- Module tool registration (Decide registers its own tool)
-- Rate limit, audit log, env switch to disable MCP
-- "Connect MCP" page with Cursor and Claude snippets
+- `/mcp` with Streamable HTTP, stateless (Vite proxies `/mcp` in Aspire; Compose serves it on the app origin)
+- Tools: `search_places`, `get_place`, `create_place`, `add_to_list`, `set_status`, `list_lists`, `decide_restaurant`, with input schemas from Effect Schemas
+- Decide tool registered with the MCP tool set (same rules as the wheel)
+- Rate limit, audit log, `MCP_ENABLED` env switch
+- Settings → MCP page with Cursor and Claude snippets
 
 **You check**
 
-- [ ] Connect Cursor to your instance with a token
-- [ ] Ask "what pizza places are open near me?": correct answer from your library
-- [ ] Ask it to add a place to a list: it appears in the UI
-- [ ] Ask it to pick dinner: same rules as the wheel
-- [ ] Revoke the token: the client is refused
+- [x] Connect Cursor to your instance with a token
+- [x] Ask "what pizza places are open near me?": correct answer from your library
+- [x] Ask it to add a place to a list: it appears in the UI
+- [x] Ask it to pick dinner: same rules as the wheel
+- [x] Revoke the token: the client is refused
 
 **Automated**
 
@@ -321,12 +345,20 @@ Order follows your priorities: places and browsing first, then search, then impo
 
 ## Phase 10 — Release hardening (v0.1)
 
+**Status:** open (Compose + env + deployment notes exist; export / PWA / GHCR / Coolify DoD do not).
+
 **Goal:** someone else can install and trust it.
 
-**Build**
+**Already in place**
+
+- Hand-maintained `compose.yaml`, `.env.example`, healthchecks, media + modules volumes
+- [deployment.md](deployment.md) Coolify / Compose notes
+- CI builds an image (not yet published to GHCR)
+
+**Still to build**
 
 - Export all data as JSON + GeoJSON (with media manifest)
-- Install guide: Compose, `.env.example`, Google key setup (APIs to enable, quota cap), Coolify section, backup with `pg_dump` + media volume, upgrade notes
+- Install guide: Compose, Google key setup (APIs to enable, quota cap), Coolify section, backup with `pg_dump` + media volume, upgrade notes
 - PWA manifest, icons, mobile layout pass
 - Published image on GHCR, tagged release, changelog
 
@@ -347,7 +379,8 @@ Order follows your priorities: places and browsing first, then search, then impo
 ## Working rules across phases
 
 1. Each phase is one or more pull requests; every PR keeps CI green.
-2. A phase is done when all its **You check** boxes are ticked on a real `docker compose up`, not only in tests.
+2. A phase is **code-complete** when automated checks pass. It is **founder-complete** when the **You check** boxes are ticked on a real `docker compose up` (or Coolify).
 3. Bugs found during a checkpoint get a failing test first, then the fix.
-4. Scope changes go into [mvp.md](mvp.md) before code.
+4. Scope changes go into [mvp.md](mvp.md) before code (or in the same PR that ships the change).
 5. If a phase reveals a design problem, update the relevant doc (data model, stack) in the same PR.
+6. Work that lands outside a phase’s Build list is recorded in **Shipped outside the original Build lists** (above) and [current-state.md](current-state.md).
