@@ -18,6 +18,7 @@ import {
   SettingsIntegrationsPage,
   SettingsLayout,
   SettingsMarketplacePage,
+  SettingsMcpPage,
   SettingsModulePage,
   SettingsModulesIndexRedirect,
   SettingsPeoplePage,
@@ -41,6 +42,7 @@ function AuthenticatedRoutes() {
         <Route path="/settings" element={<SettingsLayout />}>
           <Route index element={<Navigate to="general" replace />} />
           <Route path="general" element={<SettingsGeneralPage />} />
+          <Route path="mcp" element={<SettingsMcpPage />} />
           <Route
             path="modules"
             element={

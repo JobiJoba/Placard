@@ -40,6 +40,8 @@ Route convention: **`/m/<module.id>`** (e.g. `/m/places.pick`) so core routes st
 
 Module settings: Marketplace card → **Settings** → **`/settings/modules/<module.id>`**. Today that page toggles “show in nav”; later modules can declare extra options (home widgets, enrichment hooks, uploaded `settingsExport`, etc.) on the same route.
 
+MCP: core tools live at `/mcp` (bearer PAT). Module tools (e.g. `decide_restaurant` for Decide) are registered by the host when the module is available to the token’s user — keep spin request schemas in domain so agents call the same service as the UI.
+
 ---
 
 ## Example: `places.pick` (generic Decide)

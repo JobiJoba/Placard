@@ -14,15 +14,18 @@ import { Lists } from "../places/lists.ts"
 import { Places } from "../places/places.ts"
 import { Search } from "../places/search.ts"
 import { Tags } from "../places/tags.ts"
+import { Tokens } from "../tokens/tokens.ts"
 import { AdminApiLive, MeApiLive, SetupApiLive } from "./accounts.ts"
 import { AdminAuthenticationLive, AuthenticationLive, AuthRoutesLive } from "./auth.ts"
 import { DecideApiLive } from "./decide.ts"
 import { HealthApiLive } from "./health.ts"
 import { ImportApiLive } from "./import.ts"
+import { McpRoutesLive } from "./mcp.ts"
 import { MediaApiLive, MediaFileRoutesLive } from "./media.ts"
 import { ModuleFileRoutesLive, ModulesApiLive } from "./modules.ts"
 import { GoogleApiLive, ListsApiLive, PlacesApiLive, TagsApiLive } from "./places.ts"
 import { SearchApiLive } from "./search.ts"
+import { McpApiLive, TokensApiLive } from "./tokens.ts"
 
 export const ApiLive = HttpApiBuilder.layer(Api, {
   openapiPath: "/openapi.json",
@@ -41,6 +44,8 @@ export const ApiLive = HttpApiBuilder.layer(Api, {
     MediaApiLive,
     DecideApiLive,
     ModulesApiLive,
+    TokensApiLive,
+    McpApiLive,
   ]),
   Layer.provide([AuthenticationLive, AdminAuthenticationLive]),
 )
@@ -64,6 +69,7 @@ export const ServicesLayer = Import.layer.pipe(
   Layer.provideMerge(GooglePlaces.layer),
   Layer.provideMerge(Places.layer),
   Layer.provideMerge(Tags.layer),
+  Layer.provideMerge(Tokens.layer),
   Layer.provideMerge(AccountsLayer),
   Layer.provideMerge(JobQueue.layer),
 )
@@ -74,4 +80,5 @@ export const RoutesLive = Layer.mergeAll(
   AuthRoutesLive,
   MediaFileRoutesLive,
   ModuleFileRoutesLive,
+  McpRoutesLive,
 ).pipe(Layer.provide(ServicesLayer), Layer.provide(ModuleRuntime.layer))

@@ -291,6 +291,8 @@ Order follows your priorities: places and browsing first, then search, then impo
 
 ## Phase 9 — MCP
 
+**Status:** done.
+
 **Goal:** talk to your library from an AI client.
 
 **Build**

@@ -88,6 +88,7 @@ import {
   TagRef,
 } from "./places.ts"
 import { SearchFilter, SearchHit } from "./search.ts"
+import { ApiToken, CreatedToken, CreateTokenInput, McpStatus, TokenNotFound } from "./tokens.ts"
 
 export class HealthApi extends HttpApiGroup.make("health", { topLevel: true }).add(
   HttpApiEndpoint.get("health", "/api/health", {
@@ -468,6 +469,29 @@ export class ModulesApi extends HttpApiGroup.make("modules")
   .middleware(Authentication)
   .prefix("/api/modules") {}
 
+/** Personal access tokens for MCP (create once, list metadata, revoke). */
+export class TokensApi extends HttpApiGroup.make("tokens")
+  .add(
+    HttpApiEndpoint.get("list", "/", { success: Schema.Array(ApiToken) }),
+    HttpApiEndpoint.post("create", "/", {
+      payload: CreateTokenInput,
+      success: CreatedToken,
+    }),
+    HttpApiEndpoint.delete("revoke", "/:id", {
+      params: { id: Schema.String },
+      success: Schema.Void,
+      error: TokenNotFound,
+    }),
+  )
+  .middleware(Authentication)
+  .prefix("/api/tokens") {}
+
+/** MCP connection info for the Connect settings page. */
+export class McpApi extends HttpApiGroup.make("mcp")
+  .add(HttpApiEndpoint.get("status", "/status", { success: McpStatus }))
+  .middleware(Authentication)
+  .prefix("/api/mcp") {}
+
 export class Api extends HttpApi.make("placard")
   .add(HealthApi)
   .add(SetupApi)
@@ -482,6 +506,8 @@ export class Api extends HttpApi.make("placard")
   .add(MediaApi)
   .add(DecideApi)
   .add(ModulesApi)
+  .add(TokensApi)
+  .add(McpApi)
   .annotateMerge(
     OpenApi.annotations({
       title: "Placard API",

@@ -18,6 +18,11 @@ export default defineConfig({
         target: apiTarget,
         changeOrigin: true,
       },
+      // MCP Streamable HTTP (Phase 9) — must not fall through to the SPA.
+      "/mcp": {
+        target: apiTarget,
+        changeOrigin: true,
+      },
       "/openapi.json": {
         target: apiTarget,
         changeOrigin: true,

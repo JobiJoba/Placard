@@ -442,6 +442,46 @@ export const decidePicks = pgTable(
   (table) => [index("decide_picks_owner_picked_at_idx").on(table.ownerId, table.pickedAt)],
 )
 
+/** Personal access tokens for MCP (Phase 9). Secret is hashed; plaintext shown once. */
+export const apiTokens = pgTable(
+  "api_tokens",
+  {
+    id: text("id").primaryKey(),
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    tokenHash: text("token_hash").notNull().unique(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("api_tokens_owner_id_idx").on(table.ownerId)],
+)
+
+/** MCP tool call audit log. */
+export const mcpAudit = pgTable(
+  "mcp_audit",
+  {
+    id: text("id").primaryKey(),
+    tokenId: text("token_id")
+      .notNull()
+      .references(() => apiTokens.id, { onDelete: "cascade" }),
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tool: text("tool").notNull(),
+    input: jsonb("input").$type<Record<string, unknown>>().notNull().default({}),
+    ok: boolean("ok").notNull(),
+    error: text("error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("mcp_audit_owner_created_at_idx").on(table.ownerId, table.createdAt),
+    index("mcp_audit_token_id_idx").on(table.tokenId),
+  ],
+)
+
 /** Dish photos, general photos, attachments; Google covers use origin = google. */
 export const media = pgTable(
   "media",

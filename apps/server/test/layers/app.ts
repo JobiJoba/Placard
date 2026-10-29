@@ -28,10 +28,15 @@ export interface Browser {
   readonly send: (method: string, path: string, body?: unknown) => Promise<JsonResponse>
 }
 
+export interface TestAppService {
+  readonly browser: () => Browser
+  /** Absolute-URL fetch against the in-process router (for MCP SDK clients). */
+  readonly fetch: typeof globalThis.fetch
+  readonly publicUrl: URL
+}
+
 /** The full `/api` router running in-process against the test database. */
-export class TestApp extends Context.Service<TestApp, { readonly browser: () => Browser }>()(
-  "test/TestApp",
-) {
+export class TestApp extends Context.Service<TestApp, TestAppService>()("test/TestApp") {
   static readonly layer = Layer.effect(
     TestApp,
     Effect.gen(function* () {
@@ -47,6 +52,21 @@ export class TestApp extends Context.Service<TestApp, { readonly browser: () => 
         { disableLogger: true },
       )
       yield* Effect.addFinalizer(() => Effect.promise(() => app.dispose()))
+
+      const fetchImpl: typeof globalThis.fetch = async (input, init) => {
+        const url =
+          typeof input === "string"
+            ? new URL(input, config.publicUrl)
+            : input instanceof URL
+              ? input
+              : new URL(input.url)
+        const headers = new Headers(init?.headers)
+        if (!headers.has("origin")) headers.set("origin", config.publicUrl.origin)
+        const requestInit: RequestInit = { headers }
+        if (init?.method !== undefined) requestInit.method = init.method
+        if (init?.body !== undefined) requestInit.body = init.body
+        return app.handler(new Request(url, requestInit), services)
+      }
 
       const browser = (): Browser => {
         const cookies = new Map<string, string>()
@@ -93,7 +113,7 @@ export class TestApp extends Context.Service<TestApp, { readonly browser: () => 
         }
       }
 
-      return { browser }
+      return { browser, fetch: fetchImpl, publicUrl: config.publicUrl }
     }),
   ).pipe(Layer.provideMerge(IntegrationLayer))
 }

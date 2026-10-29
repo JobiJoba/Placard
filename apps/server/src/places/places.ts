@@ -74,7 +74,11 @@ export class Places extends Context.Service<
       source: Extract<PlaceSource, "autocomplete" | "map_pick" | "takeout">,
       options?: { readonly importRunId?: string },
     ) => Effect.Effect<SavedPlace>
-    readonly addManual: (ownerId: string, input: ManualPlaceInput) => Effect.Effect<SavedPlace>
+    readonly addManual: (
+      ownerId: string,
+      input: ManualPlaceInput,
+      options?: { readonly source?: Extract<PlaceSource, "manual" | "mcp"> },
+    ) => Effect.Effect<SavedPlace>
     /** Create a Takeout pin without a Google Place ID (coords required). */
     readonly addFromTakeout: (
       ownerId: string,
@@ -339,19 +343,21 @@ export class Places extends Context.Service<
           },
         ),
 
-        addManual: (ownerId, input) =>
-          sql<PlaceRow>`
+        addManual: (ownerId, input, options) => {
+          const source = options?.source ?? "manual"
+          return sql<PlaceRow>`
             insert into places (id, owner_id, name, category, location, address, source, manual_fields)
             values (
               ${uuidv7()}, ${ownerId}, ${input.name}, ${input.category},
               ${point(input.location.lat, input.location.lng)}, ${input.address || null},
-              'manual', ${["name", "category", "address"]}
+              ${source}, ${["name", "category", "address"]}
             )
             returning ${columns}`.pipe(
             Effect.orDie,
             Effect.flatMap(hydrate),
             Effect.map((places) => ({ place: places[0]!, created: true })),
-          ),
+          )
+        },
 
         addFromTakeout: (ownerId, input) =>
           sql<PlaceRow>`
