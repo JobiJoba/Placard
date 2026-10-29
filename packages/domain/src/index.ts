@@ -17,6 +17,7 @@ export {
   TokensApi,
 } from "./api.ts"
 export * from "./decide.ts"
+export * from "./export.ts"
 export * from "./facts.ts"
 export {
   CheckFail,

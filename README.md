@@ -6,10 +6,12 @@ Placard is a self-hosted place library: collect, organize, and enrich places you
 
 Think Immich, but for starred places: private to your instance, Docker-friendly, extensible.
 
-> **Status:** Phases **0–9 done** (library, Takeout, Decide, MCP, trusted Marketplace). **Phase 10** left: export, PWA, Coolify DoD, GHCR release. See [docs/current-state.md](docs/current-state.md).  
+> **Status:** Phases **0–10 code-complete** (export, PWA, install guide, GHCR workflow). Founder Coolify / phone install checks remain. See [docs/current-state.md](docs/current-state.md).  
 > **License:** AGPL-3.0 (like Immich).
 
 ## Run it (self-host)
+
+Step-by-step (Compose, Coolify, backup, upgrade): **[docs/install.md](docs/install.md)**.
 
 ```sh
 cp .env.example .env        # set POSTGRES_PASSWORD and BETTER_AUTH_SECRET
@@ -82,7 +84,8 @@ Placard: **import → enrich → search/browse cards → run modules** — and t
 | [docs/architecture-modules.md](docs/architecture-modules.md) | Core vs modules; trusted plugins |
 | [docs/creating-modules.md](docs/creating-modules.md) | **How to build a module** (step-by-step + Pick example) |
 | [docs/mcp.md](docs/mcp.md) | Agent access (must-ship, implemented) |
-| [docs/deployment.md](docs/deployment.md) | Docker, Coolify, Nextcloud adjacency |
+| [docs/install.md](docs/install.md) | **Install / Coolify / backup / upgrade** |
+| [docs/deployment.md](docs/deployment.md) | Docker targets, Coolify notes, Nextcloud adjacency |
 | [docs/feasibility.md](docs/feasibility.md) | Takeout, Google BYOK, what’s realistic |
 | [docs/competitors.md](docs/competitors.md) | Adjacent landscape |
 | [docs/naming.md](docs/naming.md) | Name decision |
@@ -91,7 +94,7 @@ Placard: **import → enrich → search/browse cards → run modules** — and t
 
 - **Import + browse + library search** are the top jobs; dinner spin is a flagship module
 - ~500 places, near-me daily, multi-city library OK
-- **PWA** still Phase 10; multi-user accounts ship now; **household sharing is v0.2**
+- **PWA** installable (manifest + icons); multi-user accounts ship now; **household sharing is v0.2**
 - Google Takeout must; instance Google key; force refresh, no auto mass cron
 - Want / been-there first-class; visit history optional & separate from dishes
 - **MCP ships**; trusted Marketplace plugins (Decide bundled; zip upload); AGPL-3.0

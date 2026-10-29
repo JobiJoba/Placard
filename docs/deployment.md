@@ -2,6 +2,8 @@
 
 Placard targets the self-hosted community: home server, VPS, NAS, Coolify, etc. You do **not** need a native Nextcloud app on day one to feel “installable” next to Immich-like projects — you need a **boring, excellent Docker story**.
 
+**Install walkthrough:** [install.md](install.md) (Compose quickstart, Coolify, Google APIs, backup, upgrade, GHCR image).
+
 ## Priority order
 
 | Priority | Target | What “ready” means |
@@ -83,12 +85,12 @@ Target UX: **one-click backup** (database + media/dish photos), Immich-like — 
 ## Install checklist (definition of done for “self-host ready”)
 
 - [x] Official Compose file in repo
-- [x] `.env.example` (full install.md still Phase 10)
+- [x] `.env.example` + [install.md](install.md)
 - [x] Healthchecks + restart policies
-- [ ] One-click (or guided) backup + restore
-- [ ] Upgrade guidance
+- [x] Documented backup + restore (`pg_dump` + volumes) — one-click UI is v0.2
+- [x] Upgrade guidance in install.md
 - [x] MCP enabled behind auth + connect snippet for Cursor/Claude
-- [ ] Coolify walkthrough verified end-to-end
+- [ ] Coolify walkthrough verified end-to-end (founder)
 - [ ] Optional: Unraid/CasaOS template
 - [ ] Optional: OIDC login
 

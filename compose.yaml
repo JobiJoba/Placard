@@ -28,6 +28,8 @@ services:
       retries: 20
 
   app:
+    # Local: build from this repo. Released images: ghcr.io/jobijoba/placard:0.1.0
+    # (set image: and omit build: — see docs/install.md).
     build: .
     image: placard:${PLACARD_VERSION:-local}
     restart: unless-stopped

@@ -4,7 +4,7 @@ How Placard gets built, in phases. Each phase ends with something you can **run 
 
 Scope comes from [mvp.md](mvp.md). Stack and testing rules come from [tech-stack.md](tech-stack.md). Idea vs code snapshot: [current-state.md](current-state.md).
 
-**Progress:** Phases **0–9 are code-complete**; founder “You check” boxes through Phase 9 are done. Phase **10** remains the release gate.
+**Progress:** Phases **0–10 are code-complete**; founder “You check” boxes through Phase 9 are done. Phase **10** founder checks (Coolify / phone / wipe-restore) remain.
 
 ## Overview
 
@@ -20,7 +20,7 @@ Scope comes from [mvp.md](mvp.md). Stack and testing rules come from [tech-stack
 | 7 | Photos | **done** | Add dish photos; Google covers when Details has photos |
 | 8 | Decide module | **done** | Spin the wheel (Marketplace install + nav) |
 | 9 | MCP | **done** | Search, lists, and decide from Cursor or Claude |
-| 10 | Release hardening | **open** | Coolify install, export, PWA, published image |
+| 10 | Release hardening | **code done** | Export, PWA, install guide, GHCR workflow (founder Coolify DoD open) |
 
 Order followed the original priorities: places and browsing first, then search, then import at scale, then modules and MCP. Manual add came before Takeout because it builds the Places + Google plumbing that import reuses.
 
@@ -345,22 +345,17 @@ Work that landed between phases (or ahead of mvp “Later”) and should be trea
 
 ## Phase 10 — Release hardening (v0.1)
 
-**Status:** open (Compose + env + deployment notes exist; export / PWA / GHCR / Coolify DoD do not).
+**Status:** code-complete (founder Coolify / phone / wipe-restore checks open).
 
 **Goal:** someone else can install and trust it.
 
-**Already in place**
+**Shipped**
 
 - Hand-maintained `compose.yaml`, `.env.example`, healthchecks, media + modules volumes
-- [deployment.md](deployment.md) Coolify / Compose notes
-- CI builds an image (not yet published to GHCR)
-
-**Still to build**
-
-- Export all data as JSON + GeoJSON (with media manifest)
-- Install guide: Compose, Google key setup (APIs to enable, quota cap), Coolify section, backup with `pg_dump` + media volume, upgrade notes
-- PWA manifest, icons, mobile layout pass
-- Published image on GHCR, tagged release, changelog
+- [deployment.md](deployment.md) + [install.md](install.md) (Compose, Coolify, Google, backup, upgrade)
+- Per-user library export zip (`GET /api/export`: JSON + GeoJSON + media)
+- PWA manifest + icons + mobile shell tweaks
+- CI builds an image; release workflow publishes to GHCR on `v*` tags; [CHANGELOG.md](../CHANGELOG.md)
 
 **You check**
 
@@ -371,8 +366,8 @@ Work that landed between phases (or ahead of mvp “Later”) and should be trea
 
 **Automated**
 
-- E2E: the full definition-of-done suite against the built image
 - Integration: export contains every place, list, tag and media reference
+- Release workflow: push `ghcr.io/jobijoba/placard` on version tags
 
 ---
 

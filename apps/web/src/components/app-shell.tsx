@@ -55,13 +55,13 @@ export function AppShell({ modules }: { readonly modules: ReadonlyArray<MyModule
   const morePlugins = pluginNav.filter((p) => p.slot === "more")
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--parchment)]">
+    <div className="flex min-h-dvh min-w-0 flex-col overflow-x-hidden bg-[var(--parchment)]">
       <header className="sticky top-0 z-40 border-b border-[var(--crate-edge)] bg-[var(--crate)] text-[var(--parchment)]">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-4 sm:gap-6">
             <Link
               to="/"
-              className="font-catalog shrink-0 text-2xl font-semibold uppercase tracking-[0.04em] text-[var(--parchment)]"
+              className="font-catalog truncate text-xl font-semibold uppercase tracking-[0.04em] text-[var(--parchment)] sm:text-2xl"
             >
               Placard
             </Link>
@@ -145,11 +145,11 @@ export function AppShell({ modules }: { readonly modules: ReadonlyArray<MyModule
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8 md:pb-16 pb-24">
+      <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-6 pb-24 sm:px-6 sm:py-8 md:pb-16">
         <Outlet />
       </main>
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--crate-edge)] bg-[var(--crate)]/95 backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--crate-edge)] bg-[var(--crate)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
         aria-label="Primary"
       >
         <div className="mx-auto flex max-w-6xl">
@@ -158,7 +158,7 @@ export function AppShell({ modules }: { readonly modules: ReadonlyArray<MyModule
           </NavLink>
           {primaryPlugins[0] ? (
             <NavLink to={primaryPlugins[0].to} className={bottomLink}>
-              {primaryPlugins[0].label}
+              <span className="max-w-16 truncate">{primaryPlugins[0].label}</span>
             </NavLink>
           ) : null}
           <NavLink to="/add" className={bottomLink}>

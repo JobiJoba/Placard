@@ -15,6 +15,7 @@ export function SettingsGeneralPage() {
     <div className="flex flex-col gap-6">
       <AccountCard />
       <DistanceUnitCard />
+      <ExportLibraryCard />
     </div>
   )
 }
@@ -140,6 +141,48 @@ function DistanceUnitCard() {
           <ToggleGroupItem value="mi">Miles</ToggleGroupItem>
         </ToggleGroup>
         <ErrorAlert message={error} />
+      </div>
+    </SettingsCard>
+  )
+}
+
+function ExportLibraryCard() {
+  const [error, setError] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
+
+  const download = async () => {
+    setPending(true)
+    setError(null)
+    try {
+      const response = await fetch("/api/export", { credentials: "include" })
+      if (!response.ok) {
+        setError(response.status === 401 ? "Sign in to export." : "Export failed.")
+        return
+      }
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement("a")
+      anchor.href = url
+      anchor.download = "placard-export.zip"
+      anchor.click()
+      URL.revokeObjectURL(url)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Export failed.")
+    } finally {
+      setPending(false)
+    }
+  }
+
+  return (
+    <SettingsCard
+      title="Export library"
+      description="Download your places, lists, tags, and media as a zip (JSON + GeoJSON). Instance backup still uses pg_dump + volumes."
+    >
+      <div className="flex flex-col gap-3">
+        <ErrorAlert message={error} />
+        <Button type="button" variant="outline" disabled={pending} onClick={() => void download()}>
+          {pending ? "Preparing…" : "Download export.zip"}
+        </Button>
       </div>
     </SettingsCard>
   )

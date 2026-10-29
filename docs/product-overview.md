@@ -156,7 +156,7 @@ CRUD works without a Google key.
 
 **Shipped for v0.1 (code)** — accounts; library CRUD; cards/map; tags/lists; Takeout triage; search filters; enrichment + force refresh; dish photos + Google covers; Decide (Marketplace); MCP; Compose; trusted zip plugins.
 
-**Still for v0.1 release (Phase 10)** — export JSON/GeoJSON; PWA basics; Coolify DoD; GHCR image.
+**Phase 10 code shipped** — export JSON/GeoJSON zip; PWA basics; install guide; GHCR release workflow. Founder Coolify / phone DoD still open.
 
 **Soon after (v0.2+)**
 

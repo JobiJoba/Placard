@@ -21,7 +21,7 @@ That thesis still holds. What changed is *how far the code got*, and a few thing
 
 ## What works today (code + CI)
 
-Phases **0–9** are implemented. On a local Aspire or Compose stack you can:
+Phases **0–10** are implemented in code. On a local Aspire or Compose stack you can:
 
 | Job | Where |
 | --- | --- |
@@ -34,6 +34,8 @@ Phases **0–9** are implemented. On a local Aspire or Compose stack you can:
 | Dish / place photos; Google cover when Details returns photos | place detail |
 | Decide wheel (install from Marketplace; show in nav) | `/m/restaurants.decide` |
 | MCP: PAT + Streamable HTTP `/mcp` (search, get, create, lists, status, decide) | `/settings/mcp` |
+| Export library zip (JSON + GeoJSON + media) | Settings → General |
+| Install as PWA (manifest + icons) | browser “Add to Home Screen” |
 
 Stack in practice: **Vite React SPA + Effect HttpApi + PostGIS + Better Auth + Aspire (dev) + Compose (deploy)**. Phase 0 was rebuilt onto this after an earlier Nest/Next sketch; that rewrite is the real foundation.
 
@@ -53,15 +55,17 @@ These are real product surface, not side experiments:
 
 mvp.md originally parked “third-party modules / SDK / manifest” under Later — that work is **in tree now** as *trusted admin plugins* (no sandbox, no public store). Scope freeze was updated to match.
 
-## Still open for v0.1 release (Phase 10)
+## Phase 10 (code) vs founder release gate
 
-The library → Decide → MCP loop is usable. Release hardening is not:
+**In tree:** per-user export zip; PWA manifest/icons; [install.md](install.md); GHCR release workflow + changelog.
 
-- Export all data as **JSON + GeoJSON** (with media manifest)
-- **PWA** basics (manifest, icons, mobile layout pass)
-- Install guide walkthrough on **Coolify** only
-- Published image (**GHCR**), tagged release, changelog
-- Founder QA: real Takeout of ~500 places; tick remaining “You check” boxes on Compose
+**Still founder / ops:**
+
+- Coolify install following only the guide
+- Phone home-screen PWA install
+- Backup → wipe → restore with photos
+- Real Takeout of ~500 places on Compose if not already done
+- Cut a `v0.1.0` tag so GHCR publishes
 
 ## Explicitly later (still true)
 

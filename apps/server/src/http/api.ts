@@ -2,6 +2,7 @@ import { Api } from "@placard/domain"
 import { Layer } from "effect"
 import { HttpApiBuilder } from "effect/http-api"
 import { AccountsLayer } from "../accounts/layer.ts"
+import { LibraryExport } from "../export/export.ts"
 import { GooglePlaces } from "../google/places.ts"
 import { Import } from "../import/import.ts"
 import { JobQueue } from "../jobs/queue.ts"
@@ -15,6 +16,7 @@ import { Tags } from "../places/tags.ts"
 import { Tokens } from "../tokens/tokens.ts"
 import { AdminApiLive, MeApiLive, SetupApiLive } from "./accounts.ts"
 import { AdminAuthenticationLive, AuthenticationLive, AuthRoutesLive } from "./auth.ts"
+import { ExportRoutesLive } from "./export.ts"
 import { HealthApiLive } from "./health.ts"
 import { ImportApiLive } from "./import.ts"
 import { McpRoutesLive } from "./mcp.ts"
@@ -61,6 +63,13 @@ export const ServicesLayer = Import.layer.pipe(
   Layer.provideMerge(Tokens.layer),
   Layer.provideMerge(AccountsLayer),
   Layer.provideMerge(JobQueue.layer),
+  Layer.provideMerge(
+    LibraryExport.layer.pipe(
+      Layer.provide(Places.layer),
+      Layer.provide(Lists.layer),
+      Layer.provide(Tags.layer),
+    ),
+  ),
 )
 
 /** Every `/api` route, with app services built in. */
@@ -70,4 +79,5 @@ export const RoutesLive = Layer.mergeAll(
   MediaFileRoutesLive,
   ModuleFileRoutesLive,
   McpRoutesLive,
+  ExportRoutesLive,
 ).pipe(Layer.provide(ServicesLayer), Layer.provide(ModuleRuntime.layer))
