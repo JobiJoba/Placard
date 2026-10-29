@@ -1,6 +1,8 @@
 import type { MyModule } from "@placard/domain"
-import { Menu } from "lucide-react"
+import { Menu, Search } from "lucide-react"
+import { useEffect, useState } from "react"
 import { Link, NavLink, Outlet } from "react-router"
+import { CommandPalette } from "@/components/command-palette"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -41,6 +43,18 @@ const bottomLink = ({ isActive }: { isActive: boolean }) =>
 export function AppShell({ modules }: { readonly modules: ReadonlyArray<MyModule> }) {
   const me = useMe()
   const { signOut } = useSession()
+  const [paletteOpen, setPaletteOpen] = useState(false)
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== "k") return
+      if (!(event.metaKey || event.ctrlKey)) return
+      event.preventDefault()
+      setPaletteOpen((open) => !open)
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [])
 
   const pluginNav = modules.flatMap((m) =>
     m.visible
@@ -94,6 +108,30 @@ export function AppShell({ modules }: { readonly modules: ReadonlyArray<MyModule
             </nav>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="hidden border-[var(--crate-edge)] bg-transparent text-[var(--parchment)] hover:bg-[var(--crate-raised)] hover:text-[var(--parchment)] sm:inline-flex"
+              onClick={() => setPaletteOpen(true)}
+              aria-label="Search and commands"
+            >
+              <Search aria-hidden />
+              <span className="hidden lg:inline">Search</span>
+              <kbd className="pointer-events-none hidden rounded border border-[var(--crate-edge)] px-1.5 py-0.5 font-mono text-[0.65rem] text-[color-mix(in_srgb,var(--parchment)_70%,transparent)] md:inline">
+                ⌘K
+              </kbd>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="border-[var(--crate-edge)] bg-transparent text-[var(--parchment)] hover:bg-[var(--crate-raised)] sm:hidden"
+              onClick={() => setPaletteOpen(true)}
+              aria-label="Search and commands"
+            >
+              <Search aria-hidden />
+            </Button>
             <span className="hidden text-sm text-[color-mix(in_srgb,var(--parchment)_70%,transparent)] lg:inline">
               {me.name}
             </span>
@@ -139,6 +177,7 @@ export function AppShell({ modules }: { readonly modules: ReadonlyArray<MyModule
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setPaletteOpen(true)}>Search…</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => void signOut()}>Sign out</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -169,6 +208,7 @@ export function AppShell({ modules }: { readonly modules: ReadonlyArray<MyModule
           </NavLink>
         </div>
       </nav>
+      <CommandPalette modules={modules} open={paletteOpen} onOpenChange={setPaletteOpen} />
     </div>
   )
 }

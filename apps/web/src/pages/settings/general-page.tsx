@@ -7,6 +7,11 @@ import { Input } from "@/components/ui/input"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { api, errorMessage } from "@/lib/api"
 import { changePassword } from "@/lib/auth-client"
+import {
+  isLibraryDensity,
+  LIBRARY_DENSITIES,
+  useLibraryDensity,
+} from "@/lib/library-density"
 import { useMe, useSession } from "@/session"
 import { SettingsCard } from "./settings-card"
 
@@ -15,6 +20,7 @@ export function SettingsGeneralPage() {
     <div className="flex flex-col gap-6">
       <AccountCard />
       <DistanceUnitCard />
+      <LibraryDensityCard />
       <ExportLibraryCard />
     </div>
   )
@@ -142,6 +148,35 @@ function DistanceUnitCard() {
         </ToggleGroup>
         <ErrorAlert message={error} />
       </div>
+    </SettingsCard>
+  )
+}
+
+function LibraryDensityCard() {
+  const [density, setDensity] = useLibraryDensity()
+
+  return (
+    <SettingsCard
+      title="Library grid"
+      description="How many place cards fit across a typical desktop row. Stored on this device."
+    >
+      <ToggleGroup
+        type="single"
+        variant="outline"
+        spacing={0}
+        value={String(density)}
+        onValueChange={(value) => {
+          const next = Number(value)
+          if (isLibraryDensity(next)) setDensity(next)
+        }}
+        aria-label="Library cards per row"
+      >
+        {LIBRARY_DENSITIES.map((n) => (
+          <ToggleGroupItem key={n} value={String(n)}>
+            {n}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
     </SettingsCard>
   )
 }

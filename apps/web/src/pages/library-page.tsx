@@ -36,6 +36,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { api, errorMessage } from "@/lib/api"
 import { requestLocation } from "@/lib/geolocation"
+import { useLibraryDensity } from "@/lib/library-density"
 import { categoryIcons, categoryLabels, formatDistance, statusLabels } from "@/lib/places"
 import { useLoad } from "@/lib/use-load"
 import { useMe } from "@/session"
@@ -54,6 +55,7 @@ const parseCategory = (value: string | null): PlaceCategory | undefined =>
 
 export function LibraryPage() {
   const me = useMe()
+  const [libraryDensity] = useLibraryDensity()
   const [params, setParams] = useSearchParams()
   const text = params.get("q") ?? ""
   const tag = params.get("tag") ?? undefined
@@ -244,7 +246,7 @@ export function LibraryPage() {
   if (error) return <ErrorAlert message={error} />
   if (!hits && !searchBlocked) {
     return (
-      <div className="crate-grid">
+      <div className="crate-grid" data-density={libraryDensity}>
         {[0, 1, 2, 3, 4, 5].map((i) => (
           <Skeleton key={i} className="aspect-square rounded-sm" />
         ))}
@@ -595,7 +597,7 @@ export function LibraryPage() {
       )}
 
       {waitingForGeo ? (
-        <div className="crate-grid">
+        <div className="crate-grid" data-density={libraryDensity}>
           {[0, 1, 2, 3, 4, 5].map((i) => (
             <Skeleton key={i} className="aspect-square rounded-sm" />
           ))}
@@ -635,7 +637,7 @@ export function LibraryPage() {
           </p>
         )
       ) : (
-        <ul className="crate-grid list-none p-0">
+        <ul className="crate-grid list-none p-0" data-density={libraryDensity}>
           {(hits ?? []).map(({ place, distanceMeters }) => (
             <li key={place.id} className="min-w-0">
               <PlaceCard
@@ -1008,7 +1010,13 @@ function PlaceCard({
             loading="lazy"
           />
           <div
-            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[var(--crate)] via-[color-mix(in_srgb,var(--crate)_45%,transparent)] to-transparent"
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: [
+                "linear-gradient(to top, var(--crate) 0%, color-mix(in srgb, var(--crate) 55%, transparent) 38%, transparent 62%)",
+                "linear-gradient(to bottom, color-mix(in srgb, var(--crate) 78%, transparent) 0%, transparent 42%)",
+              ].join(", "),
+            }}
             aria-hidden
           />
         </>
@@ -1042,7 +1050,7 @@ function PlaceCard({
         to={`/places/${place.id}`}
         className="cover-face relative z-[1] flex h-full flex-col justify-between gap-2 p-3 pr-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spine-gold)]"
       >
-        <div className="cover-meta flex items-center gap-1.5 text-[0.65rem] font-medium tracking-wide text-[color-mix(in_srgb,var(--parchment)_78%,transparent)] uppercase">
+        <div className="cover-meta flex items-center gap-1.5 text-[0.65rem] font-medium tracking-wide text-[var(--parchment)] uppercase [text-shadow:0_1px_2px_rgb(26_22_18_/_70%)]">
           <Icon className="size-3.5 shrink-0" aria-hidden />
           <span className="truncate">{categoryLabels[place.category]}</span>
           {distanceMeters != null && (
