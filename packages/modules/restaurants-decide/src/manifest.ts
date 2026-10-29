@@ -16,9 +16,7 @@ export const restaurantsDecideManifest = defineModule({
   icon: raw.icon,
   cover: raw.cover,
   webRoutes: raw.webRoutes as [{ path: string; exportName: string }],
-  mcpTools: raw.mcpTools as
-    | [{ name: string; title?: string; description: string }]
-    | undefined,
+  mcpTools: raw.mcpTools as [{ name: string; title?: string; description: string }] | undefined,
 })
 
 export const RESTAURANTS_DECIDE_ID = restaurantsDecideManifest.id

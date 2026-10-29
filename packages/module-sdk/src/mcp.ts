@@ -33,7 +33,10 @@ export type ModuleMcpResult =
   | { readonly ok: true; readonly data: unknown }
   | { readonly ok: false; readonly error: string }
 
-export type ModuleHostFetch = (path: string, init?: globalThis.RequestInit) => Promise<globalThis.Response>
+export type ModuleHostFetch = (
+  path: string,
+  init?: globalThis.RequestInit,
+) => Promise<globalThis.Response>
 
 /**
  * Context passed to module MCP handlers.

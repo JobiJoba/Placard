@@ -8,7 +8,7 @@ import {
   type ModuleUpload,
   type MyModule,
 } from "@placard/domain"
-import { defaultWebEntry, moduleMcpToolName, type ModuleManifest } from "@placard/module-sdk"
+import { defaultWebEntry, type ModuleManifest, moduleMcpToolName } from "@placard/module-sdk"
 import { Context, DateTime, Effect, Layer } from "effect"
 import { SqlClient } from "effect/sql"
 import { AppConfig } from "../config.ts"
@@ -489,25 +489,24 @@ export class Modules extends Context.Service<
           return row.visible ?? true
         }),
 
-        isMcpEnabledForUser: Effect.fn("Modules.isMcpEnabledForUser")(function* (
-          ownerId,
-          moduleId,
-        ) {
-          const rows = yield* sql<{
-            enabled: boolean
-            visible: boolean | null
-            mcp_enabled: boolean | null
-          }>`
+        isMcpEnabledForUser: Effect.fn("Modules.isMcpEnabledForUser")(
+          function* (ownerId, moduleId) {
+            const rows = yield* sql<{
+              enabled: boolean
+              visible: boolean | null
+              mcp_enabled: boolean | null
+            }>`
             select i.enabled, p.visible, p.mcp_enabled
             from instance_modules i
             left join user_module_prefs p
               on p.module_id = i.module_id and p.user_id = ${ownerId}
             where i.module_id = ${moduleId}`.pipe(Effect.orDie)
-          const row = rows[0]
-          if (!row?.enabled) return false
-          if (!(row.visible ?? true)) return false
-          return row.mcp_enabled ?? true
-        }),
+            const row = rows[0]
+            if (!row?.enabled) return false
+            if (!(row.visible ?? true)) return false
+            return row.mcp_enabled ?? true
+          },
+        ),
 
         loadDiskModules: Effect.gen(function* () {
           const rows = yield* listRows()

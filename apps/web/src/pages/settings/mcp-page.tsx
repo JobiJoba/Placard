@@ -34,9 +34,7 @@ export function SettingsMcpPage() {
 
   const setModuleMcp = (mod: MyModule, enabled: boolean) => {
     setActionError(null)
-    void api((c) =>
-      c.modules.setMcpEnabled({ params: { id: mod.id }, payload: { enabled } }),
-    ).then(
+    void api((c) => c.modules.setMcpEnabled({ params: { id: mod.id }, payload: { enabled } })).then(
       (updated) => {
         setModules((prev) => (prev ?? []).map((m) => (m.id === updated.id ? updated : m)))
       },

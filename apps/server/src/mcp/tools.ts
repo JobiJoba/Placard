@@ -1,8 +1,8 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import type { ManualPlaceInput, Me, PlaceStatus, SearchFilter } from "@placard/domain"
-import { Effect } from "effect"
-import { z } from "zod"
 import { moduleMcpToolName } from "@placard/module-sdk"
+import type { Effect } from "effect"
+import { z } from "zod"
 import type { ModuleRuntime } from "../modules/loader.ts"
 import type { Modules } from "../modules/modules.ts"
 import type { Lists } from "../places/lists.ts"
@@ -320,7 +320,10 @@ export const registerPlacardTools = async (server: McpServer, ctx: ToolContext) 
                   const pathname = path.startsWith("http")
                     ? new URL(path).pathname
                     : path.split("?")[0]
-                  if (pathname === "/api/search" && (init?.method ?? "GET").toUpperCase() === "POST") {
+                  if (
+                    pathname === "/api/search" &&
+                    (init?.method ?? "GET").toUpperCase() === "POST"
+                  ) {
                     const raw =
                       typeof init?.body === "string"
                         ? init.body

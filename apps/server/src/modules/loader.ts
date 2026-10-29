@@ -6,8 +6,8 @@ import {
   defaultServerEntry,
   defaultWebEntry,
   type ModuleManifest as Manifest,
-  type ModuleMcpTool,
   ModuleManifest,
+  type ModuleMcpTool,
 } from "@placard/module-sdk"
 import { Context, Effect, Layer, Schema } from "effect"
 
