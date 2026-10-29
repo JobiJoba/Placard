@@ -4,11 +4,28 @@ Docker Compose is the **recommended** way to run Placard. You pull a published i
 
 Architecture notes: [deployment.md](deployment.md).
 
+**On this page**
+
+1. [Requirements](#requirements)
+2. [Step 1 — Download](#step-1--download-the-required-files)
+3. [Step 2 — `.env`](#step-2--populate-the-env-file)
+4. [Step 3 — Start](#step-3--start-the-containers)
+5. [Image tags](#image-tags)
+6. [Coolify](#coolify)
+7. [Dokploy](#dokploy)
+8. [Backup](#backup)
+9. [Build from source](#build-from-source-contributors)
+10. [Library export & MCP](#library-export--mcp)
+
+Google Maps Platform setup (API key, restrictions, smoke-check) lives in **[google-apis.md](google-apis.md)**.
+
 ## Requirements
 
 - Docker Engine + Compose v2
 - ~1 GB RAM free for app + PostGIS
-- Optional: Google Maps Platform key (Places API New + Maps JavaScript API)
+- Optional but recommended for a full install: Google Maps Platform key — see [google-apis.md](google-apis.md)
+
+CRUD, Takeout triage, OSM pin-drop, and MCP work **without** a Google key. The key unlocks autocomplete, Google map picking, enrichment (hours, phone, cover photos), and confident Takeout matching.
 
 ---
 
@@ -62,7 +79,7 @@ Edit `.env` and set at least:
 Optional:
 
 - `PLACARD_PORT` — host port (default `3000`)
-- `GOOGLE_MAPS_API_KEY` — or set later in Settings → Integrations
+- `GOOGLE_MAPS_API_KEY` — or set later in Settings → Integrations (see [google-apis.md](google-apis.md))
 - `PLACARD_IMAGE` — override the image (release compose already pins a version; use `ghcr.io/jobijoba/placard:nightly` only if you opt into nightlies)
 - `MCP_ENABLED` — default `true`
 
@@ -117,9 +134,18 @@ Migrations run on boot. Keep named volumes so the library and photos survive. Se
 
 Volumes `media` and `modules` must persist. MCP is same-origin at `/mcp`.
 
-## Google APIs
+## Dokploy
 
-Enable **Places API (New)** and **Maps JavaScript API**. Restrict the key to those APIs and set a daily quota cap. Do **not** use HTTP-referrer-only restrictions (server calls send no referrer). Without a key, users can still drop pins on OpenStreetMap.
+Same Compose stack as Coolify — create a **Docker Compose** service (not a single-image app).
+
+1. Paste the release `docker-compose.yml` (or repo [`compose.ghcr.yaml`](../compose.ghcr.yaml) for tip-of-main / `:nightly`)
+2. Set env from `example.env` (`BETTER_AUTH_SECRET`, `POSTGRES_PASSWORD`, `PUBLIC_URL=https://your-domain`)
+3. **Domains → Add Domain** → select the **app** service → container port **3000** (Dokploy/Traefik routes to that internal port; do not confuse this with host port publish)
+4. Deploy; wait for healthchecks. HTTPS certs may take a few seconds after the first deploy
+
+Volumes `media` and `modules` must persist. MCP is same-origin at `/mcp`.
+
+---
 
 ## Backup
 

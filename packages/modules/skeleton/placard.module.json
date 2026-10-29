@@ -1,0 +1,32 @@
+{
+  "id": "example.skeleton",
+  "name": "Skeleton",
+  "version": "0.1.0",
+  "description": "Minimal starter module — hello HTTP + optional MCP. Replace with your feature.",
+  "permissions": ["places.read", "search.query"],
+  "nav": [
+    {
+      "path": "/m/example.skeleton",
+      "label": "Skeleton",
+      "slot": "more"
+    }
+  ],
+  "source": "upload",
+  "packageName": "@placard/module-skeleton",
+  "sdkVersion": "0.1.0",
+  "serverEntry": "./server/index.js",
+  "webEntry": "./web/index.js",
+  "webRoutes": [
+    {
+      "path": "/m/example.skeleton",
+      "exportName": "SkeletonPage"
+    }
+  ],
+  "mcpTools": [
+    {
+      "name": "skeleton_hello",
+      "title": "Skeleton hello",
+      "description": "Returns a short hello from the skeleton module (sanity-check MCP wiring)."
+    }
+  ]
+}

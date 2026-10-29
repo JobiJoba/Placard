@@ -1,101 +1,51 @@
-# Deployment & install targets
+# Deployment overview
 
-Placard targets the self-hosted community: home server, VPS, NAS, Coolify, etc. You do **not** need a native Nextcloud app on day one to feel “installable” next to Immich-like projects — you need a **boring, excellent Docker story**.
+Placard is meant to feel like Immich-class self-hosting: **Docker Compose first**, then panels such as Coolify or Dokploy.
 
-**Install walkthrough:** [install.md](install.md) — **published GHCR image first** (`compose.ghcr.yaml`), then Coolify / backup / build-from-source.
+Step-by-step commands: [install.md](install.md). Google Places BYOK: [google-apis.md](google-apis.md).
 
-## Priority order
+## Recommended path
 
-| Priority | Target | What “ready” means |
+| Target | Status |
+| --- | --- |
+| Docker Compose + GHCR image | Primary |
+| Coolify / Dokploy / similar | Same Compose file; map HTTPS to the `app` service on port **3000** |
+| NAS / Unraid / CasaOS | Use the Compose file and persistent volumes |
+| Reverse proxy (Caddy, Traefik, nginx) | Terminate TLS; forward to `PLACARD_PORT` (default 3000) |
+
+**Aspire** (`aspire run`) is for **local development** of the monorepo. Self-hosters never need the Aspire CLI — use the published image and [install.md](install.md).
+
+## What the Compose stack includes
+
+- **`app`** — API + built web UI + MCP at `/mcp`
+- **`worker`** — background jobs (import, enrichment)
+- **`db`** — Postgres + PostGIS
+- **Volumes** — database data, `media` (photos), `modules` (uploaded Marketplace zips)
+
+Health: `$PUBLIC_URL/api/health`.
+
+## Environment (high level)
+
+| Variable | Required | Purpose |
 | --- | --- | --- |
-| **P0** | Docker Compose | One command up; documented env; volumes for DB + media; healthcheck |
-| **P0** | Coolify / similar PaaS | Compose-based deploy works; domain + HTTPS via their proxy; env UI documented |
-| **P1** | NAS / Unraid / CasaOS | Template or one-click compose snippet; persistent paths clear |
-| **P2** | Reverse-proxy notes | Traefik / Caddy / nginx examples |
-| **P3** | Nextcloud *adjacency* | Link/External site / Dashboard button — not a full Nextcloud PHP app |
-| **Later** | True Nextcloud app | Only if demand justifies heavy coupling |
+| `POSTGRES_PASSWORD` | yes | Database password |
+| `BETTER_AUTH_SECRET` | yes | Session signing (`openssl rand -base64 32`) |
+| `PUBLIC_URL` | yes | Exact public origin (auth and links) |
+| `PLACARD_PORT` | no | Host port (default `3000`) |
+| `GOOGLE_MAPS_API_KEY` | no | Places BYOK — or set in Settings |
+| `MCP_ENABLED` | no | Default `true` |
+| `PLACARD_IMAGE` | no | Override image tag |
 
-## What we must ship for Coolify (and friends)
+Full comments live in `example.env` / `.env.example`.
 
-Coolify eats **Docker Compose** (or Dockerfile) from Git very well. Prepare:
+## Nextcloud
 
-1. **`compose.ghcr.yaml`** (prebuilt GHCR images — preferred for Coolify/VPS) and **`compose.yaml`** (local `--build` for contributors), with:
-   - `app` service (Effect HttpApi server + built SPA + later MCP)
-   - `worker` service (same image, runs the background job worker; see [tech-stack.md](tech-stack.md))
-   - `db` (Postgres + PostGIS image `imresamu/postgis:18-3.6`)
-   - named **volumes** for uploads / dish photos (`media`) and uploaded plugins (`modules` → `PLACARD_MODULES_DIR`)
-   - **healthchecks** so the proxy waits for readiness
-   - documented **ports** (e.g. app `3000`)
-2. **Environment variables** listed in `.env.example`:
-   - `POSTGRES_PASSWORD`
-   - `BETTER_AUTH_SECRET` (required, 32+ characters: `openssl rand -base64 32`; changing it signs everyone out)
-   - `PUBLIC_URL` (sign-in only works from this origin; invite links point here)
-   - optional `GOOGLE_MAPS_API_KEY` (BYOK; can instead be set in Settings). Enable **Places API (New)** and **Maps JavaScript API**. The key reaches the browser for the map, so restrict it to those two APIs and set a daily quota cap (don't add an HTTP-referrer restriction: the server's Places calls send no referrer). Without a key, places are added by dropping a pin on OpenStreetMap
-   - `PLACARD_FAKE_GOOGLE` is test-only (answers Google calls from fixtures); never set it in production
-   - optional `MCP_ENABLED`, token settings
-3. **No hardcoded localhost** assumptions for public URL (respect `PUBLIC_URL` / Coolify domain)
-4. **Persistent data** only on volumes — upgrades must not wipe the library
-5. Short **Coolify** subsection in install docs: “New Resource → Docker Compose → set domain to app service port”
+Run Placard **beside** Nextcloud (bookmark or External site). A native Nextcloud PHP app is not required and not the v1 path.
 
-That is enough for Coolify, Dockge, Portainer, plain VPS, and most NAS Docker UIs.
+## Modules on a deployed instance
 
-**Aspire** is for local development (`aspire run`). Self-hosters use published images via `compose.ghcr.yaml` (see [install.md](install.md)) and never need the Aspire CLI. Validate source-build `compose.yaml` markers with `pnpm compose:generate`.
+Uploaded modules land on the **`modules` volume** (`PLACARD_MODULES_DIR`). Keep that volume across upgrades. See [creating-modules.md](creating-modules.md).
 
-Nixpacks/Railpack alone are weaker for multi-service (app+db+media). Prefer **Compose as the canonical path**.
+## Backup
 
-## Nextcloud specifically
-
-Three levels of integration:
-
-### A. “Runs beside Nextcloud” (recommended first)
-
-- Placard is its own container stack
-- Users bookmark it or add an **External site** / link in Nextcloud
-- SSO later via OIDC (Nextcloud / Authelia / Pocket ID) — high value, still not a Nextcloud app
-
-**Effort:** low. **Fit:** matches Immich, Paperless, etc.
-
-### B. Nextcloud “Integration” / dashboard widget
-
-- Deeper UX: open Placard from Nextcloud UI, maybe pass OIDC
-- Still separate backend
-
-**Effort:** medium. Depends on Nextcloud APIs and maintenance.
-
-### C. Native Nextcloud app (`apps/placard`)
-
-- PHP/Nextcloud lifecycle, app store listing, NC sharing model
-- Fights our module/MCP/Docker-first architecture
-- High maintenance tax
-
-**Recommendation:** do **not** plan C for v1. Document A clearly (“works great next to Nextcloud”). Revisit B when solo+household core is stable.
-
-## MCP on deployed instances
-
-MCP is implemented ([mcp.md](mcp.md)):
-
-- Same origin as the app (`https://placard.domain/mcp`) behind PAT auth
-- Coolify: no special MCP product support required — it is just HTTPS to the container
-- Firewall / auth: MCP must not be anonymously open on the internet; revoke tokens from Settings → MCP
-
-## Backups
-
-Target UX: **one-click backup** (database + media/dish photos), Immich-like — not only “remember to volume-mount and pg_dump”. Document restore as well.
-
-## Install checklist (definition of done for “self-host ready”)
-
-- [x] Official Compose file in repo
-- [x] `.env.example` + [install.md](install.md)
-- [x] Healthchecks + restart policies
-- [x] Documented backup + restore (`pg_dump` + volumes) — one-click UI is v0.2
-- [x] Upgrade guidance in install.md
-- [x] MCP enabled behind auth + connect snippet for Cursor/Claude
-- [ ] Coolify walkthrough verified end-to-end (founder)
-- [ ] Optional: Unraid/CasaOS template
-- [ ] Optional: OIDC login
-
-## What we should *not* block on
-
-- App Store presence inside Nextcloud
-- Kubernetes Helm charts (nice later; Compose first)
-- Managed cloud multi-tenant SaaS
+Instance backup (database + media + modules volumes) is documented in [install.md](install.md#backup). Library **Export** in Settings is a per-user zip, not a full disaster-recovery backup.

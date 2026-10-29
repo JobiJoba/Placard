@@ -1,121 +1,83 @@
-# MCP — talking to Placard from agents
+# Connect agents with MCP
 
-Placard should be usable not only from a browser, but from AI clients that speak the **Model Context Protocol (MCP)** — e.g. Cursor, Claude Desktop, and other MCP hosts.
+Placard exposes a [Model Context Protocol](https://modelcontextprotocol.io/) endpoint on your instance so tools like Cursor or Claude can search your library, add places, and run module tools (for example **Decide**) using a personal access token you control.
 
-Goal: *“Add this restaurant to my Italian list”* or *“What’s open tonight from my dinner list?”* without opening the UI.
+## What you get
 
-**Product decision: MCP is must-ship** with a usable library — not a backlog nice-to-have. See [decisions.md](decisions.md).
-
-## What we need to deliver
-
-### 1. An MCP server that wraps the core API
-
-Prefer **one HTTP API** (Effect `HttpApi` on `apps/server`) used by:
-
-- the web UI (typed client)
-- modules
-- the MCP layer
-
-MCP is an adapter on the same server process, not a second business-logic stack.
-
-**Transports (support both over time):**
-
-| Transport | When |
+| Capability | Notes |
 | --- | --- |
-| **Streamable HTTP** (e.g. `https://placard.example/mcp`) | Self-hosted instance reachable by a remote/local MCP client — default for Docker/Coolify installs |
-| **stdio** (optional package) | Power users running a small local bridge that talks to their Placard URL with a token |
+| Core tools | Search, get/create places, lists, want/been status |
+| Module tools | Optional tools from installed modules (e.g. Decide) |
+| Auth | Bearer PAT (`plc_…`) — same privacy rules as the UI |
+| Transport | Streamable HTTP at `$PUBLIC_URL/mcp` |
 
-Self-hosted reality: most users want HTTP + API token (or OAuth later), not a public unauthenticated MCP endpoint.
+Anyone with a token can read and change your places. Treat it like a password.
 
-### 2. Auth for MCP
+## Connect a client
 
-Private data ⇒ MCP must authenticate.
+1. Open Placard → **Settings → MCP**.
+2. Create a personal access token and copy it once.
+3. Note your MCP URL: `https://your-domain/mcp` (same origin as the app).
+4. Add that URL + Bearer token in your MCP host (Cursor, Claude Desktop, …).
 
-Minimum viable:
+Example Cursor-style config shape (adjust to your client’s schema):
 
-- Personal **access token** (or household-scoped token) created in Placard settings
-- Token sent by the MCP client (header / MCP auth as specs evolve)
-- Same authorization rules as the UI (solo vs household)
+```json
+{
+  "mcpServers": {
+    "placard": {
+      "url": "https://placard.example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer plc_your_token_here"
+      }
+    }
+  }
+}
+```
 
-Do **not** expose write tools without auth. Reads of private places are also sensitive.
+Disable MCP for the whole instance with `MCP_ENABLED=false` in the server environment.
 
-### 3. A curated tool catalog (not every API route)
+## Core tools
 
-MCP tools should map to **user goals**, not raw CRUD spam.
-
-**Core tools (shipped)**
+Agents call these names directly (no module prefix):
 
 | Tool | Purpose |
 | --- | --- |
-| `search_places` | Find places by text / tag / list / type / open / radius |
-| `get_place` | Card-level detail + key facts |
-| `create_place` | Save from Place ID or coordinates |
-| `list_lists` / `add_to_list` | Organization |
+| `search_places` | Text / tag / list / type / open now or tonight / radius |
+| `get_place` | Card-level detail and key facts |
+| `create_place` | Save from a Google Place ID or coordinates |
+| `list_lists` | List your lists |
+| `add_to_list` | Add a place to a list |
 | `set_status` | Want to go / been there |
 
-Open now/tonight is a filter on `search_places` (no separate `list_open_places`). `update_place` is not exposed yet.
+## Module tools
 
-**Module tools** (declared by plugins via `createModule().mcpTools`)
+Installed modules may register extra tools. Placard prefixes them so names never collide:
 
-| Local name (in module) | MCP name clients call | Status |
+`{module_id_with_dots_as_underscores}__{local_tool_name}`
+
+Examples after you install those modules:
+
+| Module | Local name | Name agents call |
 | --- | --- | --- |
-| `decide_restaurant` | `restaurants_decide__decide_restaurant` | **Shipped** — `restaurants.decide` |
-| `pick_place` | `places_pick__pick_place` | Example upload (`places.pick`) |
-| dish / vote tools | *(same prefix rule)* | Later |
+| Decide (`restaurants.decide`) | `decide_restaurant` | `restaurants_decide__decide_restaurant` |
+| Pick (`places.pick`, upload example) | `pick_place` | `places_pick__pick_place` |
 
-**Namespacing:** Authors only pick a **local** tool name unique inside their module. The host registers a **global** MCP name `{sanitized_module_id}__{local_name}` (`.` → `_`) so two plugins can both ship `pick_place` without colliding. Core tools stay unprefixed (`search_places`, …). Settings shows the global name (what agents call).
+**Decide** ships with Placard as a Marketplace module (restaurant wheel). It is not a copy of another package you paste into MCP — the host loads the module and exposes its tools when:
 
-Authors declare tools on the module; the host discovers them from loaded plugins and can disable MCP for a whole module in Settings ([creating-modules.md](creating-modules.md), [architecture-modules.md](architecture-modules.md)).
+1. The module is installed and enabled for the instance
+2. You allow MCP for that module under **Settings → Marketplace → [module] → Settings**
 
-Also useful MCP **resources** (read-only URIs), e.g. `placard://place/{id}`, `placard://list/{id}` — optional phase-two.
+Settings lists the **global** tool names (what agents should call).
 
-### 4. Docs for users connecting a client
+## Safety
 
-Ship a short “Connect MCP” page:
+- Prefer short-lived tokens; revoke unused ones in Settings → MCP
+- Destructive core actions (delete) are not exposed as MCP tools today
+- Turn off **Allow MCP for this module** to hide that module’s tools without uninstalling
 
-1. Enable MCP in settings (or it’s on with auth required)
-2. Copy base URL + create token
-3. Paste into Cursor / Claude / etc. config example
-4. Warn: anyone with the token can read/write your places
+## Related
 
-### 5. Safety defaults
-
-- Confirm or require explicit tool use for destructive actions (delete)
-- Rate-limit MCP endpoints
-- Audit log of MCP tool calls (who/what/when) — especially for household installs
-- Disable MCP entirely via env flag for paranoid deploys
-
-## What we do *not* need on day one
-
-- Submitting Placard as a public ChatGPT plugin directory listing
-- Hosting a cloud MCP for all users (each instance is its own server)
-- Exposing every internal admin RPC as a tool
-
-## Implementation (shipped)
-
-```
-MCP client (Cursor, …)
-    │  Streamable HTTP + Bearer PAT (`plc_…`)
-    ▼
-Placard /mcp  (apps/server; Vite proxies /mcp in Aspire)
-    │
-    ├─ Core tools (search_places, …)
-    └─ Module tools from ModuleRuntime (host-prefixed names)
-         │  gated by instance enable + user mcp_enabled
-         ▼
-    Plugin handlers (hostFetch → /api/search, module data/)
-```
-
-`/mcp` lives in-process on `apps/server` (same origin as the SPA in Compose). Settings → MCP creates tokens, lists modules that expose tools (global names), and toggles per-module MCP. Disable globally with `MCP_ENABLED=false`. Optional stdio bridge package remains a later nice-to-have.
-
-Core tools: `search_places`, `get_place`, `create_place`, `add_to_list`, `list_lists`, `set_status`. Module example: `restaurants_decide__decide_restaurant`.
-
-## Success check
-
-A user can, from an MCP-capable chat:
-
-1. Search their library  
-2. Add a place to a list  
-3. Run **decide restaurant** for “open tonight” on a list  
-
-…against their self-hosted Placard, with a token, without a public share page.
+- [Install](install.md) — Compose / Coolify / Dokploy
+- [Creating modules](creating-modules.md) — ship your own tools
+- [FOR AI — module brief](module-brief-for-ai.md) — copy-paste prompt for agents that write modules

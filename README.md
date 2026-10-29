@@ -29,7 +29,7 @@ Open http://localhost:3000 (or your `PUBLIC_URL`). Health: `/api/health`.
 
 Release compose pins a stable image tag. Until the first `v*` release exists, use the [main fallback](docs/install.md#step-1--download-the-required-files) (`compose.ghcr.yaml` + `:nightly`).
 
-Full guide (Coolify, Google APIs, backup, upgrade, build-from-source): **[docs/install.md](docs/install.md)**.
+Full guide (Coolify, Dokploy, backup, upgrade, build-from-source): **[docs/install.md](docs/install.md)**. Google Maps Platform BYOK: **[docs/google-apis.md](docs/google-apis.md)**. The marketing site serves the same pages under `/docs`.
 
 ## Develop
 
@@ -95,7 +95,12 @@ Placard: **import → enrich → search/browse cards → run modules** — and t
 | [docs/architecture-modules.md](docs/architecture-modules.md) | Core vs modules; trusted plugins |
 | [docs/creating-modules.md](docs/creating-modules.md) | **How to build a module** (step-by-step + Pick example) |
 | [docs/mcp.md](docs/mcp.md) | Agent access (must-ship, implemented) |
-| [docs/install.md](docs/install.md) | **Install / Coolify / backup / upgrade** |
+| [docs/install.md](docs/install.md) | **Install / Coolify / Dokploy / backup / upgrade** |
+| [docs/google-apis.md](docs/google-apis.md) | **Google Maps Platform BYOK** |
+| [docs/mcp.md](docs/mcp.md) | **Connect MCP clients** |
+| [docs/creating-modules.md](docs/creating-modules.md) | **Marketplace modules (zip upload)** |
+| [docs/module-brief-for-ai.md](docs/module-brief-for-ai.md) | **Copy-paste brief for AI module authors** |
+| [packages/modules/skeleton](packages/modules/skeleton) | **Minimal module skeleton (`example.skeleton`)** |
 | [docs/deployment.md](docs/deployment.md) | Docker targets, Coolify notes, Nextcloud adjacency |
 | [docs/feasibility.md](docs/feasibility.md) | Takeout, Google BYOK, what’s realistic |
 | [docs/competitors.md](docs/competitors.md) | Adjacent landscape |

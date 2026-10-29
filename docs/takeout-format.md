@@ -1,6 +1,6 @@
-# Google Takeout format (as observed)
+# Google Takeout format
 
-Based on a real export, reduced to an anonymized fixture at [`test/fixtures/takeout/`](../test/fixtures/takeout/).
+What Placard’s importer expects from a Google Takeout of Maps saved places. Anonymized examples live in the repo under `test/fixtures/takeout/`.
 
 ## Export paths
 
@@ -9,7 +9,7 @@ Based on a real export, reduced to an anonymized fixture at [`test/fixtures/take
 | `Maps (your places)/Saved Places.json` | Starred / “Your places” pins (GeoJSON) |
 | `Saved/<List name>.csv` | Custom saved lists |
 
-A Takeout may include either or both. Placard’s importer should accept a zip or an already-extracted folder with this layout.
+A Takeout may include either or both. Upload a zip or an extracted folder with this layout.
 
 ## `Saved Places.json`
 
