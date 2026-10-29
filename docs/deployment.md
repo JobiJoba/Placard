@@ -2,7 +2,7 @@
 
 Placard targets the self-hosted community: home server, VPS, NAS, Coolify, etc. You do **not** need a native Nextcloud app on day one to feel “installable” next to Immich-like projects — you need a **boring, excellent Docker story**.
 
-**Install walkthrough:** [install.md](install.md) (Compose quickstart, Coolify, Google APIs, backup, upgrade, GHCR image).
+**Install walkthrough:** [install.md](install.md) (Compose quickstart, Coolify, Google APIs, backup, upgrade, GHCR `:0.1.0` / `:nightly`).
 
 ## Priority order
 

@@ -2,7 +2,7 @@
 
 The tables behind [mvp.md](mvp.md). Each table has a matching Effect Schema for its domain type; Drizzle table definitions live in `apps/server/src/db/schema.ts`.
 
-Migrations live under `apps/server/drizzle/`. Phases 0–9 have added the full v0.1 library, import, media, modules, tokens, and MCP audit tables — see [implementation-phases.md](implementation-phases.md).
+Migrations live under `apps/server/drizzle/`. Phases 0–10 have added the full v0.1 library, import, media, modules, tokens, MCP audit, and per-user module MCP prefs — see [implementation-phases.md](implementation-phases.md).
 
 ## Conventions
 
@@ -21,15 +21,16 @@ Migrations live under `apps/server/drizzle/`. Phases 0–9 have added the full v
 users ─┬─< places ─┬─< place_facts
        │           ├─< place_tags >── tags
        │           ├─< list_items >── lists
-       │           ├─< media (incl. covers)
-       │           └─< decide_picks
+       │           └─< media (incl. covers)
        ├─< import_runs ─< import_entries ──> places (once committed)
        ├─< api_tokens / mcp_audit
-       ├─< user_module_prefs
+       ├─< user_module_prefs (visible, mcp_enabled)
        └─< invitations (invited_by)
 instance_settings (single row)
 instance_modules (Marketplace installs)
 sessions, accounts, verifications   (Better Auth)
+
+Module-owned files (not core tables): e.g. restaurants.decide → data/picks.json under PLACARD_MODULES_DIR
 ```
 
 ## Tables
@@ -176,9 +177,13 @@ The staging table for free triage. Nothing here costs an API call.
 
 Skips are remembered across re-imports through `(owner_id, dedupe_key)`.
 
-### `decide_picks` (Phase 8, owned by the `restaurants.decide` module)
+### Decide avoid-recent (module data, not a core table)
 
-`id`, `owner_id`, `place_id`, `picked_at`. Used for avoid-recent. The module owns this table; core never reads it.
+`restaurants.decide` stores pick history in **`data/picks.json`** under the module root on the modules volume (`PLACARD_MODULES_DIR`). The old core `decide_picks` table was removed once Decide ran as a pure plugin. Core never reads module pick files.
+
+### `user_module_prefs`
+
+`user_id`, `module_id`, `visible` (nav), `mcp_enabled` (default true — when false, that module’s MCP tools are hidden for the user).
 
 ### `api_tokens` (Phase 9)
 

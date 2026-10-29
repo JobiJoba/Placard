@@ -142,16 +142,16 @@ Distances show in km or miles according to a user setting. Results need to feel 
 
 ## Definition of done
 
-v0.1 ships when, on a fresh `docker compose up` (items 1–5 are already met in code/CI; 6–7 are Phase 10):
+v0.1 ships when, on a fresh `docker compose up`:
 
-1. Admin signs up, sets the Google key, triages a real Takeout export of ~500 places (skipping some without any API call), and imports the rest with lists preserved. Then bulk-deletes a few imported places.
-2. Admin adds a new place through autocomplete, and another by clicking it on the map.
-3. "Pizza, open now, within 5 km" returns the right cards quickly.
-4. The Decide wheel picks from an open-tonight list.
-5. From Cursor or Claude via MCP: search, add to a list, and decide all work with a token.
-6. Export produces a complete JSON/GeoJSON file.
-7. The same stack deploys on Coolify by following the install guide.
-8. PWA install on a phone home screen works (manifest + icons).
+1. Admin signs up, sets the Google key, triages a real Takeout export of ~500 places (skipping some without any API call), and imports the rest with lists preserved. Then bulk-deletes a few imported places. *(founder)*
+2. Admin adds a new place through autocomplete, and another by clicking it on the map. *(covered in CI e2e / integration)*
+3. "Pizza, open now, within 5 km" returns the right cards quickly. *(integration)*
+4. The Decide wheel picks from an open-tonight list. *(integration `/api/m/…`)*
+5. From Cursor or Claude via MCP: search, add to a list, and decide all work with a token. *(integration)*
+6. Export produces a complete JSON/GeoJSON (+ media) zip. *(integration `GET /api/export`)*
+7. The same stack deploys on Coolify by following [install.md](install.md). *(founder)*
+8. PWA install on a phone home screen works (manifest + icons in tree). *(founder)*
 
 ## Known risks for v0.1
 

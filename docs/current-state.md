@@ -65,7 +65,7 @@ mvp.md originally parked “third-party modules / SDK / manifest” under Later 
 - Phone home-screen PWA install
 - Backup → wipe → restore with photos
 - Real Takeout of ~500 places on Compose if not already done
-- Cut a `v0.1.0` tag so GHCR publishes
+- Cut a `v0.1.0` tag for a stable GHCR release (`:latest`); CI already publishes `:nightly` from `main`
 
 ## Explicitly later (still true)
 

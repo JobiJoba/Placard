@@ -23,16 +23,25 @@ Open `$PUBLIC_URL`. Health: `$PUBLIC_URL/api/health`.
 
 First visitor becomes **admin**. Set the Google key under Settings → Integrations (or `GOOGLE_MAPS_API_KEY` in `.env`).
 
-### Published image (optional)
+### Published images (optional)
 
-After a tagged release, you can skip building from source. In `compose.yaml`, point `app` / `worker` at:
+Skip building from source by pointing `app` / `worker` at GHCR (comment out `build:`):
+
+| Tag | When to use |
+| --- | --- |
+| `0.1.0` (or other semver) | **Production** — cut by a git tag `v*`; also updates `:latest` |
+| `nightly` | **Testers only** — tip of `main` after CI goes green; **never** use for automatic production upgrades |
+| `nightly-<full-sha>` | Pin a specific nightly build |
 
 ```yaml
+# Production (pin a release)
 image: ghcr.io/jobijoba/placard:0.1.0
-# remove or comment out: build: .
+
+# Or try tonight’s main (opt-in)
+# image: ghcr.io/jobijoba/placard:nightly
 ```
 
-See [CHANGELOG.md](../CHANGELOG.md) for tags. Pull with Docker logged into GHCR if the package is private.
+`:latest` is only moved by **stable** version tags (not nightlies). See [CHANGELOG.md](../CHANGELOG.md). Pull with Docker logged into GHCR if the package is private.
 
 ## Environment
 

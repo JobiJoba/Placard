@@ -76,3 +76,37 @@ jobs:
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # Testers only: floating tip of main. Never pushes :latest (that is Release on v* tags).
+  nightly:
+    name: Publish nightly image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [check, integration, e2e, image]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Lowercase image name
+        id: image
+        run: echo "name=ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/placard" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:nightly
+            ${{ steps.image.outputs.name }}:nightly-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

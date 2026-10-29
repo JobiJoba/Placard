@@ -367,7 +367,8 @@ Work that landed between phases (or ahead of mvp “Later”) and should be trea
 **Automated**
 
 - Integration: export contains every place, list, tag and media reference
-- Release workflow: push `ghcr.io/jobijoba/placard` on version tags
+- CI on `main`: after lint/typecheck/unit/integration/e2e/image succeed → push `ghcr.io/…/placard:nightly` (+ `nightly-<sha>`); does **not** move `:latest`
+- Release workflow: push semver (+ `:latest`) only on git tags `v*`
 
 ---
 
