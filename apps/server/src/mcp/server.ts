@@ -1,9 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js"
 import type { Me } from "@placard/domain"
-import type { Decide } from "@placard/module-restaurants-decide/server"
 import { Effect, Result } from "effect"
-import type { SqlClient } from "effect/sql"
+import type { ModuleRuntime } from "../modules/loader.ts"
+import type { Modules } from "../modules/modules.ts"
 import type { Lists } from "../places/lists.ts"
 import type { Places } from "../places/places.ts"
 import type { Search } from "../places/search.ts"
@@ -15,12 +15,13 @@ const rateLimiter = createRateLimiter()
 
 export type McpDeps = {
   readonly mcpEnabled: boolean
+  readonly publicUrl: URL
   readonly tokens: Tokens["Service"]
   readonly places: Places["Service"]
   readonly search: Search["Service"]
   readonly lists: Lists["Service"]
-  readonly decide: Decide["Service"]
-  readonly sql: SqlClient.SqlClient
+  readonly modules: Modules["Service"]
+  readonly runtime: ModuleRuntime["Service"]
 }
 
 const bearerSecret = (request: Request): string | null => {
@@ -86,17 +87,21 @@ export const handleMcpRequest = (deps: McpDeps, request: Request): Promise<Respo
         Effect.runPromise(effect)
 
       const server = new McpServer({ name: "placard", version: "0.1.0" })
-      registerPlacardTools(server, {
-        user: auth.user satisfies Me,
-        tokenId: auth.tokenId,
-        tokens: deps.tokens,
-        places: deps.places,
-        search: deps.search,
-        lists: deps.lists,
-        decide: deps.decide,
-        sql: deps.sql,
-        run,
-      })
+      yield* Effect.promise(() =>
+        registerPlacardTools(server, {
+          user: auth.user satisfies Me,
+          tokenId: auth.tokenId,
+          tokenSecret: secret,
+          publicUrl: deps.publicUrl,
+          tokens: deps.tokens,
+          places: deps.places,
+          search: deps.search,
+          lists: deps.lists,
+          modules: deps.modules,
+          runtime: deps.runtime,
+          run,
+        }),
+      )
 
       const transport = new WebStandardStreamableHTTPServerTransport()
       yield* Effect.promise(() => server.connect(transport))

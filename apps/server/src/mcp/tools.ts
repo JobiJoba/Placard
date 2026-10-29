@@ -1,16 +1,10 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
-import type {
-  DecideRequest,
-  ManualPlaceInput,
-  Me,
-  PlaceStatus,
-  SearchFilter,
-} from "@placard/domain"
-import { RESTAURANTS_DECIDE_ID } from "@placard/module-restaurants-decide/manifest"
-import type { Decide } from "@placard/module-restaurants-decide/server"
+import type { ManualPlaceInput, Me, PlaceStatus, SearchFilter } from "@placard/domain"
 import { Effect } from "effect"
-import type { SqlClient } from "effect/sql"
 import { z } from "zod"
+import { moduleMcpToolName } from "@placard/module-sdk"
+import type { ModuleRuntime } from "../modules/loader.ts"
+import type { Modules } from "../modules/modules.ts"
 import type { Lists } from "../places/lists.ts"
 import type { Places } from "../places/places.ts"
 import type { Search } from "../places/search.ts"
@@ -54,15 +48,17 @@ const errorResult = (message: string) => ({
   content: [{ type: "text" as const, text: message }],
 })
 
-type ToolContext = {
+export type ToolContext = {
   readonly user: Me
   readonly tokenId: string
+  readonly tokenSecret: string
+  readonly publicUrl: URL
   readonly tokens: Tokens["Service"]
   readonly places: Places["Service"]
   readonly search: Search["Service"]
   readonly lists: Lists["Service"]
-  readonly decide: Decide["Service"]
-  readonly sql: SqlClient.SqlClient
+  readonly modules: Modules["Service"]
+  readonly runtime: ModuleRuntime["Service"]
   readonly run: <A, E>(effect: Effect.Effect<A, E, never>) => Promise<A>
 }
 
@@ -100,22 +96,26 @@ const withAudit = async <A>(
   }
 }
 
-const requireDecide = (ctx: ToolContext) =>
-  Effect.gen(function* () {
-    const rows = yield* ctx.sql<{ enabled: boolean; visible: boolean | null }>`
-      select i.enabled, p.visible
-      from instance_modules i
-      left join user_module_prefs p
-        on p.module_id = i.module_id and p.user_id = ${ctx.user.id}
-      where i.module_id = ${RESTAURANTS_DECIDE_ID}`.pipe(Effect.orDie)
-    const row = rows[0]
-    if (!(row?.enabled && (row.visible ?? true))) {
-      return yield* Effect.fail(new Error("Decide is not enabled for you on this instance."))
-    }
-  })
+/** JSON Schema → loose zod object so MCP SDK accepts plugin schemas. */
+const zodFromJsonSchema = (schema: Record<string, unknown>) => {
+  const props = (schema.properties ?? {}) as Record<string, unknown>
+  const shape: Record<string, z.ZodTypeAny> = {}
+  for (const [key, raw] of Object.entries(props)) {
+    const prop = raw as { type?: string; enum?: unknown[] }
+    let field: z.ZodTypeAny = z.unknown()
+    if (prop.type === "string" && Array.isArray(prop.enum)) {
+      field = z.enum(prop.enum as [string, ...string[]])
+    } else if (prop.type === "string") field = z.string()
+    else if (prop.type === "number") field = z.number()
+    else if (prop.type === "boolean") field = z.boolean()
+    else if (prop.type === "object") field = z.record(z.string(), z.unknown())
+    shape[key] = field.optional()
+  }
+  return shape
+}
 
-/** Register core + Decide MCP tools on a per-request server. */
-export const registerPlacardTools = (server: McpServer, ctx: ToolContext) => {
+/** Register core MCP tools, then enabled module tools. */
+export const registerPlacardTools = async (server: McpServer, ctx: ToolContext) => {
   server.registerTool(
     "search_places",
     {
@@ -275,45 +275,86 @@ export const registerPlacardTools = (server: McpServer, ctx: ToolContext) => {
     },
   )
 
-  // Module tool (restaurants.decide) — registered here; third-party modules can plug in later.
-  server.registerTool(
-    "decide_restaurant",
-    {
-      title: "Decide restaurant",
-      description:
-        "Pick one restaurant from your library (open tonight, list/tag/radius, optional avoid-recent). Same rules as the Decide wheel.",
-      inputSchema: {
-        ...searchFilterShape,
-        avoidRecent: z.boolean().default(false),
-      },
-    },
-    async (args) => {
-      try {
-        const request: DecideRequest = {
-          ...toSearchFilter(args),
-          avoidRecent: args.avoidRecent ?? false,
-        }
-        const result = await withAudit(
-          ctx,
-          "decide_restaurant",
-          args as Record<string, unknown>,
-          () =>
-            ctx.run(
-              Effect.gen(function* () {
-                yield* requireDecide(ctx)
-                return yield* ctx.decide.spin(ctx.user.id, request)
-              }),
-            ),
-        )
-        return textResult({
-          id: result.place.id,
-          name: result.place.name,
-          address: result.place.address,
-          category: result.place.category,
-        })
-      } catch (cause) {
-        return errorResult(cause instanceof Error ? cause.message : String(cause))
-      }
-    },
-  )
+  const registered = new Set<string>([
+    "search_places",
+    "get_place",
+    "create_place",
+    "add_to_list",
+    "set_status",
+    "list_lists",
+  ])
+
+  for (const plugin of ctx.runtime.all()) {
+    const tools = plugin.mcpTools
+    if (!tools || tools.length === 0) continue
+
+    const mcpOk = await ctx.run(ctx.modules.isMcpEnabledForUser(ctx.user.id, plugin.moduleId))
+    if (!mcpOk) continue
+
+    const seenLocal = new Set<string>()
+    for (const tool of tools) {
+      if (seenLocal.has(tool.def.name)) continue
+      seenLocal.add(tool.def.name)
+
+      const globalName = moduleMcpToolName(plugin.moduleId, tool.def.name)
+      if (registered.has(globalName)) continue
+      registered.add(globalName)
+
+      const inputSchema = zodFromJsonSchema(tool.def.inputSchema as Record<string, unknown>)
+      server.registerTool(
+        globalName,
+        {
+          title: tool.def.title ?? tool.def.name,
+          description: tool.def.description,
+          ...(Object.keys(inputSchema).length > 0 ? { inputSchema } : {}),
+        },
+        async (args) => {
+          try {
+            const result = await withAudit(
+              ctx,
+              globalName,
+              args as Record<string, unknown>,
+              async () => {
+                const hostFetch = async (path: string, init?: RequestInit) => {
+                  // In-process search so plugins can hostFetch("/api/search") under MCP without cookies.
+                  const pathname = path.startsWith("http")
+                    ? new URL(path).pathname
+                    : path.split("?")[0]
+                  if (pathname === "/api/search" && (init?.method ?? "GET").toUpperCase() === "POST") {
+                    const raw =
+                      typeof init?.body === "string"
+                        ? init.body
+                        : init?.body != null
+                          ? String(init.body)
+                          : "{}"
+                    const filter = JSON.parse(raw) as SearchFilter
+                    const hits = await ctx.run(ctx.search.query(ctx.user.id, filter))
+                    return Response.json(hits)
+                  }
+                  const url = new URL(path, ctx.publicUrl)
+                  const headers = new Headers(init?.headers)
+                  headers.set("authorization", `Bearer ${ctx.tokenSecret}`)
+                  headers.set("origin", ctx.publicUrl.origin)
+                  if (init?.body && !headers.has("content-type")) {
+                    headers.set("content-type", "application/json")
+                  }
+                  return ctx.runtime.hostFetch(url, { ...init, headers })
+                }
+                return tool.handler(args as Record<string, unknown>, {
+                  moduleId: plugin.moduleId,
+                  rootDir: plugin.rootDir,
+                  ownerId: ctx.user.id,
+                  hostFetch,
+                })
+              },
+            )
+            if (!result.ok) return errorResult(result.error)
+            return textResult(result.data)
+          } catch (cause) {
+            return errorResult(cause instanceof Error ? cause.message : String(cause))
+          }
+        },
+      )
+    }
+  }
 }

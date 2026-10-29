@@ -94,9 +94,10 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("modules marketpla
       const decide = me.body.find((m: { id: string }) => m.id === "restaurants.decide")
       expect(decide.nav).toEqual([])
 
-      const spun = await admin.browser.send("POST", "/api/decide/spin", { avoidRecent: false })
+      const spun = await admin.browser.send("POST", "/api/m/restaurants.decide/spin", {
+        avoidRecent: false,
+      })
       expect(spun.status).toBe(404)
-      expect(spun.body._tag).toBe("ModuleDisabled")
 
       await admin.browser.send("PATCH", "/api/modules/me/restaurants.decide", { visible: true })
     }),
@@ -112,7 +113,9 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("modules marketpla
       expect(disabled.status).toBe(200)
       expect(disabled.body.enabled).toBe(false)
 
-      const spun = await admin.browser.send("POST", "/api/decide/spin", { avoidRecent: false })
+      const spun = await admin.browser.send("POST", "/api/m/restaurants.decide/spin", {
+        avoidRecent: false,
+      })
       expect(spun.status).toBe(404)
 
       await admin.browser.send("PATCH", "/api/modules/installed/restaurants.decide", {

@@ -1,6 +1,7 @@
-import type { ApiToken, CreatedToken, McpStatus } from "@placard/domain"
+import type { ApiToken, CreatedToken, McpStatus, MyModule } from "@placard/domain"
 import { DateTime } from "effect"
 import { useCallback, useState } from "react"
+import { Link } from "react-router"
 import { ErrorAlert } from "@/components/error-alert"
 import { Button } from "@/components/ui/button"
 import { Field, FieldLabel } from "@/components/ui/field"
@@ -19,10 +20,29 @@ export function SettingsMcpPage() {
     setData: setTokens,
     reload: reloadTokens,
   } = useLoad(useCallback(() => api((c) => c.tokens.list()), []))
+  const {
+    data: modules,
+    error: modulesError,
+    setData: setModules,
+  } = useLoad(useCallback(() => api((c) => c.modules.me()), []))
   const [name, setName] = useState("Cursor")
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [created, setCreated] = useState<CreatedToken | null>(null)
+
+  const moduleTools = (modules ?? []).filter((m) => m.mcpTools.length > 0)
+
+  const setModuleMcp = (mod: MyModule, enabled: boolean) => {
+    setActionError(null)
+    void api((c) =>
+      c.modules.setMcpEnabled({ params: { id: mod.id }, payload: { enabled } }),
+    ).then(
+      (updated) => {
+        setModules((prev) => (prev ?? []).map((m) => (m.id === updated.id ? updated : m)))
+      },
+      (cause: unknown) => setActionError(errorMessage(cause)),
+    )
+  }
 
   const create = () => {
     setBusy(true)
@@ -115,6 +135,49 @@ export function SettingsMcpPage() {
                     Revoke
                   </Button>
                 )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </SettingsCard>
+      <SettingsCard
+        title="Module tools"
+        description="Plugins can register MCP tools. Disable a module here to hide all of its tools for you."
+      >
+        <ErrorAlert message={modulesError} />
+        {moduleTools.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No installed modules expose MCP tools.</p>
+        ) : (
+          <ul className="divide-y divide-[var(--crate-edge)]">
+            {moduleTools.map((mod) => (
+              <li key={mod.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">{mod.name}</p>
+                  <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                    {mod.mcpTools.map((tool) => (
+                      <li key={tool.name}>
+                        <code>{tool.name}</code>
+                        {tool.title ? ` — ${tool.title}` : ""}
+                        {tool.localName !== tool.name ? (
+                          <span className="text-muted-foreground"> ({tool.localName})</span>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={mod.mcpEnabled ? "secondary" : "outline"}
+                    onClick={() => setModuleMcp(mod, !mod.mcpEnabled)}
+                  >
+                    {mod.mcpEnabled ? "Allowed" : "Disabled"}
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" asChild>
+                    <Link to={`/settings/modules/${encodeURIComponent(mod.id)}`}>Settings</Link>
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>

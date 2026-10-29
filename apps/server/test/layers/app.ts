@@ -7,6 +7,8 @@ import { runMigrations } from "../../src/db/migrate.ts"
 import { GoogleFixtureClient } from "../../src/google/fixture-client.ts"
 import type { Health } from "../../src/health.ts"
 import { RoutesLive } from "../../src/http/api.ts"
+import { ModuleRuntime, setModuleHostFetch } from "../../src/modules/loader.ts"
+import { Modules } from "../../src/modules/modules.ts"
 import { IntegrationLayer } from "./postgis.ts"
 
 export interface JsonResponse {
@@ -43,6 +45,8 @@ export class TestApp extends Context.Service<TestApp, TestAppService>()("test/Te
       yield* runMigrations
       const config = yield* AppConfig
       const services = yield* Effect.context<SqlClient.SqlClient | AppConfig | Health | Database>()
+      const modules = yield* Modules
+      yield* modules.loadDiskModules
       const app = HttpRouter.toWebHandler(
         RoutesLive.pipe(
           Layer.provide(GoogleFixtureClient),
@@ -67,6 +71,7 @@ export class TestApp extends Context.Service<TestApp, TestAppService>()("test/Te
         if (init?.body !== undefined) requestInit.body = init.body
         return app.handler(new Request(url, requestInit), services)
       }
+      setModuleHostFetch(fetchImpl)
 
       const browser = (): Browser => {
         const cookies = new Map<string, string>()
@@ -115,5 +120,8 @@ export class TestApp extends Context.Service<TestApp, TestAppService>()("test/Te
 
       return { browser, fetch: fetchImpl, publicUrl: config.publicUrl }
     }),
-  ).pipe(Layer.provideMerge(IntegrationLayer))
+  ).pipe(
+    Layer.provide(Modules.layer.pipe(Layer.provide(ModuleRuntime.layer))),
+    Layer.provideMerge(IntegrationLayer),
+  )
 }

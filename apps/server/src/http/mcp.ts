@@ -1,13 +1,15 @@
-import { Decide } from "@placard/module-restaurants-decide/server"
-import { Effect } from "effect"
+import { Effect, Layer } from "effect"
 import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/http"
-import { SqlClient } from "effect/sql"
 import { AppConfig } from "../config.ts"
 import { handleMcpRequest } from "../mcp/server.ts"
+import { ModuleRuntime } from "../modules/loader.ts"
+import { Modules } from "../modules/modules.ts"
 import { Lists } from "../places/lists.ts"
 import { Places } from "../places/places.ts"
 import { Search } from "../places/search.ts"
 import { Tokens } from "../tokens/tokens.ts"
+
+const ModulesServiceLive = Modules.layer.pipe(Layer.provide(ModuleRuntime.layer))
 
 /** Mounts Streamable HTTP MCP at `/mcp` (stateless, bearer PAT). */
 export const McpRoutesLive = HttpRouter.use(
@@ -17,17 +19,18 @@ export const McpRoutesLive = HttpRouter.use(
     const places = yield* Places
     const search = yield* Search
     const lists = yield* Lists
-    const decide = yield* Decide
-    const sql = yield* SqlClient.SqlClient
+    const modules = yield* Modules
+    const runtime = yield* ModuleRuntime
 
     const deps = {
       mcpEnabled: config.mcpEnabled,
+      publicUrl: config.publicUrl,
       tokens,
       places,
       search,
       lists,
-      decide,
-      sql,
+      modules,
+      runtime,
     }
 
     const handle = (request: HttpServerRequest.HttpServerRequest) =>
@@ -42,4 +45,4 @@ export const McpRoutesLive = HttpRouter.use(
     yield* router.add("DELETE", "/mcp", handle)
     yield* router.add("OPTIONS", "/mcp", handle)
   }),
-)
+).pipe(Layer.provide(ModulesServiceLive))

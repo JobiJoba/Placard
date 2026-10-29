@@ -100,17 +100,26 @@ export function DecidePage() {
     }
     let cancelled = false
     setPreviewError(null)
-    void api((c) => c.decide.preview({ payload: request })).then(
-      (preview) => {
-        if (!cancelled) setPreviewCount(preview.count)
-      },
-      (cause: unknown) => {
+    void fetch("/api/m/restaurants.decide/preview", {
+      method: "POST",
+      credentials: "include",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(request),
+    })
+      .then(async (res) => {
+        const body = (await res.json()) as { count?: number; message?: string }
+        if (!res.ok) throw Object.assign(new Error(body.message ?? "Preview failed"), body)
+        return body
+      })
+      .then((preview) => {
+        if (!cancelled) setPreviewCount(preview.count ?? 0)
+      })
+      .catch((cause: unknown) => {
         if (!cancelled) {
           setPreviewCount(null)
           setPreviewError(errorMessage(cause))
         }
-      },
-    )
+      })
     return () => {
       cancelled = true
     }
@@ -129,11 +138,28 @@ export function DecidePage() {
     }, 90)
 
     const started = Date.now()
-    void api((c) => c.decide.spin({ payload: request }))
+    void fetch("/api/m/restaurants.decide/spin", {
+      method: "POST",
+      credentials: "include",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(request),
+    })
+      .then(async (res) => {
+        const body = (await res.json()) as {
+          place?: Place
+          _tag?: string
+          message?: string
+        }
+        if (!res.ok) {
+          throw Object.assign(new Error(body.message ?? "Decide failed"), body)
+        }
+        return body
+      })
       .then(async (outcome) => {
         const wait = Math.max(0, SPIN_MS - (Date.now() - started))
         if (wait > 0) await new Promise((r) => setTimeout(r, wait))
         window.clearInterval(timer)
+        if (!outcome.place) throw new Error("Decide returned no place")
         setSpinLabel(outcome.place.name)
         setResult(outcome.place)
         setPreviewCount((n) => (n == null ? n : Math.max(0, n - (avoidRecent ? 1 : 0))))

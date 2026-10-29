@@ -40,6 +40,19 @@ export function SettingsModulePage() {
     )
   }
 
+  const setMcpEnabled = (enabled: boolean) => {
+    if (!mod) return
+    setActionError(null)
+    void api((c) =>
+      c.modules.setMcpEnabled({ params: { id: mod.id }, payload: { enabled } }),
+    ).then(
+      (updated) => {
+        setData((prev) => (prev ?? []).map((m) => (m.id === updated.id ? updated : m)))
+      },
+      (cause: unknown) => setActionError(errorMessage(cause)),
+    )
+  }
+
   if (!mod) {
     return <p className="text-sm text-muted-foreground">Loading…</p>
   }
@@ -79,6 +92,45 @@ export function SettingsModulePage() {
             </Button>
           )}
         </div>
+      </SettingsCard>
+
+      <SettingsCard
+        title="MCP access"
+        description="Tools this module registers for AI clients. Toggle off to hide all of them for you (not per-tool)."
+      >
+        {mod.mcpTools.length === 0 ? (
+          <p className="text-sm text-muted-foreground">This module does not expose MCP tools.</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <ul className="space-y-2 text-sm">
+              {mod.mcpTools.map((tool) => (
+                <li key={tool.name} className="rounded-md border border-[var(--crate-edge)] p-2">
+                  <p className="font-medium">
+                    {tool.title ?? tool.localName}{" "}
+                    <code className="text-xs text-muted-foreground">{tool.name}</code>
+                  </p>
+                  <p className="text-muted-foreground">{tool.description}</p>
+                </li>
+              ))}
+            </ul>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                size="sm"
+                variant={mod.mcpEnabled ? "secondary" : "outline"}
+                onClick={() => setMcpEnabled(!mod.mcpEnabled)}
+              >
+                {mod.mcpEnabled ? "MCP allowed" : "MCP disabled"}
+              </Button>
+              <Link
+                to="/settings/mcp"
+                className="text-sm underline underline-offset-2 text-muted-foreground"
+              >
+                MCP settings
+              </Link>
+            </div>
+          </div>
+        )}
       </SettingsCard>
 
       <SettingsCard

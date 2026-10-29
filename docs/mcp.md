@@ -55,15 +55,17 @@ MCP tools should map to **user goals**, not raw CRUD spam.
 
 Open now/tonight is a filter on `search_places` (no separate `list_open_places`). `update_place` is not exposed yet.
 
-**Module tools**
+**Module tools** (declared by plugins via `createModule().mcpTools`)
 
-| Tool | Status |
-| --- | --- |
-| `decide_restaurant` | **Shipped** with `restaurants.decide` |
-| `list_dish_memories` / `add_dish_memory` | Later |
-| `start_dinner_vote` / `cast_vote` | Later (needs household) |
+| Local name (in module) | MCP name clients call | Status |
+| --- | --- | --- |
+| `decide_restaurant` | `restaurants_decide__decide_restaurant` | **Shipped** — `restaurants.decide` |
+| `pick_place` | `places_pick__pick_place` | Example upload (`places.pick`) |
+| dish / vote tools | *(same prefix rule)* | Later |
 
-Modules that register MCP tools do so through the module contract ([architecture-modules.md](architecture-modules.md)), so third-party modules can expose tools later too.
+**Namespacing:** Authors only pick a **local** tool name unique inside their module. The host registers a **global** MCP name `{sanitized_module_id}__{local_name}` (`.` → `_`) so two plugins can both ship `pick_place` without colliding. Core tools stay unprefixed (`search_places`, …). Settings shows the global name (what agents call).
+
+Authors declare tools on the module; the host discovers them from loaded plugins and can disable MCP for a whole module in Settings ([creating-modules.md](creating-modules.md), [architecture-modules.md](architecture-modules.md)).
 
 Also useful MCP **resources** (read-only URIs), e.g. `placard://place/{id}`, `placard://list/{id}` — optional phase-two.
 
@@ -97,16 +99,16 @@ MCP client (Cursor, …)
     ▼
 Placard /mcp  (apps/server; Vite proxies /mcp in Aspire)
     │
-    ▼
-Core services + Decide tool
-    │
-    ▼
-DB / media
+    ├─ Core tools (search_places, …)
+    └─ Module tools from ModuleRuntime (host-prefixed names)
+         │  gated by instance enable + user mcp_enabled
+         ▼
+    Plugin handlers (hostFetch → /api/search, module data/)
 ```
 
-`/mcp` lives in-process on `apps/server` (same origin as the SPA in Compose). Settings → MCP creates tokens and shows Cursor/Claude snippets. Disable with `MCP_ENABLED=false`. Optional stdio bridge package remains a later nice-to-have.
+`/mcp` lives in-process on `apps/server` (same origin as the SPA in Compose). Settings → MCP creates tokens, lists modules that expose tools (global names), and toggles per-module MCP. Disable globally with `MCP_ENABLED=false`. Optional stdio bridge package remains a later nice-to-have.
 
-Shipped tools: `search_places`, `get_place`, `create_place`, `add_to_list`, `list_lists`, `set_status`, `decide_restaurant`.
+Core tools: `search_places`, `get_place`, `create_place`, `add_to_list`, `list_lists`, `set_status`. Module example: `restaurants_decide__decide_restaurant`.
 
 ## Success check
 

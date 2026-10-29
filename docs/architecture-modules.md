@@ -18,18 +18,18 @@ Placard is built as a **stable core** plus **modules** that should not tangle wi
 └──────────────────────────────────────────────┘
 ```
 
-**Core** owns identity, privacy, place data, enrichment pipeline, and the shell UI (library, cards, settings).
+**Core** owns identity, privacy, place data, enrichment pipeline, MCP transport + core tools, and the shell UI (library, cards, settings).
 
-**Modules** own specialized UX and workflows (Decide wheel, dinner vote, later hotel tools, …). They read/write through the **public contract**, not by reaching into the database schema ad hoc.
+**Modules** own specialized UX and workflows (Decide wheel, dinner vote, later hotel tools, …). They expose HTTP under `/api/m/<id>/*` and optional MCP tools via `createModule()`; they call host APIs through `hostFetch`, not by reaching into core SQL.
 
 ## Design rules
 
-1. **Core does not import module code.** Modules register themselves; core discovers them.
-2. **Modules do not patch core tables casually.** Prefer module-owned storage (namespaced tables / JSON docs) plus references to core IDs (`place_id`, `list_id`, …).
-3. **Everything a module needs goes through a versioned API** (same surface MCP and the web UI ideally share).
+1. **Core does not hard-wire module features.** Catalog lists bundled packages; runtime loads `createModule` like uploads. No Decide-specific MCP/HTTP in the host.
+2. **Modules do not patch core tables casually.** Prefer module-owned storage (JSON under the module root / namespaced tables) plus references to core IDs (`place_id`, `list_id`, …).
+3. **HTTP and MCP share one implementation** inside the module (`createHttpApp` + `mcpTools` calling the same helpers).
 4. **Household gating stays in core.** Modules declare capabilities (`requires: household`); core hides them in solo mode.
-5. **Failure isolation.** A broken module must not take down the library. Disable/uninstall without data loss in core.
-6. **Permissions.** Module actions respect the same authz as the UI (user / household member).
+5. **Failure isolation.** A broken module must not take down the library. Disable/uninstall without data loss in core. Per-user **MCP kill switch** (`user_module_prefs.mcp_enabled`) hides that module’s tools without uninstalling.
+6. **Permissions.** Module actions respect the same authz as the UI (user / household member); MCP tools also respect instance enable + MCP pref.
 
 ## What the core exposes (contract sketch)
 
@@ -69,8 +69,9 @@ Placard ships a **Module SDK** (`@placard/module-sdk`) and a self-hosted **marke
 - **Catalog** — curated first-party (and later remote) manifests of installable plugins
 - **Instance install** — admin installs/uninstalls; `instance_modules` + instance enable kill switch
 - **Per-user show** — `user_module_prefs.visible`; shell nav/routes come from `GET /api/modules/me`
-- **Runtime** — trusted **same-process** JS (no sandbox yet). Bundled reference: `@placard/module-restaurants-decide` (Decide)
-- **Host contract** — plugins use `ModuleHostSearch` (and future host tags), never core SQL helpers
+- **Runtime** — trusted **same-process** JS (no sandbox yet). Bundled reference: `@placard/module-restaurants-decide` (Decide) loads via the same `createModule` path as uploads
+- **Host contract** — plugins use `hostFetch` (e.g. `/api/search`) and optional `mcpTools`; never core SQL helpers
+- **MCP** — host registers tools from `LoadedPlugin.mcpTools` under a **module-prefixed** global name (`moduleMcpToolName`); Settings lists those names and toggles `mcp_enabled` per module
 
 **Phase C-lite (shipped):** admins upload a **prebuilt zip** into `PLACARD_MODULES_DIR` (Compose `modules` volume). The host extracts, registers `instance_modules` (`source: upload`), dynamic-imports the server entry, and serves web assets + optional `/api/m/<id>/*` HTTP. No in-container TypeScript compile; authors build against `@placard/module-sdk` on their machine. See [creating-modules.md](creating-modules.md#distribute--packaging-for-docker-prebuilt-zip).
 
@@ -81,7 +82,8 @@ This is a **self-hosted plugin catalog**, not a consumer SaaS app store.
 - Hard-coding restaurant vote tables into core migrations “just this once”
 - Modules calling undocumented SQL
 - Core UI full of `if (restaurant)` special cases that belong in a module slot
-- MCP tools that bypass module/core auth
+- MCP tools hard-coded in the host for a specific module
+- MCP tools that bypass module/core auth or the per-module MCP pref
 
 ## Phasing
 

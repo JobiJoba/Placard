@@ -1,7 +1,7 @@
 {
   "id": "places.pick",
   "name": "Pick",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Spin one place from your library — any category, open now, near you, or surprise me.",
   "permissions": ["places.read", "search.query"],
   "nav": [
@@ -22,6 +22,13 @@
     {
       "path": "/m/places.pick",
       "exportName": "PickPage"
+    }
+  ],
+  "mcpTools": [
+    {
+      "name": "pick_place",
+      "title": "Pick a place",
+      "description": "Pick one place from your library (any category, open now/tonight, list/tag/radius, optional avoid-recent). Same rules as the Pick wheel."
     }
   ]
 }

@@ -27,6 +27,15 @@ export const ModuleWebRoute = Schema.Struct({
 })
 export type ModuleWebRoute = typeof ModuleWebRoute.Type
 
+/** MCP tool metadata for Settings (handlers live in createModule). */
+export const ModuleMcpToolManifest = Schema.Struct({
+  name: Schema.String.pipe(Schema.check(Schema.isBetweenLength(1, 64))),
+  title: Schema.optional(Schema.String),
+  description: Schema.String,
+  inputSchema: Schema.optional(Schema.Record(Schema.String, Schema.Unknown)),
+})
+export type ModuleMcpToolManifest = typeof ModuleMcpToolManifest.Type
+
 /**
  * Declared shape of a Placard plugin (`placard.module.json` / `defineModule`).
  * Prebuilt zip packages use `server.entry` / `web.entry` relative to the package root.
@@ -58,6 +67,11 @@ export const ModuleManifest = Schema.Struct({
    * Hosts fall back to a styled placeholder when absent.
    */
   cover: Schema.optional(Schema.String),
+  /**
+   * MCP tools this module exposes (display + discovery).
+   * Must match `createModule().mcpTools[].def.name` when the server entry loads.
+   */
+  mcpTools: Schema.optional(Schema.Array(ModuleMcpToolManifest)),
 })
 export type ModuleManifest = typeof ModuleManifest.Type
 

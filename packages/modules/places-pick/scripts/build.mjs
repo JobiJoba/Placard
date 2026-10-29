@@ -83,6 +83,6 @@ const collect = (dir, prefix = "") => {
 
 const files = collect(packDir)
 const zipped = zipSync(files, { level: 6 })
-const outZip = join(distZipParent, "places.pick-0.1.0.zip")
+const outZip = join(distZipParent, "places.pick-0.1.1.zip")
 writeFileSync(outZip, Buffer.from(zipped))
 console.log(`Packed ${outZip} (${Object.keys(files).length} files)`)

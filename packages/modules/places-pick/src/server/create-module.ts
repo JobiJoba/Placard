@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises"
 import { join } from "node:path"
+import type { CreateModuleResult, ModuleMcpContext, ModuleMcpResult } from "@placard/module-sdk"
 
 const placeCategories = [
   "restaurant",
@@ -38,6 +39,7 @@ type PluginCtx = {
   readonly pathSuffix: string
   readonly rootDir?: string
   readonly ownerId?: string
+  readonly hostFetch?: (path: string, init?: RequestInit) => Promise<Response>
 }
 
 const json = (body: unknown, status = 200) =>
@@ -52,17 +54,29 @@ const resolveRootDir = (ctx: PluginCtx) => {
 const resolveOwnerId = (ctx: PluginCtx) =>
   typeof ctx.ownerId === "string" && ctx.ownerId.length > 0 ? ctx.ownerId : "unknown"
 
-const hostFetch = async (request: Request, path: string, init?: RequestInit) => {
+const defaultHostFetch = async (request: Request, path: string, init?: RequestInit) => {
   const url = new URL(path, request.url)
   const headers = new Headers(init?.headers)
   const cookie = request.headers.get("cookie")
   if (cookie) headers.set("cookie", cookie)
+  const authorization = request.headers.get("authorization")
+  if (authorization) headers.set("authorization", authorization)
   const origin = request.headers.get("origin") ?? url.origin
   headers.set("origin", origin)
   if (init?.body && !headers.has("content-type")) {
     headers.set("content-type", "application/json")
   }
   return fetch(url, { ...init, headers })
+}
+
+const hostFetchFor = (request: Request | null, ctx: PluginCtx) => {
+  if (ctx.hostFetch) return ctx.hostFetch
+  if (request) {
+    return (path: string, init?: RequestInit) => defaultHostFetch(request, path, init)
+  }
+  return async () => {
+    throw new Error("hostFetch is required when no inbound Request is available")
+  }
 }
 
 const readPicks = async (rootDir: string): Promise<PickRow[]> => {
@@ -103,8 +117,7 @@ const emptyMessage = (request: PickRequest) => {
   return "No places match these filters. Try a different list, tag, or radius — or turn off avoid recent."
 }
 
-const parseBody = async (request: Request): Promise<PickRequest> => {
-  const body = (await request.json()) as Record<string, unknown>
+const parsePickRequest = (body: Record<string, unknown>): PickRequest => {
   const category = body.category
   if (category != null && category !== "" && !placeCategories.includes(category as PlaceCategory)) {
     throw new Error("Invalid category")
@@ -128,18 +141,23 @@ const parseBody = async (request: Request): Promise<PickRequest> => {
   return filter
 }
 
+const parseBody = async (request: Request): Promise<PickRequest> => {
+  const body = (await request.json()) as Record<string, unknown>
+  return parsePickRequest(body)
+}
+
 const toSearchPayload = (pickRequest: PickRequest) => {
   const { avoidRecent: _, ...filter } = pickRequest
   return filter
 }
 
 const queryPool = async (
-  request: Request,
+  fetchHost: (path: string, init?: RequestInit) => Promise<Response>,
   rootDir: string,
   ownerId: string,
   pickRequest: PickRequest,
 ) => {
-  const searchRes = await hostFetch(request, "/api/search", {
+  const searchRes = await fetchHost("/api/search", {
     method: "POST",
     body: JSON.stringify(toSearchPayload(pickRequest)),
   })
@@ -155,12 +173,92 @@ const queryPool = async (
   return hits
 }
 
-export function createModule() {
+const spinOnce = async (
+  fetchHost: (path: string, init?: RequestInit) => Promise<Response>,
+  rootDir: string,
+  ownerId: string,
+  pickRequest: PickRequest,
+): Promise<{ ok: true; place: SearchHit["place"] } | { ok: false; message: string }> => {
+  const hits = await queryPool(fetchHost, rootDir, ownerId, pickRequest)
+  if (hits.length === 0) {
+    return { ok: false, message: emptyMessage(pickRequest) }
+  }
+  const index = Math.floor(Math.random() * hits.length)
+  const hit = hits[index]
+  if (!hit) {
+    return { ok: false, message: emptyMessage(pickRequest) }
+  }
+  const rows = await readPicks(rootDir)
+  rows.push({
+    ownerId,
+    placeId: hit.place.id,
+    pickedAt: new Date().toISOString(),
+  })
+  await writePicks(rootDir, rows)
+  return { ok: true, place: hit.place }
+}
+
+const pickPlaceInputSchema = {
+  type: "object",
+  properties: {
+    category: {
+      type: "string",
+      enum: [...placeCategories],
+      description: "Optional place category. Omit for any type.",
+    },
+    text: { type: "string" },
+    open: { type: "string", enum: ["now", "tonight"] },
+    near: {
+      type: "object",
+      properties: { lat: { type: "number" }, lng: { type: "number" } },
+    },
+    radiusKm: { type: "number" },
+    tag: { type: "string" },
+    list: { type: "string" },
+    status: { type: "string", enum: ["want_to_go", "been_there"] },
+    avoidRecent: { type: "boolean" },
+  },
+}
+
+export const pickPlaceToolDef = {
+  name: "pick_place",
+  title: "Pick a place",
+  description:
+    "Pick one place from your library (any category, open now/tonight, list/tag/radius, optional avoid-recent). Same rules as the Pick wheel.",
+  inputSchema: pickPlaceInputSchema,
+}
+
+const handlePickPlace = async (
+  args: Record<string, unknown>,
+  ctx: ModuleMcpContext,
+): Promise<ModuleMcpResult> => {
+  try {
+    const pickRequest = parsePickRequest(args)
+    const result = await spinOnce(ctx.hostFetch, ctx.rootDir, ctx.ownerId, pickRequest)
+    if (!result.ok) {
+      return { ok: false, error: result.message }
+    }
+    return {
+      ok: true,
+      data: {
+        id: result.place.id,
+        name: result.place.name,
+        address: result.place.address ?? null,
+        category: result.place.category,
+      },
+    }
+  } catch (cause) {
+    return { ok: false, error: cause instanceof Error ? cause.message : "Pick failed" }
+  }
+}
+
+export function createModule(): CreateModuleResult {
   return {
     createHttpApp: async (request: Request, ctx: PluginCtx): Promise<Response> => {
       const path = ctx.pathSuffix.replace(/^\/+/, "")
       const rootDir = resolveRootDir(ctx)
       const ownerId = resolveOwnerId(ctx)
+      const fetchHost = hostFetchFor(request, ctx)
       try {
         if (request.method === "GET" && (path === "" || path === "meta")) {
           return json({
@@ -171,29 +269,17 @@ export function createModule() {
 
         if (request.method === "POST" && path === "preview") {
           const pickRequest = await parseBody(request)
-          const hits = await queryPool(request, rootDir, ownerId, pickRequest)
+          const hits = await queryPool(fetchHost, rootDir, ownerId, pickRequest)
           return json({ count: hits.length })
         }
 
         if (request.method === "POST" && path === "spin") {
           const pickRequest = await parseBody(request)
-          const hits = await queryPool(request, rootDir, ownerId, pickRequest)
-          if (hits.length === 0) {
-            return json({ _tag: "PickPoolEmpty", message: emptyMessage(pickRequest) }, 404)
+          const result = await spinOnce(fetchHost, rootDir, ownerId, pickRequest)
+          if (!result.ok) {
+            return json({ _tag: "PickPoolEmpty", message: result.message }, 404)
           }
-          const index = Math.floor(Math.random() * hits.length)
-          const hit = hits[index]
-          if (!hit) {
-            return json({ _tag: "PickPoolEmpty", message: emptyMessage(pickRequest) }, 404)
-          }
-          const rows = await readPicks(rootDir)
-          rows.push({
-            ownerId,
-            placeId: hit.place.id,
-            pickedAt: new Date().toISOString(),
-          })
-          await writePicks(rootDir, rows)
-          return json({ place: hit.place })
+          return json({ place: result.place })
         }
 
         return json({ message: "Not found" }, 404)
@@ -202,5 +288,11 @@ export function createModule() {
         return json({ message }, 400)
       }
     },
+    mcpTools: [
+      {
+        def: pickPlaceToolDef,
+        handler: handlePickPlace,
+      },
+    ],
   }
 }

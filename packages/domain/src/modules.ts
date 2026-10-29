@@ -50,15 +50,29 @@ export const InstalledModule = Schema.Struct({
 })
 export type InstalledModule = typeof InstalledModule.Type
 
+export const ModuleMcpToolInfo = Schema.Struct({
+  /** Global MCP name clients call (host-prefixed), e.g. `places_pick__pick_place`. */
+  name: Schema.String,
+  /** Author-declared local name inside the module (unprefixed). */
+  localName: Schema.String,
+  title: Schema.optional(Schema.String),
+  description: Schema.String,
+})
+export type ModuleMcpToolInfo = typeof ModuleMcpToolInfo.Type
+
 export const MyModule = Schema.Struct({
   id: Schema.String,
   name: Schema.String,
   version: Schema.String,
   description: Schema.String,
   visible: Schema.Boolean,
+  /** When false, this module’s MCP tools are hidden for the user. */
+  mcpEnabled: Schema.Boolean,
   source: ModuleSource,
   nav: Schema.Array(ModuleNavItem),
   webRoutes: Schema.Array(ModuleWebRoute),
+  /** MCP tools declared by the module (defs only). */
+  mcpTools: Schema.Array(ModuleMcpToolInfo),
   /** When set, the shell loads this ESM URL instead of a bundled registry page. */
   webEntryUrl: Schema.NullOr(Schema.String),
 })
@@ -85,6 +99,11 @@ export const ModuleVisibleUpdate = Schema.Struct({
   visible: Schema.Boolean,
 })
 export type ModuleVisibleUpdate = typeof ModuleVisibleUpdate.Type
+
+export const ModuleMcpEnabledUpdate = Schema.Struct({
+  enabled: Schema.Boolean,
+})
+export type ModuleMcpEnabledUpdate = typeof ModuleMcpEnabledUpdate.Type
 
 export class ModuleNotFound extends Schema.TaggedError<ModuleNotFound>()(
   "ModuleNotFound",

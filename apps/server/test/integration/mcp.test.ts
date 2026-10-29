@@ -130,13 +130,14 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("mcp", (it) => {
 
       const tools = await client.listTools()
       const names = tools.tools.map((t) => t.name).sort()
+      expect(names).toContain("restaurants_decide__decide_restaurant")
       expect(names).toEqual(
         [
           "add_to_list",
           "create_place",
-          "decide_restaurant",
           "get_place",
           "list_lists",
+          "restaurants_decide__decide_restaurant",
           "search_places",
           "set_status",
         ].sort(),
@@ -166,7 +167,36 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("mcp", (it) => {
       expect(got.isError).toBeFalsy()
       expect((got.content as { text: string }[])[0]?.text).toContain("want_to_go")
 
+      const decided = await client.callTool({
+        name: "restaurants_decide__decide_restaurant",
+        arguments: { avoidRecent: false },
+      })
+      expect(decided.isError).toBeFalsy()
+
       await client.close()
+    }),
+  )
+
+  it.effect("disabling module MCP hides restaurants_decide__decide_restaurant", () =>
+    run(async (app) => {
+      const off = await admin.browser.send("PATCH", "/api/modules/me/restaurants.decide/mcp", {
+        enabled: false,
+      })
+      expect(off.status).toBe(200)
+      expect(off.body.mcpEnabled).toBe(false)
+
+      const transport = new StreamableHTTPClientTransport(new URL("/mcp", app.publicUrl), {
+        fetch: mcpFetch(app, secret),
+      })
+      const client = new Client({ name: "placard-test", version: "0.0.0" })
+      await client.connect(transport)
+      const tools = await client.listTools()
+      expect(tools.tools.map((t) => t.name)).not.toContain("restaurants_decide__decide_restaurant")
+      await client.close()
+
+      await admin.browser.send("PATCH", "/api/modules/me/restaurants.decide/mcp", {
+        enabled: true,
+      })
     }),
   )
 

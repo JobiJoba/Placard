@@ -8,13 +8,22 @@ import {
   type ModuleUpload,
   type MyModule,
 } from "@placard/domain"
-import { defaultWebEntry, type ModuleManifest } from "@placard/module-sdk"
+import { defaultWebEntry, moduleMcpToolName, type ModuleManifest } from "@placard/module-sdk"
 import { Context, DateTime, Effect, Layer } from "effect"
 import { SqlClient } from "effect/sql"
 import { AppConfig } from "../config.ts"
 import { allCatalogManifests, catalogManifest } from "./catalog.ts"
 import { ModuleRuntime, webEntryUrlFor } from "./loader.ts"
 import { extractModuleZip, removeModuleDir } from "./package-zip.ts"
+
+/** Resolve bundled plugin server entry for dynamic import (same contract as upload). */
+const bundledPluginImportHref = (packageName: string): string | null => {
+  try {
+    return import.meta.resolve(`${packageName}/plugin-server`)
+  } catch {
+    return null
+  }
+}
 
 interface InstanceRow {
   readonly module_id: string
@@ -93,8 +102,15 @@ export class Modules extends Context.Service<
       moduleId: string,
       visible: boolean,
     ) => Effect.Effect<MyModule, ModuleNotFound>
+    readonly setMcpEnabled: (
+      ownerId: string,
+      moduleId: string,
+      enabled: boolean,
+    ) => Effect.Effect<MyModule, ModuleNotFound>
     readonly isAvailableToUser: (ownerId: string, moduleId: string) => Effect.Effect<boolean>
-    /** Load all enabled disk modules after migrate (folder/upload). */
+    /** Whether module MCP tools should register for this user. */
+    readonly isMcpEnabledForUser: (ownerId: string, moduleId: string) => Effect.Effect<boolean>
+    /** Load all enabled disk/bundled modules after migrate. */
     readonly loadDiskModules: Effect.Effect<void>
     readonly resolveAsset: (
       moduleId: string,
@@ -225,10 +241,28 @@ export class Modules extends Context.Service<
           Effect.orDie,
         )
 
+      const mcpToolInfos = (manifest: ModuleManifest, moduleId: string) => {
+        const toInfo = (localName: string, title: string | undefined, description: string) => ({
+          name: moduleMcpToolName(moduleId, localName),
+          localName,
+          ...(title !== undefined ? { title } : {}),
+          description,
+        })
+        const fromManifest = manifest.mcpTools ?? []
+        if (fromManifest.length > 0) {
+          return fromManifest.map((t) => toInfo(t.name, t.title, t.description))
+        }
+        const loaded = runtime.get(moduleId)
+        return (loaded?.mcpTools ?? []).map((t) =>
+          toInfo(t.def.name, t.def.title, t.def.description),
+        )
+      }
+
       const toMyModule = (
         row: InstanceRow,
         manifest: ModuleManifest,
         visible: boolean,
+        mcpEnabled: boolean,
       ): MyModule => {
         const disk = row.source === "upload" || row.source === "folder"
         const webEntry = manifest.webEntry ?? defaultWebEntry
@@ -238,12 +272,31 @@ export class Modules extends Context.Service<
           version: row.version,
           description: manifest.description,
           visible,
+          mcpEnabled,
           source: row.source,
           nav: visible ? [...manifest.nav] : [],
           webRoutes: visible ? [...manifest.webRoutes] : [],
+          mcpTools: mcpToolInfos(manifest, row.module_id),
           webEntryUrl: visible && disk ? webEntryUrlFor(row.module_id, webEntry) : null,
         }
       }
+
+      const loadBundledRuntime = (manifest: ModuleManifest) =>
+        Effect.gen(function* () {
+          const packageName = manifest.packageName
+          if (!packageName) {
+            return { ok: false as const, error: "Bundled module is missing packageName." }
+          }
+          const href = bundledPluginImportHref(packageName)
+          if (!href) {
+            return {
+              ok: false as const,
+              error: `Could not resolve ${packageName}/plugin-server.`,
+            }
+          }
+          const rootDir = join(modulesDir, manifest.id)
+          return yield* runtime.loadFromCreateModule(manifest.id, rootDir, manifest, href)
+        })
 
       return {
         catalog: Effect.fn("Modules.catalog")(function* (_ownerId) {
@@ -294,7 +347,9 @@ export class Modules extends Context.Service<
               message: "Use Upload plugin for non-bundled packages.",
             })
           }
-          const rows = yield* upsertInstalled(manifest, "bundled", null)
+          const load = yield* loadBundledRuntime(manifest)
+          const loadError = load.ok ? null : load.error
+          const rows = yield* upsertInstalled(manifest, "bundled", loadError)
           const row = rows[0]
           if (!row) {
             return yield* new ModuleInstallFailed({ message: "Could not record the install." })
@@ -356,9 +411,11 @@ export class Modules extends Context.Service<
         }),
 
         me: Effect.fn("Modules.me")(function* (ownerId) {
-          const rows = yield* sql<InstanceRow & { visible: boolean | null }>`
+          const rows = yield* sql<
+            InstanceRow & { visible: boolean | null; mcp_enabled: boolean | null }
+          >`
             select i.module_id, i.version, i.source, i.package_name, i.enabled, i.load_error,
-                   i.installed_at, p.visible
+                   i.installed_at, p.visible, p.mcp_enabled
             from instance_modules i
             left join user_module_prefs p
               on p.module_id = i.module_id and p.user_id = ${ownerId}
@@ -370,7 +427,8 @@ export class Modules extends Context.Service<
             const manifest = yield* resolveManifest(row)
             if (!manifest) continue
             const visible = row.visible ?? true
-            out.push(toMyModule(row, manifest, visible))
+            const mcpEnabled = row.mcp_enabled ?? true
+            out.push(toMyModule(row, manifest, visible, mcpEnabled))
           }
           return out
         }),
@@ -390,7 +448,33 @@ export class Modules extends Context.Service<
             insert into user_module_prefs (user_id, module_id, visible)
             values (${ownerId}, ${moduleId}, ${visible})
             on conflict (user_id, module_id) do update set visible = ${visible}`.pipe(Effect.orDie)
-          return toMyModule(row, manifest, visible)
+          const prefs = yield* sql<{ mcp_enabled: boolean | null }>`
+            select mcp_enabled from user_module_prefs
+            where user_id = ${ownerId} and module_id = ${moduleId}`.pipe(Effect.orDie)
+          return toMyModule(row, manifest, visible, prefs[0]?.mcp_enabled ?? true)
+        }),
+
+        setMcpEnabled: Effect.fn("Modules.setMcpEnabled")(function* (ownerId, moduleId, enabled) {
+          const row = yield* getRow(moduleId)
+          if (!row?.enabled) {
+            return yield* new ModuleNotFound({
+              message: `Module "${moduleId}" is not available on this instance.`,
+            })
+          }
+          const manifest = yield* resolveManifest(row)
+          if (!manifest) {
+            return yield* new ModuleNotFound({ message: `Module "${moduleId}" is unknown.` })
+          }
+          yield* sql`
+            insert into user_module_prefs (user_id, module_id, mcp_enabled)
+            values (${ownerId}, ${moduleId}, ${enabled})
+            on conflict (user_id, module_id) do update set mcp_enabled = ${enabled}`.pipe(
+            Effect.orDie,
+          )
+          const prefs = yield* sql<{ visible: boolean | null }>`
+            select visible from user_module_prefs
+            where user_id = ${ownerId} and module_id = ${moduleId}`.pipe(Effect.orDie)
+          return toMyModule(row, manifest, prefs[0]?.visible ?? true, enabled)
         }),
 
         isAvailableToUser: Effect.fn("Modules.isAvailableToUser")(function* (ownerId, moduleId) {
@@ -405,14 +489,42 @@ export class Modules extends Context.Service<
           return row.visible ?? true
         }),
 
+        isMcpEnabledForUser: Effect.fn("Modules.isMcpEnabledForUser")(function* (
+          ownerId,
+          moduleId,
+        ) {
+          const rows = yield* sql<{
+            enabled: boolean
+            visible: boolean | null
+            mcp_enabled: boolean | null
+          }>`
+            select i.enabled, p.visible, p.mcp_enabled
+            from instance_modules i
+            left join user_module_prefs p
+              on p.module_id = i.module_id and p.user_id = ${ownerId}
+            where i.module_id = ${moduleId}`.pipe(Effect.orDie)
+          const row = rows[0]
+          if (!row?.enabled) return false
+          if (!(row.visible ?? true)) return false
+          return row.mcp_enabled ?? true
+        }),
+
         loadDiskModules: Effect.gen(function* () {
           const rows = yield* listRows()
           for (const row of rows) {
             if (!row.enabled) continue
-            if (row.source !== "upload" && row.source !== "folder") continue
-            const rootDir = join(modulesDir, row.module_id)
-            const load = yield* runtime.loadFromDisk(row.module_id, rootDir)
-            yield* setLoadError(row.module_id, load.ok ? null : load.error)
+            if (row.source === "upload" || row.source === "folder") {
+              const rootDir = join(modulesDir, row.module_id)
+              const load = yield* runtime.loadFromDisk(row.module_id, rootDir)
+              yield* setLoadError(row.module_id, load.ok ? null : load.error)
+              continue
+            }
+            if (row.source === "bundled") {
+              const manifest = catalogManifest(row.module_id)
+              if (!manifest) continue
+              const load = yield* loadBundledRuntime(manifest)
+              yield* setLoadError(row.module_id, load.ok ? null : load.error)
+            }
           }
         }),
 

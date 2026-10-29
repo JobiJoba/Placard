@@ -3,6 +3,7 @@ import { Effect } from "effect"
 import { type Browser, TestApp } from "../layers/app.ts"
 
 const password = "correct horse battery"
+const decide = (path: string) => `/api/m/restaurants.decide/${path}`
 
 const run = <A>(f: (app: TestApp["Service"]) => Promise<A>) =>
   Effect.gen(function* () {
@@ -10,7 +11,7 @@ const run = <A>(f: (app: TestApp["Service"]) => Promise<A>) =>
     return yield* Effect.promise(() => f(app))
   })
 
-layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("decide http", (it) => {
+layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("decide plugin http", (it) => {
   const admin = { browser: undefined as unknown as Browser }
   const placeIds: string[] = []
 
@@ -44,7 +45,7 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("decide http", (it
 
   it.effect("preview counts restaurants only", () =>
     run(async () => {
-      const preview = await admin.browser.send("POST", "/api/decide/preview", {
+      const preview = await admin.browser.send("POST", decide("preview"), {
         avoidRecent: false,
       })
       expect(preview.status).toBe(200)
@@ -54,7 +55,7 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("decide http", (it
 
   it.effect("spin returns a restaurant from the pool and records a pick", () =>
     run(async () => {
-      const spun = await admin.browser.send("POST", "/api/decide/spin", {
+      const spun = await admin.browser.send("POST", decide("spin"), {
         avoidRecent: false,
       })
       expect(spun.status).toBe(200)
@@ -65,21 +66,20 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("decide http", (it
 
   it.effect("avoid-recent excludes the last pick on the next spin", () =>
     run(async () => {
-      const first = await admin.browser.send("POST", "/api/decide/spin", {
+      const first = await admin.browser.send("POST", decide("spin"), {
         avoidRecent: true,
       })
       expect(first.status).toBe(200)
       const firstId = first.body.place.id as string
 
-      const second = await admin.browser.send("POST", "/api/decide/spin", {
+      const second = await admin.browser.send("POST", decide("spin"), {
         avoidRecent: true,
       })
       expect(second.status).toBe(200)
       expect(second.body.place.id).not.toBe(firstId)
 
-      // Drain the pool until empty
-      await admin.browser.send("POST", "/api/decide/spin", { avoidRecent: true })
-      const empty = await admin.browser.send("POST", "/api/decide/spin", {
+      await admin.browser.send("POST", decide("spin"), { avoidRecent: true })
+      const empty = await admin.browser.send("POST", decide("spin"), {
         avoidRecent: true,
       })
       expect(empty.status).toBe(404)
@@ -89,7 +89,7 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("decide http", (it
 
   it.effect("empty pool when filters match nothing", () =>
     run(async () => {
-      const empty = await admin.browser.send("POST", "/api/decide/spin", {
+      const empty = await admin.browser.send("POST", decide("spin"), {
         avoidRecent: false,
         tag: "does-not-exist-xyz",
       })

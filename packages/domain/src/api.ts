@@ -16,7 +16,6 @@ import {
   SetupStatus,
   UserSummary,
 } from "./accounts.ts"
-import { DecidePoolEmpty, DecidePreview, DecideRequest, DecideResult } from "./decide.ts"
 import {
   EnrichmentBusy,
   EnrichmentRun,
@@ -61,10 +60,10 @@ import {
 import {
   CatalogModule,
   InstalledModule,
-  ModuleDisabled,
   ModuleEnabledUpdate,
   ModuleInstallFailed,
   ModuleInstallInput,
+  ModuleMcpEnabledUpdate,
   ModuleNotFound,
   ModuleUpload,
   ModuleVisibleUpdate,
@@ -409,23 +408,6 @@ export class MediaApi extends HttpApiGroup.make("media")
   .middleware(Authentication)
   .prefix("/api/media") {}
 
-/** restaurants.decide — pick one restaurant from a filtered pool (plugin). */
-export class DecideApi extends HttpApiGroup.make("decide")
-  .add(
-    HttpApiEndpoint.post("preview", "/preview", {
-      payload: DecideRequest,
-      success: DecidePreview,
-      error: ModuleDisabled,
-    }),
-    HttpApiEndpoint.post("spin", "/spin", {
-      payload: DecideRequest,
-      success: DecideResult,
-      error: [DecidePoolEmpty, ModuleDisabled],
-    }),
-  )
-  .middleware(Authentication)
-  .prefix("/api/decide") {}
-
 /** Trusted plugin catalog, instance install, and per-user visibility. */
 export class ModulesApi extends HttpApiGroup.make("modules")
   .add(
@@ -462,6 +444,12 @@ export class ModulesApi extends HttpApiGroup.make("modules")
     HttpApiEndpoint.patch("setVisible", "/me/:id", {
       params: { id: Schema.String },
       payload: ModuleVisibleUpdate,
+      success: MyModule,
+      error: ModuleNotFound,
+    }),
+    HttpApiEndpoint.patch("setMcpEnabled", "/me/:id/mcp", {
+      params: { id: Schema.String },
+      payload: ModuleMcpEnabledUpdate,
       success: MyModule,
       error: ModuleNotFound,
     }),
@@ -504,7 +492,6 @@ export class Api extends HttpApi.make("placard")
   .add(SearchApi)
   .add(ImportApi)
   .add(MediaApi)
-  .add(DecideApi)
   .add(ModulesApi)
   .add(TokensApi)
   .add(McpApi)

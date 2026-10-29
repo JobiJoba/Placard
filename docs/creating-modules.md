@@ -20,27 +20,28 @@ This guide walks a **generic Pick** module — same idea as Decide, but the user
 You are writing a first-party (or third-party prebuilt) package that:
 
 1. Declares a **manifest**
-2. Implements **server** logic using host contracts (`ModuleHostSearch`, …) — not core SQL internals
-3. Exposes **HTTP** via an `HttpApiGroup` on the shared `Api` (first-party) or a documented host hook
-4. Provides a **web page** registered in the client module registry
-5. Owns any **extra tables** (e.g. pick history) via a Drizzle migration
+2. Implements **server** logic in `createModule()` — HTTP via `createHttpApp`, optional MCP via `mcpTools`
+3. Calls host APIs through `hostFetch` (e.g. `POST /api/search`) — not core SQL internals
+4. Provides a **web page** (bundled registry export or uploaded `webEntryUrl`)
+5. Owns module data under the module root (e.g. `data/picks.json`) — not host Effect groups
 
 Folders:
 
 ```
-packages/module-sdk/                      # SDK: manifest types, ModuleHostSearch
-packages/modules/<your-module>/           # Your plugin package
-apps/server/src/modules/catalog.ts        # Add your manifest to the catalog
-apps/server/src/http/                     # Wire HttpApiLive + Layer
-apps/web/src/modules/registry.ts          # Map exportName → React page
-apps/web/src/pages/<your-page>.tsx        # UI (first-party; uses app `@/` UI kit)
+packages/module-sdk/                      # SDK: manifest, createModule, ModuleMcpContext
+packages/modules/<your-module>/           # Your plugin package (plugin/src/server/create-module.ts)
+apps/server/src/modules/catalog.ts        # Bundled listing only (not HTTP/MCP special-casing)
+apps/web/src/modules/registry.ts          # Optional first-party exportName → React page
+apps/web/src/pages/<your-page>.tsx        # UI (calls /api/m/<id>/…; uses app `@/` UI kit)
 ```
 
-Route convention: **`/m/<module.id>`** (e.g. `/m/places.pick`) so core routes stay free.
+Route convention: **`/m/<module.id>`** (UI) and **`/api/m/<module.id>/*`** (plugin HTTP) so core routes stay free.
 
-Module settings: Marketplace card → **Settings** → **`/settings/modules/<module.id>`**. Today that page toggles “show in nav”; later modules can declare extra options (home widgets, enrichment hooks, uploaded `settingsExport`, etc.) on the same route.
+Module settings: Marketplace card → **Settings** → **`/settings/modules/<module.id>`**. That page toggles nav visibility and **Allow MCP for this module** (lists declared tool names; kill switch is per-module, not per-tool).
 
-MCP: core tools live at `/mcp` (bearer PAT). Module tools (e.g. `decide_restaurant` for Decide) are registered by the host when the module is available to the token’s user — keep spin request schemas in domain so agents call the same service as the UI.
+**MCP:** Core tools live at `/mcp` (bearer PAT). Module tools come from `createModule().mcpTools` on every loaded plugin; the host registers them when the instance is enabled, the user can use the module, and `user_module_prefs.mcp_enabled` is true. Declare the same **local** tool defs on the manifest (`mcpTools`) so Settings can list them without executing handlers.
+
+**Tool name uniqueness:** You only need a local name unique **inside your module** (e.g. `pick_place`). The host prefixes with the module id at registration — `places.pick` + `pick_place` → MCP name `places_pick__pick_place` — so authors need not coordinate globally. Do not invent your own prefix; Settings and agents use the host global name. See [mcp.md](mcp.md).
 
 ---
 
@@ -67,9 +68,9 @@ Skim these before copying:
 
 | File | Why |
 | --- | --- |
-| [`packages/modules/restaurants-decide/placard.module.json`](../packages/modules/restaurants-decide/placard.module.json) | Manifest shape |
-| [`packages/modules/restaurants-decide/src/server/decide.ts`](../packages/modules/restaurants-decide/src/server/decide.ts) | Pool + avoid-recent + `ModuleHostSearch` |
-| [`apps/web/src/pages/decide-page.tsx`](../apps/web/src/pages/decide-page.tsx) | Spin UI + filters |
+| [`packages/modules/restaurants-decide/placard.module.json`](../packages/modules/restaurants-decide/placard.module.json) | Manifest shape + `mcpTools` |
+| [`packages/modules/restaurants-decide/plugin/src/server/create-module.ts`](../packages/modules/restaurants-decide/plugin/src/server/create-module.ts) | `createHttpApp` + `mcpTools` + `hostFetch` |
+| [`apps/web/src/pages/decide-page.tsx`](../apps/web/src/pages/decide-page.tsx) | Spin UI → `/api/m/restaurants.decide/*` |
 | [`apps/server/src/modules/catalog.ts`](../apps/server/src/modules/catalog.ts) | Catalog registration |
 | [`apps/web/src/modules/registry.ts`](../apps/web/src/modules/registry.ts) | Web export map |
 
@@ -160,97 +161,49 @@ export const PLACES_PICK_ID = placesPickManifest.id
 
 ---
 
-## Step 3 — Domain types + HTTP contract
+## Step 3 — Request shapes (JSON, not host HttpApi)
 
-First-party modules still declare schemas on `@placard/domain` so the typed `HttpApiClient` and OpenAPI stay unified.
+Keep request/response shapes in the module (or shared domain helpers if the web UI needs them). Prefer plain JSON Schema for MCP `inputSchema`.
 
-1. Add something like `packages/domain/src/pick.ts`:
+Decide forces `category: "restaurant"` inside the plugin. For Pick, accept an optional `category` on the body and pass it through to `hostFetch("/api/search", …)`.
 
-```ts
-export const PickRequest = Schema.Struct({
-  ...SearchFilter.fields,       // text, category?, open?, near?, radiusKm?, tag?, list?, status?
-  avoidRecent: Schema.Boolean,
-})
-// category optional → “any type”; when set, Search filters to that PlaceCategory
-
-export const PickPreview = Schema.Struct({ count: Schema.Number })
-export const PickResult = Schema.Struct({ place: Place })
-export class PickPoolEmpty extends Schema.TaggedError<PickPoolEmpty>()(/* … */) {}
-```
-
-Reuse `SearchFilter` fields; do **not** force `category` in the schema.
-
-2. Add `PickApi` on `Api` in `packages/domain/src/api.ts`:
-
-- `POST /api/pick/preview`
-- `POST /api/pick/spin`
-- Errors: `PickPoolEmpty`, `ModuleDisabled`
-
-3. Export from `packages/domain/src/index.ts`.
-
-`restaurants.decide` forced category in the **service**. For Pick, pass the user’s category through to `ModuleHostSearch.query` unchanged (omit or set `category` on the filter).
+Do **not** add a host `HttpApiGroup` for module endpoints — mount everything under `/api/m/<id>/*` via `createHttpApp`.
 
 ---
 
-## Step 4 — Server service (host contracts only)
+## Step 4 — `createModule()` (HTTP + optional MCP)
 
-In `packages/modules/places-pick/src/server/pick.ts`:
+In `plugin/src/server/create-module.ts` (or pack `server/index.js`):
 
-1. Depend on **`ModuleHostSearch`** from `@placard/module-sdk` — never import `apps/server/src/places/search.ts`.
-2. Build the pool:
-
-```ts
-const hits = yield* search.query(ownerId, {
-  ...filterWithoutAvoidRecent,
-  // category already on the request when the user picked one
-})
-```
-
-3. If `avoidRecent`, load recent place ids from **your** table (e.g. `pick_picks`) and filter with the same `excludeRecent` helper pattern as Decide.
-4. Pick with `Random.nextIntBetween(0, hits.length, { halfOpen: true })`.
-5. Insert a pick row; return `{ place }`.
-
-**Module-owned table** (migration under `apps/server/drizzle/…`):
-
-| Column | Notes |
-| --- | --- |
-| `id`, `owner_id`, `place_id`, `picked_at` | Same shape as `decide_picks` |
-| Optional `category` | Useful if you want “avoid recent parks” vs global avoid |
-
-Document in [data-model.md](data-model.md) that core must not read this table.
-
-Wire the Layer in the host like Decide:
+1. Export `createModule()` returning `{ createHttpApp, mcpTools? }` from `@placard/module-sdk`.
+2. In handlers, call **`ctx.hostFetch("/api/search", { method: "POST", body: JSON.stringify(filter) })`** — never import `apps/server` search/SQL.
+3. Persist avoid-recent under the module root (e.g. `data/picks.json`), not a host table.
+4. Share one `spinOnce` helper between HTTP `POST …/spin` and the MCP tool handler.
+5. Declare the same **local** tool names on the manifest `mcpTools` array for Settings (host will show the prefixed global name).
 
 ```ts
-// apps/server — map core Search → ModuleHostSearch, then provide Pick.layer
-Pick.layer.pipe(
-  Layer.provide(ModuleHostSearchLive),
-  Layer.provide(Search.layer),
-)
+export function createModule() {
+  return {
+    createHttpApp: async (request, ctx) => { /* preview / spin */ },
+    mcpTools: [
+      {
+        // Local name only — clients call places_pick__pick_place
+        def: { name: "pick_place", description: "…", inputSchema: { type: "object", properties: { … } } },
+        handler: async (args, ctx) => {
+          const result = await spinOnce(ctx.hostFetch, ctx.rootDir, ctx.ownerId, args)
+          return result.ok ? { ok: true, data: result } : { ok: false, error: result.message }
+        },
+      },
+    ],
+  }
+}
 ```
 
-See [`apps/server/src/modules/host-search.ts`](../apps/server/src/modules/host-search.ts) and [`apps/server/src/http/api.ts`](../apps/server/src/http/api.ts).
+The host mounts HTTP at **`/api/m/<id>/*`** (session cookie) and registers `mcpTools` on `/mcp` as `{sanitized_module_id}__{local_name}` when MCP is allowed for that user+module.
 
 ---
 
-## Step 5 — HTTP handlers + module gate
-
-`apps/server/src/http/pick.ts` (mirror `decide.ts`):
-
-1. `HttpApiBuilder.group(Api, "pick", …)` calling your service.
-2. Before preview/spin, ensure the module is **instance-enabled** and **visible for this user**:
-
-```ts
-// same pattern as Decide: query instance_modules + user_module_prefs
-// or call Modules.isAvailableToUser(ownerId, PLACES_PICK_ID)
-if (!ok) return yield* new ModuleDisabled({ message: "…" })
-```
-
-3. Register `PickApiLive` in `ApiLive` and merge `PickLive` into `ServicesLayer`.
-
----
-
-## Step 6 — Web UI
+## Step 5 — Web UI
 
 1. Add `apps/web/src/pages/pick-page.tsx` (Vinyl / existing shell tokens).
 
@@ -261,8 +214,8 @@ Suggested controls (one composition, not a dashboard):
 - **Open tonight** / **Open now**
 - **Near me** + radius (`requestLocation`)
 - **Avoid recent**
-- Preview count via `POST /api/pick/preview`
-- **Choose for me** → spin → result + maps links
+- Preview count via `POST /api/m/places.pick/preview`
+- **Choose for me** → `POST /api/m/places.pick/spin` → result + maps links
 
 2. Register the page:
 
@@ -280,7 +233,7 @@ The shell mounts routes from `GET /api/modules/me` automatically — do **not** 
 
 ---
 
-## Step 7 — Catalog + seed install
+## Step 6 — Catalog + seed install
 
 1. Add the manifest to the host catalog:
 
@@ -304,7 +257,7 @@ Without a seed, admins install it from **Settings → Module marketplace**.
 
 ---
 
-## Step 8 — Verify
+## Step 7 — Verify
 
 **As admin**
 
@@ -328,15 +281,14 @@ Without a seed, admins install it from **Settings → Module marketplace**.
 ## Checklist (copy for each new module)
 
 - [ ] Package under `packages/modules/<name>/` with `placard.module.json`
-- [ ] Manifest id, nav path `/m/…`, `webRoutes.exportName`
-- [ ] Domain schemas + `HttpApiGroup` on `Api`
-- [ ] Server Layer uses **host** tags only (`ModuleHostSearch`, …)
-- [ ] Module-owned tables + migration; documented as module-owned
-- [ ] Http handlers + `ModuleDisabled` when not available to user
-- [ ] Web page + entry in `apps/web/src/modules/registry.ts`
-- [ ] Manifest listed in `apps/server/src/modules/catalog.ts`
-- [ ] Server `package.json` workspace dependency
-- [ ] Tests: unit + availability integration
+- [ ] Manifest id, nav path `/m/…`, `webRoutes` / `webEntry`; optional `mcpTools` defs
+- [ ] `createModule()` with `createHttpApp` and optional `mcpTools` (names match manifest)
+- [ ] Handlers use `hostFetch` for search/places — no host SQL
+- [ ] Module-owned data under module root (or documented module storage)
+- [ ] Web page calls `/api/m/<id>/…` (+ bundled registry entry if first-party)
+- [ ] Manifest listed in `apps/server/src/modules/catalog.ts` when bundled
+- [ ] Server `package.json` workspace dependency (bundled)
+- [ ] Tests: unit + `/api/m/…` + MCP list/call when tools ship
 - [ ] Docs: one line in [modules-restaurants.md](modules-restaurants.md) or a sibling module doc if it’s a new family
 
 ---
@@ -344,9 +296,9 @@ Without a seed, admins install it from **Settings → Module marketplace**.
 ## Rules of thumb
 
 1. **Core does not special-case your feature in Library chrome.** Nav comes from the registry.
-2. **Reuse `SearchFilter` / `Search.query`** for geography, open-now, tags, lists — don’t reimplement PostGIS.
+2. **Reuse host `POST /api/search`** via `hostFetch` for geography, open-now, tags, lists — don’t reimplement PostGIS.
 3. **Avoid-recent is module data**, not a core places column.
-4. **Same spin API for MCP later** — keep request/result schemas in domain so Phase 9 can register `pick_place` from the same service.
+4. **Same spin helper for HTTP and MCP** — one implementation, two entry points.
 5. **Trusted code** — bundled and uploaded modules run in-process. Admin zip upload is trusted; no sandbox yet.
 
 ---
@@ -360,7 +312,7 @@ Compose/Coolify instances only have the image + volumes. They cannot rebuild the
 ```
 placard.module.json          # required
 server/
-  index.js                   # ESM; export createModule() → { createHttpApp? }
+  index.js                   # ESM; export createModule() → { createHttpApp?, mcpTools? }
 web/
   index.js                   # browser ESM exporting page components
   assets/…                   # optional
@@ -413,7 +365,7 @@ pnpm placard:pack ./path/to/pack
 1. Admin: Settings → Module marketplace → **Choose .zip**
 2. Host extracts to `PLACARD_MODULES_DIR/<module.id>/` (Compose volume `modules` → `/data/modules`)
 3. Upserts `instance_modules`, dynamic-imports `serverEntry`, serves web under `/api/modules/<id>/assets/*`
-4. Custom HTTP (optional): export `createHttpApp` from `createModule()`; host mounts it at **`/api/m/<id>/*`** (session auth; not typed OpenAPI). First-party bundled modules may keep typed `HttpApiGroup`s.
+4. Custom HTTP / MCP (optional): export `createHttpApp` and/or `mcpTools` from `createModule()`. HTTP mounts at **`/api/m/<id>/*`** (session auth). MCP tools register on `/mcp` when the user’s module MCP pref is on.
 
 **Unload:** disabling an uploaded module stops routing when handlers check `enabled`; fully dropping a prior `import()` graph may need a **container restart**. Prefer disable-without-delete as a kill switch.
 

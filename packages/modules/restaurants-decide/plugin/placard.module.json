@@ -23,5 +23,12 @@
       "path": "/m/restaurants.decide",
       "exportName": "DecidePage"
     }
+  ],
+  "mcpTools": [
+    {
+      "name": "decide_restaurant",
+      "title": "Decide restaurant",
+      "description": "Pick one restaurant from your library (open tonight, list/tag/radius, optional avoid-recent). Same rules as the Decide wheel."
+    }
   ]
 }

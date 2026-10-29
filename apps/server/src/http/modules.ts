@@ -60,6 +60,12 @@ export const ModulesApiLive = HttpApiBuilder.group(
           return yield* modules.setVisible(me.id, params.id, payload.visible)
         }),
       )
+      .handle("setMcpEnabled", ({ params, payload }) =>
+        Effect.gen(function* () {
+          const me = yield* CurrentUser
+          return yield* modules.setMcpEnabled(me.id, params.id, payload.enabled)
+        }),
+      )
   }),
 ).pipe(Layer.provide(ModulesServiceLive))
 
@@ -166,14 +172,29 @@ export const ModuleFileRoutesLive = HttpRouter.use(
         }
 
         const webRequest = yield* HttpServerRequest.toWeb(request)
+        const rootDir = plugin.rootDir || join(modulesDir, id)
+        const hostFetch = runtime.hostFetch
         const response = yield* Effect.tryPromise({
           try: () =>
             Promise.resolve(
               plugin.createHttpApp?.(webRequest, {
                 moduleId: id,
                 pathSuffix: suffix,
-                rootDir: plugin.rootDir || join(modulesDir, id),
+                rootDir,
                 ownerId: user.value.id,
+                hostFetch: (path, init) => {
+                  const url = new URL(path, webRequest.url)
+                  const nextHeaders = new Headers(init?.headers)
+                  const cookie = webRequest.headers.get("cookie")
+                  if (cookie) nextHeaders.set("cookie", cookie)
+                  if (!nextHeaders.has("origin")) {
+                    nextHeaders.set("origin", new URL(webRequest.url).origin)
+                  }
+                  if (init?.body && !nextHeaders.has("content-type")) {
+                    nextHeaders.set("content-type", "application/json")
+                  }
+                  return hostFetch(url, { ...init, headers: nextHeaders })
+                },
               }),
             ),
           catch: () => null,

@@ -420,6 +420,9 @@ importers:
 
   packages/modules/places-pick:
     devDependencies:
+      '@placard/module-sdk':
+        specifier: workspace:*
+        version: link:../../module-sdk
       '@types/react':
         specifier: ^19.2.0
         version: 19.3.0

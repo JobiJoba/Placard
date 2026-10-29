@@ -2,7 +2,6 @@ export * from "./accounts.ts"
 export {
   AdminApi,
   Api,
-  DecideApi,
   GoogleApi,
   HealthApi,
   ImportApi,
