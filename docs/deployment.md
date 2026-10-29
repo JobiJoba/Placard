@@ -2,7 +2,7 @@
 
 Placard targets the self-hosted community: home server, VPS, NAS, Coolify, etc. You do **not** need a native Nextcloud app on day one to feel “installable” next to Immich-like projects — you need a **boring, excellent Docker story**.
 
-**Install walkthrough:** [install.md](install.md) (Compose quickstart, Coolify, Google APIs, backup, upgrade, GHCR `:0.1.0` / `:nightly`).
+**Install walkthrough:** [install.md](install.md) — **published GHCR image first** (`compose.ghcr.yaml`), then Coolify / backup / build-from-source.
 
 ## Priority order
 
@@ -19,7 +19,7 @@ Placard targets the self-hosted community: home server, VPS, NAS, Coolify, etc. 
 
 Coolify eats **Docker Compose** (or Dockerfile) from Git very well. Prepare:
 
-1. **`compose.yaml`** (committed, hand-maintained for self-hosters) with:
+1. **`compose.ghcr.yaml`** (prebuilt GHCR images — preferred for Coolify/VPS) and **`compose.yaml`** (local `--build` for contributors), with:
    - `app` service (Effect HttpApi server + built SPA + later MCP)
    - `worker` service (same image, runs the background job worker; see [tech-stack.md](tech-stack.md))
    - `db` (Postgres + PostGIS image `imresamu/postgis:18-3.6`)
@@ -39,7 +39,7 @@ Coolify eats **Docker Compose** (or Dockerfile) from Git very well. Prepare:
 
 That is enough for Coolify, Dockge, Portainer, plain VPS, and most NAS Docker UIs.
 
-**Aspire** is for local development (`aspire run`). It can also `aspire publish` Compose artifacts; Placard keeps a readable hand-maintained `compose.yaml` as the Coolify path so self-hosters never need the Aspire CLI. Validate markers with `pnpm compose:generate`.
+**Aspire** is for local development (`aspire run`). Self-hosters use published images via `compose.ghcr.yaml` (see [install.md](install.md)) and never need the Aspire CLI. Validate source-build `compose.yaml` markers with `pnpm compose:generate`.
 
 Nixpacks/Railpack alone are weaker for multi-service (app+db+media). Prefer **Compose as the canonical path**.
 

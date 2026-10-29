@@ -7,18 +7,29 @@ Placard is a self-hosted place library: collect, organize, and enrich places you
 Think Immich, but for starred places: private to your instance, Docker-friendly, extensible.
 
 > **Status:** Phases **0–10 code-complete** (export, PWA, install guide, GHCR workflow). Founder Coolify / phone install checks remain. See [docs/current-state.md](docs/current-state.md).  
+> **Site:** Marketing landing in [`apps/site`](apps/site) (GitHub Pages).  
 > **License:** AGPL-3.0 (like Immich).
 
-## Run it (self-host)
+## Install (Docker Compose — recommended)
 
-Step-by-step (Compose, Coolify, backup, upgrade): **[docs/install.md](docs/install.md)**.
+No local build. Download release install files, set env, start Compose:
 
 ```sh
-cp .env.example .env        # set POSTGRES_PASSWORD and BETTER_AUTH_SECRET
-docker compose up -d --build
+mkdir ./placard-app && cd ./placard-app
+curl -fsSL -o docker-compose.yml \
+  https://github.com/JobiJoba/Placard/releases/latest/download/docker-compose.yml
+curl -fsSL -o example.env \
+  https://github.com/JobiJoba/Placard/releases/latest/download/example.env
+cp example.env .env
+# Edit .env: POSTGRES_PASSWORD, BETTER_AUTH_SECRET (openssl rand -base64 32), PUBLIC_URL
+docker compose up -d
 ```
 
-Open http://localhost:3000. `http://localhost:3000/api/health` reports database status.
+Open http://localhost:3000 (or your `PUBLIC_URL`). Health: `/api/health`.
+
+Release compose pins a stable image tag. Until the first `v*` release exists, use the [main fallback](docs/install.md#step-1--download-the-required-files) (`compose.ghcr.yaml` + `:nightly`).
+
+Full guide (Coolify, Google APIs, backup, upgrade, build-from-source): **[docs/install.md](docs/install.md)**.
 
 ## Develop
 

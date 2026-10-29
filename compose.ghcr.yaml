@@ -1,0 +1,92 @@
+# Placard — run prebuilt images from GHCR (no local build).
+# Usage: see docs/install.md
+#
+#   cp .env.example .env   # edit secrets + PUBLIC_URL
+#   docker compose -f compose.ghcr.yaml up -d
+#
+# Pin a release when you have one (e.g. 0.1.0). Default is nightly (testers / tip of main).
+
+name: placard
+
+x-placard-env: &placard-env
+  DATABASE_URL: postgres://placard:${POSTGRES_PASSWORD:-placard}@db:5432/placard
+  PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3000}
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env (openssl rand -base64 32)}
+  MEDIA_DIR: /data/media
+  PLACARD_MODULES_DIR: /data/modules
+  WEB_DIST_DIR: /app/web-dist
+  GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+  MCP_ENABLED: ${MCP_ENABLED:-true}
+  PORT: "3000"
+
+x-placard-image: &placard-image
+  image: ${PLACARD_IMAGE:-ghcr.io/jobijoba/placard:nightly}
+  pull_policy: always
+
+services:
+  db:
+    image: imresamu/postgis:18-3.6
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: placard
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-placard}
+      POSTGRES_DB: placard
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U placard -d placard"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    <<: *placard-image
+    restart: unless-stopped
+    environment: *placard-env
+    ports:
+      - "${PLACARD_PORT:-3000}:3000"
+    volumes:
+      - media:/data/media
+      - modules:/data/modules
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+
+  worker:
+    <<: *placard-image
+    restart: unless-stopped
+    command: ["node", "apps/server/src/worker.ts"]
+    environment:
+      <<: *placard-env
+      WORKER_HEARTBEAT_FILE: /tmp/placard-worker-heartbeat
+    volumes:
+      - media:/data/media
+      - modules:/data/modules
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "const s=require('fs').statSync('/tmp/placard-worker-heartbeat',{throwIfNoEntry:false});process.exit(s&&Date.now()-s.mtimeMs<30000?0:1)"
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+volumes:
+  pgdata:
+  media:
+  modules:

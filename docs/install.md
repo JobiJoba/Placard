@@ -1,6 +1,8 @@
-# Install Placard
+# Install Placard — Docker Compose
 
-Self-host Placard with Docker Compose (Coolify, VPS, NAS Docker UI). Architecture notes: [deployment.md](deployment.md).
+Docker Compose is the **recommended** way to run Placard. You pull a published image from GHCR; you do not build from source.
+
+Architecture notes: [deployment.md](deployment.md).
 
 ## Requirements
 
@@ -8,82 +10,124 @@ Self-host Placard with Docker Compose (Coolify, VPS, NAS Docker UI). Architectur
 - ~1 GB RAM free for app + PostGIS
 - Optional: Google Maps Platform key (Places API New + Maps JavaScript API)
 
-## Quick start (Compose)
+---
+
+## Step 1 — Download the required files
+
+Create a directory for Placard (for example `./placard-app`):
 
 ```sh
-git clone https://github.com/JobiJoba/Placard.git
-cd Placard
-cp .env.example .env
-# Set POSTGRES_PASSWORD and BETTER_AUTH_SECRET (openssl rand -base64 32)
-# Set PUBLIC_URL to the URL users will open (e.g. https://placard.example.com)
-docker compose up -d --build
+mkdir ./placard-app
+cd ./placard-app
+```
+
+Download `docker-compose.yml` and `example.env` from the **latest GitHub Release**:
+
+```sh
+curl -fsSL -o docker-compose.yml \
+  https://github.com/JobiJoba/Placard/releases/latest/download/docker-compose.yml
+curl -fsSL -o example.env \
+  https://github.com/JobiJoba/Placard/releases/latest/download/example.env
+```
+
+You can also download those two files in the browser from the [latest release](https://github.com/JobiJoba/Placard/releases/latest) and move them into this directory.
+
+**No release yet?** Until the first `v*` tag exists, use the tip-of-main files instead:
+
+```sh
+curl -fsSL -o docker-compose.yml \
+  https://raw.githubusercontent.com/JobiJoba/Placard/main/compose.ghcr.yaml
+curl -fsSL -o example.env \
+  https://raw.githubusercontent.com/JobiJoba/Placard/main/.env.example
+```
+
+That compose defaults to the `:nightly` image (CI tip of `main`). Prefer a pinned release for production once one is published.
+
+---
+
+## Step 2 — Populate the `.env` file
+
+```sh
+cp example.env .env
+```
+
+Edit `.env` and set at least:
+
+| Variable | Notes |
+| --- | --- |
+| `POSTGRES_PASSWORD` | Database password (use letters and digits; avoid special chars that confuse Compose) |
+| `BETTER_AUTH_SECRET` | Session signing secret — `openssl rand -base64 32` |
+| `PUBLIC_URL` | Exact URL users open (e.g. `https://placard.example.com` or `http://localhost:3000`) |
+
+Optional:
+
+- `PLACARD_PORT` — host port (default `3000`)
+- `GOOGLE_MAPS_API_KEY` — or set later in Settings → Integrations
+- `PLACARD_IMAGE` — override the image (release compose already pins a version; use `ghcr.io/jobijoba/placard:nightly` only if you opt into nightlies)
+- `MCP_ENABLED` — default `true`
+
+If the GHCR package is private: `docker login ghcr.io` (GitHub PAT with `read:packages`).
+
+---
+
+## Step 3 — Start the containers
+
+From the directory that contains `docker-compose.yml` and `.env`:
+
+```sh
+docker compose up -d
 ```
 
 Open `$PUBLIC_URL`. Health: `$PUBLIC_URL/api/health`.
 
-First visitor becomes **admin**. Set the Google key under Settings → Integrations (or `GOOGLE_MAPS_API_KEY` in `.env`).
+The first account to sign up becomes **admin**.
 
-### Published images (optional)
+### Upgrade
 
-Skip building from source by pointing `app` / `worker` at GHCR (comment out `build:`):
-
-| Tag | When to use |
-| --- | --- |
-| `0.1.0` (or other semver) | **Production** — cut by a git tag `v*`; also updates `:latest` |
-| `nightly` | **Testers only** — tip of `main` after CI goes green; **never** use for automatic production upgrades |
-| `nightly-<full-sha>` | Pin a specific nightly build |
-
-```yaml
-# Production (pin a release)
-image: ghcr.io/jobijoba/placard:0.1.0
-
-# Or try tonight’s main (opt-in)
-# image: ghcr.io/jobijoba/placard:nightly
+```sh
+# After a new release: re-download compose if needed, or bump PLACARD_IMAGE
+curl -fsSL -o docker-compose.yml \
+  https://github.com/JobiJoba/Placard/releases/latest/download/docker-compose.yml
+docker compose pull
+docker compose up -d
 ```
 
-`:latest` is only moved by **stable** version tags (not nightlies). See [CHANGELOG.md](../CHANGELOG.md). Pull with Docker logged into GHCR if the package is private.
+Migrations run on boot. Keep named volumes so the library and photos survive. See [CHANGELOG.md](../CHANGELOG.md).
 
-## Environment
+---
 
-| Variable | Required | Notes |
-| --- | --- | --- |
-| `POSTGRES_PASSWORD` | yes | Postgres user password |
-| `BETTER_AUTH_SECRET` | yes | ≥32 chars; changing it signs everyone out |
-| `PUBLIC_URL` | yes | Exact origin for cookies and invite links |
-| `PLACARD_PORT` | no | Host port (default `3000`) |
-| `GOOGLE_MAPS_API_KEY` | no | Or set in admin Settings |
-| `MCP_ENABLED` | no | Default `true` |
+## Image tags
 
-Full template: [`.env.example`](../.env.example).
+| Tag | Use |
+| --- | --- |
+| Semver (`0.1.0`, …) | **Production** — what release `docker-compose.yml` pins by default |
+| `latest` | Latest **stable** release (moved only by `v*` tags, not nightlies) |
+| `nightly` | Testers — tip of `main` after CI; opt-in via `PLACARD_IMAGE` |
+| `nightly-<sha>` | Pin one nightly build |
 
-## Google APIs
-
-Enable on the Google Cloud project:
-
-1. **Places API (New)** — server autocomplete / details / enrichment  
-2. **Maps JavaScript API** — browser map  
-
-Restrict the key to those APIs and set a **daily quota cap**. Do **not** use HTTP-referrer-only restrictions: server calls send no referrer. Without a key, users can still drop pins on OpenStreetMap.
+---
 
 ## Coolify
 
 1. New Resource → **Docker Compose**
-2. Point at this repo (or paste `compose.yaml`)
-3. Set env from `.env.example` (`BETTER_AUTH_SECRET`, `POSTGRES_PASSWORD`, `PUBLIC_URL=https://your-domain`)
+2. Paste / point at the release `docker-compose.yml` (or repo [`compose.ghcr.yaml`](../compose.ghcr.yaml))
+3. Set env from `example.env` (`BETTER_AUTH_SECRET`, `POSTGRES_PASSWORD`, `PUBLIC_URL=https://your-domain`)
 4. Map the domain to the **app** service on port **3000**
 5. Deploy; wait for healthchecks on `app` and `db`
 
-Volumes `media` and `modules` must persist across deploys. MCP is same-origin HTTPS at `/mcp` — no extra Coolify product required.
+Volumes `media` and `modules` must persist. MCP is same-origin at `/mcp`.
+
+## Google APIs
+
+Enable **Places API (New)** and **Maps JavaScript API**. Restrict the key to those APIs and set a daily quota cap. Do **not** use HTTP-referrer-only restrictions (server calls send no referrer). Without a key, users can still drop pins on OpenStreetMap.
 
 ## Backup
 
-Instance backup (database + files) — not the same as Settings → Export library (per-user zip).
+Instance backup (database + files) — not Settings → Export library (per-user zip).
 
 ```sh
-# Database
 docker compose exec -T db pg_dump -U placard placard | gzip > placard-$(date +%Y%m%d).sql.gz
 
-# Named volumes (paths vary by Docker root; example with compose project "placard")
 docker run --rm -v placard_pgdata:/data -v "$PWD":/backup alpine \
   tar czf /backup/pgdata.tgz -C /data .
 docker run --rm -v placard_media:/data -v "$PWD":/backup alpine \
@@ -94,24 +138,26 @@ docker run --rm -v placard_modules:/data -v "$PWD":/backup alpine \
 
 ### Restore
 
-1. Stop app/worker: `docker compose stop app worker`
-2. Restore Postgres (`gunzip -c ….sql.gz | docker compose exec -T db psql -U placard placard`) or restore the `pgdata` volume archive
-3. Restore `media` / `modules` volume archives
+1. `docker compose stop app worker`
+2. Restore Postgres dump or `pgdata` archive
+3. Restore `media` / `modules` archives
 4. `docker compose start app worker`
 
-## Upgrade
+## Build from source (contributors)
 
-1. Backup (above)
-2. `git pull` (or pull a newer GHCR tag)
-3. `docker compose up -d --build` (or `docker compose pull && docker compose up -d`)
-4. App runs migrations on boot — keep volumes mounted so the library and photos survive
+For forks and local image builds, use the repo [`compose.yaml`](../compose.yaml):
 
-Pin `PLACARD_VERSION` / image tags in production; read [CHANGELOG.md](../CHANGELOG.md) before jumping majors.
+```sh
+git clone https://github.com/JobiJoba/Placard.git
+cd Placard
+cp .env.example .env
+# Set POSTGRES_PASSWORD, BETTER_AUTH_SECRET, PUBLIC_URL
+docker compose up -d --build
+```
 
-## Library export
+Day-to-day development: `aspire run` — see the [README](../README.md#develop).
 
-Signed-in users can download their places, lists, tags, and media from **Settings → General → Export library** (`GET /api/export`). That zip is for portability / personal backup; it does **not** replace `pg_dump` for full instance disaster recovery.
+## Library export & MCP
 
-## MCP
-
-Settings → MCP: create a PAT, paste snippets into Cursor/Claude. Endpoint: `$PUBLIC_URL/mcp`. Disable with `MCP_ENABLED=false`. Details: [mcp.md](mcp.md).
+- **Export:** Settings → General → Export library (`GET /api/export`) — personal zip, not instance DR.
+- **MCP:** Settings → MCP — create a PAT; endpoint `$PUBLIC_URL/mcp`. Details: [mcp.md](mcp.md).
