@@ -8,6 +8,12 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { api, errorMessage } from "@/lib/api"
 import { changePassword } from "@/lib/auth-client"
 import { isLibraryDensity, LIBRARY_DENSITIES, useLibraryDensity } from "@/lib/library-density"
+import {
+  isMapsProvider,
+  MAPS_PROVIDERS,
+  mapsProviderLabels,
+  useMapsProvider,
+} from "@/lib/maps-provider"
 import { useMe, useSession } from "@/session"
 import { SettingsCard } from "./settings-card"
 
@@ -16,6 +22,7 @@ export function SettingsGeneralPage() {
     <div className="flex flex-col gap-6">
       <AccountCard />
       <DistanceUnitCard />
+      <MapsProviderCard />
       <LibraryDensityCard />
       <ExportLibraryCard />
     </div>
@@ -144,6 +151,35 @@ function DistanceUnitCard() {
         </ToggleGroup>
         <ErrorAlert message={error} />
       </div>
+    </SettingsCard>
+  )
+}
+
+function MapsProviderCard() {
+  const [provider, setProvider] = useMapsProvider()
+
+  return (
+    <SettingsCard
+      title="Maps app"
+      description="Default app for Open in maps on place pages. Stored on this device."
+    >
+      <ToggleGroup
+        type="single"
+        variant="outline"
+        spacing={0}
+        value={provider}
+        onValueChange={(value) => {
+          if (isMapsProvider(value)) setProvider(value)
+        }}
+        aria-label="Preferred maps app"
+        className="flex-wrap"
+      >
+        {MAPS_PROVIDERS.map((id) => (
+          <ToggleGroupItem key={id} value={id}>
+            {mapsProviderLabels[id]}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
     </SettingsCard>
   )
 }

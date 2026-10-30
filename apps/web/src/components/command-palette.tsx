@@ -31,6 +31,12 @@ import {
 } from "@/components/ui/command"
 import { api } from "@/lib/api"
 import { LIBRARY_DENSITIES, type LibraryDensity, useLibraryDensity } from "@/lib/library-density"
+import {
+  MAPS_PROVIDERS,
+  type MapsProvider,
+  mapsProviderLabels,
+  useMapsProvider,
+} from "@/lib/maps-provider"
 import { categoryLabels, statusLabels } from "@/lib/places"
 import { useMe, useSession } from "@/session"
 
@@ -67,6 +73,7 @@ export function CommandPalette({
   const me = useMe()
   const { setMe, signOut } = useSession()
   const [density, setDensity] = useLibraryDensity()
+  const [mapsProvider, setMapsProvider] = useMapsProvider()
   const [query, setQuery] = useState("")
   const [hits, setHits] = useState<ReadonlyArray<SearchHit>>([])
   const [tags, setTags] = useState<ReadonlyArray<TagSummary>>([])
@@ -85,7 +92,11 @@ export function CommandPalette({
   const run = useCallback(
     (action: () => void | Promise<void>) => {
       close()
-      void action()
+      // Defer so cmdk finishes unmounting before preference lists rewrite
+      // "(current)" labels — sync updates crash with `forEach` on undefined.
+      window.setTimeout(() => {
+        void action()
+      }, 0)
     },
     [close],
   )
@@ -249,9 +260,17 @@ export function CommandPalette({
       icon: <LayoutGrid />,
       run: () => setDensity(n as LibraryDensity),
     }))
+    const mapsItems: PaletteCommand[] = MAPS_PROVIDERS.map((id) => ({
+      id: `pref:maps:${id}`,
+      label: `Maps · ${mapsProviderLabels[id]}${mapsProvider === id ? " (current)" : ""}`,
+      keywords: `maps provider ${id} google apple organic open in`,
+      icon: <MapPin />,
+      run: () => setMapsProvider(id as MapsProvider),
+    }))
     const otherUnit: DistanceUnit = me.distanceUnit === "km" ? "mi" : "km"
     return [
       ...densityItems,
+      ...mapsItems,
       {
         id: "pref:unit:km",
         label: `Distance · Kilometers${me.distanceUnit === "km" ? " (current)" : ""}`,
@@ -274,7 +293,7 @@ export function CommandPalette({
         run: () => void setDistanceUnit(otherUnit),
       },
     ]
-  }, [density, me.distanceUnit, setDensity, setDistanceUnit])
+  }, [density, mapsProvider, me.distanceUnit, setDensity, setDistanceUnit, setMapsProvider])
 
   const filters = useMemo((): ReadonlyArray<PaletteCommand> => {
     const items: PaletteCommand[] = [

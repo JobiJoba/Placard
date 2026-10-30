@@ -1,12 +1,4 @@
-import {
-  appleMapsUrl,
-  type DecideRequest,
-  googleMapsUrl,
-  organicMapsUrl,
-  type Place,
-  type PlaceList,
-  type TagSummary,
-} from "@placard/domain"
+import { type DecideRequest, type Place, type PlaceList, type TagSummary } from "@placard/domain"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Link } from "react-router"
 import { ErrorAlert } from "@/components/error-alert"
@@ -23,6 +15,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { api, errorMessage, isTagged } from "@/lib/api"
 import { requestLocation } from "@/lib/geolocation"
+import { mapsProviderLabels, mapsUrlFor, useMapsProvider } from "@/lib/maps-provider"
 import { useLoad } from "@/lib/use-load"
 
 const radiusOptions = [1, 2, 5, 10, 25] as const
@@ -398,6 +391,7 @@ function ResultCard({
   readonly canAgain: boolean
 }) {
   const cover = place.coverThumbUrl
+  const [mapsProvider] = useMapsProvider()
   return (
     <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-stretch">
       <div className="relative aspect-square w-full shrink-0 overflow-hidden rounded-sm bg-[var(--crate)] sm:w-36">
@@ -436,18 +430,8 @@ function ResultCard({
             variant="outline"
             className="border-[var(--crate-edge)] bg-transparent text-[var(--parchment)]"
           >
-            <a href={googleMapsUrl(place)} target="_blank" rel="noreferrer">
-              Maps
-            </a>
-          </Button>
-          <Button asChild size="sm" variant="ghost" className="text-[var(--parchment)]">
-            <a href={appleMapsUrl(place)} target="_blank" rel="noreferrer">
-              Apple
-            </a>
-          </Button>
-          <Button asChild size="sm" variant="ghost" className="text-[var(--parchment)]">
-            <a href={organicMapsUrl(place)} target="_blank" rel="noreferrer">
-              Organic
+            <a href={mapsUrlFor(mapsProvider, place)} target="_blank" rel="noreferrer">
+              {mapsProviderLabels[mapsProvider]}
             </a>
           </Button>
           <Button

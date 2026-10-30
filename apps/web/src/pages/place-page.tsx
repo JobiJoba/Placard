@@ -1,7 +1,4 @@
 import {
-  appleMapsUrl,
-  googleMapsUrl,
-  organicMapsUrl,
   type Place,
   type PlaceCategory,
   type PlaceList,
@@ -36,6 +33,13 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { api, errorMessage, isTagged } from "@/lib/api"
+import {
+  mapsProviderLabels,
+  mapsProviderOpenLabels,
+  mapsUrlFor,
+  orderedMapsProviders,
+  useMapsProvider,
+} from "@/lib/maps-provider"
 import {
   categoryIcons,
   categoryLabels,
@@ -89,6 +93,7 @@ export function PlacePage() {
   const [removeError, setRemoveError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [refreshError, setRefreshError] = useState<string | null>(null)
+  const [mapsProvider] = useMapsProvider()
 
   useEffect(() => {
     if (!place) {
@@ -153,11 +158,8 @@ export function PlacePage() {
   }
 
   const Icon = categoryIcons[place.category]
-  const mapLinks = [
-    { label: "Google Maps", href: googleMapsUrl(place) },
-    { label: "Apple Maps", href: appleMapsUrl(place) },
-    { label: "Organic Maps", href: organicMapsUrl(place) },
-  ] as const
+  const mapProviders = orderedMapsProviders(mapsProvider)
+  const preferredMapsHref = mapsUrlFor(mapsProvider, place)
 
   return (
     <article className="flex flex-col gap-6 pb-10 md:gap-8 md:pb-0">
@@ -176,39 +178,59 @@ export function PlacePage() {
       <PlaceHero place={place} Icon={Icon} />
 
       <div className="flex flex-wrap items-center gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button type="button" className="min-h-11 gap-1.5 sm:min-h-8">
+        <div className="flex min-w-0">
+          <Button asChild className="min-h-11 rounded-r-none sm:min-h-8">
+            <a href={preferredMapsHref} target="_blank" rel="noreferrer" className="gap-1.5">
               <MapPinned aria-hidden />
-              Open in maps
-              <ChevronDown aria-hidden className="size-3.5 opacity-80" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="min-w-48">
-            {mapLinks.map((link) => (
-              <DropdownMenuItem key={link.label} asChild>
-                <a href={link.href} target="_blank" rel="noreferrer" className="gap-2">
-                  {link.label}
-                  <ExternalLink aria-hidden className="ml-auto size-3.5 opacity-60" />
-                </a>
-              </DropdownMenuItem>
-            ))}
-            {place.googlePlaceId ? (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  disabled={refreshing}
-                  onSelect={() => {
-                    void refresh()
-                  }}
-                >
-                  <RefreshCw aria-hidden className={refreshing ? "animate-spin" : undefined} />
-                  {refreshing ? "Refreshing…" : "Refresh from Google"}
+              <span className="truncate">{mapsProviderOpenLabels[mapsProvider]}</span>
+              <ExternalLink aria-hidden className="size-3.5 opacity-80" />
+            </a>
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                className="min-h-11 rounded-l-none border-l border-[color-mix(in_srgb,var(--action-fg)_25%,transparent)] px-2 sm:min-h-8"
+                aria-label="More maps options"
+              >
+                <ChevronDown aria-hidden className="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-48">
+              {mapProviders.map((provider) => (
+                <DropdownMenuItem key={provider} asChild>
+                  <a
+                    href={mapsUrlFor(provider, place)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="gap-2"
+                  >
+                    {mapsProviderLabels[provider]}
+                    {provider === mapsProvider ? (
+                      <span className="ml-auto text-xs text-muted-foreground">Preferred</span>
+                    ) : (
+                      <ExternalLink aria-hidden className="ml-auto size-3.5 opacity-60" />
+                    )}
+                  </a>
                 </DropdownMenuItem>
-              </>
-            ) : null}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              ))}
+              {place.googlePlaceId ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    disabled={refreshing}
+                    onSelect={() => {
+                      void refresh()
+                    }}
+                  >
+                    <RefreshCw aria-hidden className={refreshing ? "animate-spin" : undefined} />
+                    {refreshing ? "Refreshing…" : "Refresh from Google"}
+                  </DropdownMenuItem>
+                </>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
         <Button
           type="button"
           variant="outline"
