@@ -27,9 +27,7 @@ docker compose up -d
 
 Open http://localhost:3000 (or your `PUBLIC_URL`). Health: `/api/health`.
 
-Release compose pins a stable image tag. Until the first `v*` release exists, use the [main fallback](docs/install.md#step-1--download-the-required-files) (`compose.ghcr.yaml` + `:nightly`).
-
-Full guide (Coolify, Dokploy, backup, upgrade, build-from-source): **[docs/install.md](docs/install.md)**. Google Maps Platform BYOK: **[docs/google-apis.md](docs/google-apis.md)**. The marketing site serves the same pages under `/docs`.
+Nightly / tip-of-`main` install lives in a collapsed section of **[docs/install.md](docs/install.md)**. Google Maps Platform BYOK: **[docs/google-apis.md](docs/google-apis.md)**. The marketing site serves the same pages under `/docs`.
 
 ## Develop
 

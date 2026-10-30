@@ -1,16 +1,14 @@
 import type { Components } from "react-markdown"
 import ReactMarkdown from "react-markdown"
 import { Link } from "react-router"
+import rehypeRaw from "rehype-raw"
 import remarkGfm from "remark-gfm"
+import { githubHeadingId } from "../docs/github-slug"
 import { rewriteDocHref } from "../docs/links"
 import { CopySnippet } from "./CopySnippet"
 
 function headingId(children: unknown): string | undefined {
-  const text = flattenText(children)
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s-]/gu, "")
-    .trim()
-    .replace(/\s+/g, "-")
+  const text = githubHeadingId(flattenText(children))
   return text || undefined
 }
 
@@ -78,12 +76,22 @@ const components: Components = {
       </div>
     )
   },
+  details({ children }) {
+    return <details className="md-details">{children}</details>
+  },
+  summary({ children }) {
+    return <summary className="md-summary">{children}</summary>
+  },
 }
 
 export function MarkdownDoc({ source }: { source: string }) {
   return (
     <div className="md-doc">
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
+        components={components}
+      >
         {source}
       </ReactMarkdown>
     </div>

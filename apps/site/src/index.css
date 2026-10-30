@@ -675,6 +675,46 @@ code {
   margin: 1rem 0 1.25rem;
 }
 
+.md-doc .md-details {
+  margin: 1rem 0 1.35rem;
+  border: 1px solid rgb(26 22 18 / 0.12);
+  border-radius: 0.35rem;
+  background: color-mix(in srgb, var(--parchment) 88%, var(--crate));
+  padding: 0.15rem 0.85rem 0.85rem;
+}
+
+.md-doc .md-summary {
+  cursor: pointer;
+  list-style: none;
+  margin: 0 -0.85rem;
+  padding: 0.7rem 0.85rem;
+  font-family: var(--font-catalog);
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--parchment-ink);
+}
+
+.md-doc .md-summary::-webkit-details-marker {
+  display: none;
+}
+
+.md-doc .md-summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 0.45rem;
+  color: var(--crate);
+  transition: transform 120ms ease;
+}
+
+.md-doc .md-details[open] > .md-summary::before {
+  transform: rotate(90deg);
+}
+
+.md-doc .md-details > :not(summary) {
+  margin-top: 0.35rem;
+}
+
 .md-table-wrap {
   width: 100%;
   overflow-x: auto;

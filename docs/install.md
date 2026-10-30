@@ -38,7 +38,7 @@ mkdir ./placard-app
 cd ./placard-app
 ```
 
-Download `docker-compose.yml` and `example.env` from the **latest GitHub Release**:
+Download `docker-compose.yml` and `example.env` from the **latest GitHub Release** (pins a stable semver image):
 
 ```sh
 curl -fsSL -o docker-compose.yml \
@@ -47,9 +47,12 @@ curl -fsSL -o example.env \
   https://github.com/JobiJoba/Placard/releases/latest/download/example.env
 ```
 
-You can also download those two files in the browser from the [latest release](https://github.com/JobiJoba/Placard/releases/latest) and move them into this directory.
+You can also grab those two files in the browser from the [latest release](https://github.com/JobiJoba/Placard/releases/latest).
 
-**No release yet?** Until the first `v*` tag exists, use the tip-of-main files instead:
+<details>
+<summary>Nightly / tip of <code>main</code> (experimental)</summary>
+
+Use this only if you want CI tip-of-`main` builds. The compose file defaults to the **`:nightly`** image and can change without a semver bump.
 
 ```sh
 curl -fsSL -o docker-compose.yml \
@@ -58,7 +61,9 @@ curl -fsSL -o example.env \
   https://raw.githubusercontent.com/JobiJoba/Placard/main/.env.example
 ```
 
-That compose defaults to the `:nightly` image (CI tip of `main`). Prefer a pinned release for production once one is published.
+See [Image tags](#image-tags).
+
+</details>
 
 ---
 
@@ -80,7 +85,7 @@ Optional:
 
 - `PLACARD_PORT` — host port (default `3000`)
 - `GOOGLE_MAPS_API_KEY` — or set later in Settings → Integrations (see [google-apis.md](google-apis.md))
-- `PLACARD_IMAGE` — override the image (release compose already pins a version; use `ghcr.io/jobijoba/placard:nightly` only if you opt into nightlies)
+- `PLACARD_IMAGE` — override the image (release compose already pins a version; set `ghcr.io/jobijoba/placard:nightly` only if you opt into nightlies)
 - `MCP_ENABLED` — default `true`
 
 If the GHCR package is private: `docker login ghcr.io` (GitHub PAT with `read:packages`).
@@ -102,7 +107,7 @@ The first account to sign up becomes **admin**.
 ### Upgrade
 
 ```sh
-# After a new release: re-download compose if needed, or bump PLACARD_IMAGE
+# Re-download the latest release compose if needed, then pull + recreate
 curl -fsSL -o docker-compose.yml \
   https://github.com/JobiJoba/Placard/releases/latest/download/docker-compose.yml
 docker compose pull
@@ -119,7 +124,7 @@ Migrations run on boot. Keep named volumes so the library and photos survive. Se
 | --- | --- |
 | Semver (`0.1.0`, …) | **Production** — what release `docker-compose.yml` pins by default |
 | `latest` | Latest **stable** release (moved only by `v*` tags, not nightlies) |
-| `nightly` | Testers — tip of `main` after CI; opt-in via `PLACARD_IMAGE` |
+| `nightly` | Experimental — tip of `main` after CI (see collapsible above) |
 | `nightly-<sha>` | Pin one nightly build |
 
 ---
@@ -127,23 +132,37 @@ Migrations run on boot. Keep named volumes so the library and photos survive. Se
 ## Coolify
 
 1. New Resource → **Docker Compose**
-2. Paste / point at the release `docker-compose.yml` (or repo [`compose.ghcr.yaml`](../compose.ghcr.yaml))
+2. Paste the release `docker-compose.yml` from the [latest release](https://github.com/JobiJoba/Placard/releases/latest)
 3. Set env from `example.env` (`BETTER_AUTH_SECRET`, `POSTGRES_PASSWORD`, `PUBLIC_URL=https://your-domain`)
 4. Map the domain to the **app** service on port **3000**
 5. Deploy; wait for healthchecks on `app` and `db`
 
 Volumes `media` and `modules` must persist. MCP is same-origin at `/mcp`.
 
+<details>
+<summary>Coolify with nightly compose</summary>
+
+Paste repo [`compose.ghcr.yaml`](../compose.ghcr.yaml) instead of the release file, and set env from [`.env.example`](../.env.example).
+
+</details>
+
 ## Dokploy
 
 Same Compose stack as Coolify — create a **Docker Compose** service (not a single-image app).
 
-1. Paste the release `docker-compose.yml` (or repo [`compose.ghcr.yaml`](../compose.ghcr.yaml) for tip-of-main / `:nightly`)
+1. Paste the release `docker-compose.yml` from the [latest release](https://github.com/JobiJoba/Placard/releases/latest)
 2. Set env from `example.env` (`BETTER_AUTH_SECRET`, `POSTGRES_PASSWORD`, `PUBLIC_URL=https://your-domain`)
 3. **Domains → Add Domain** → select the **app** service → container port **3000** (Dokploy/Traefik routes to that internal port; do not confuse this with host port publish)
 4. Deploy; wait for healthchecks. HTTPS certs may take a few seconds after the first deploy
 
 Volumes `media` and `modules` must persist. MCP is same-origin at `/mcp`.
+
+<details>
+<summary>Dokploy with nightly compose</summary>
+
+Paste repo [`compose.ghcr.yaml`](../compose.ghcr.yaml) instead of the release file, and set env from [`.env.example`](../.env.example).
+
+</details>
 
 ---
 

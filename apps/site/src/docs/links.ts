@@ -23,6 +23,17 @@ export function rewriteDocHref(href: string | undefined): string | undefined {
   const hashSuffix = hash ? `#${hash}` : ""
   const cleaned = pathPart.replace(/^\.\//, "")
 
+  // Repo-relative from docs/ first (../README.md#develop, ../compose.ghcr.yaml, …)
+  // Must run before the sibling `.md` branch — otherwise `../README.md` becomes docs/README.md.
+  if (cleaned.startsWith("../")) {
+    const repoPath = cleaned.replace(/^\.\.\//, "")
+    // Config / source downloads (include `.env.example`, not only `*.env`)
+    if (/(?:^|\/)(?:\.env(?:\..+)?|.+\.(?:ya?ml|json|ts|tsx|js|mjs|cjs))$/i.test(repoPath)) {
+      return `${GITHUB_RAW}/${repoPath}`
+    }
+    return `${GITHUB_BLOB}/${repoPath}${hashSuffix}`
+  }
+
   if (cleaned.endsWith(".md")) {
     const file = cleaned.split("/").pop()?.replace(/\.md$/, "")
     if (!file) return href
@@ -30,15 +41,6 @@ export function rewriteDocHref(href: string | undefined): string | undefined {
       return `/docs/${file}${hashSuffix}`
     }
     return `${GITHUB_BLOB}/docs/${file}.md${hashSuffix}`
-  }
-
-  // Repo-relative paths from docs/ (../compose.ghcr.yaml, ../README.md, …)
-  if (cleaned.startsWith("../")) {
-    const repoPath = cleaned.replace(/^\.\.\//, "")
-    if (/\.(ya?ml|json|env|ts|tsx|js|mjs|cjs)$/i.test(repoPath)) {
-      return `${GITHUB_RAW}/${repoPath}`
-    }
-    return `${GITHUB_BLOB}/${repoPath}${hashSuffix}`
   }
 
   return href
