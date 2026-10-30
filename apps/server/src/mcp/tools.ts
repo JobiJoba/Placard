@@ -128,7 +128,7 @@ export const registerPlacardTools = async (server: McpServer, ctx: ToolContext) 
       try {
         const filter = toSearchFilter(args)
         const hits = await withAudit(ctx, "search_places", args as Record<string, unknown>, () =>
-          ctx.run(ctx.search.query(ctx.user.id, filter)),
+          ctx.run(ctx.search.query(ctx.user.id, ctx.user.householdEnabled, filter)),
         )
         return textResult({
           count: hits.length,
@@ -158,7 +158,7 @@ export const registerPlacardTools = async (server: McpServer, ctx: ToolContext) 
     async ({ id }) => {
       try {
         const place = await withAudit(ctx, "get_place", { id }, () =>
-          ctx.run(ctx.places.get(ctx.user.id, id)),
+          ctx.run(ctx.places.get(ctx.user.id, id, ctx.user.householdEnabled)),
         )
         return textResult(place)
       } catch (cause) {
@@ -331,7 +331,9 @@ export const registerPlacardTools = async (server: McpServer, ctx: ToolContext) 
                           ? String(init.body)
                           : "{}"
                     const filter = JSON.parse(raw) as SearchFilter
-                    const hits = await ctx.run(ctx.search.query(ctx.user.id, filter))
+                    const hits = await ctx.run(
+                      ctx.search.query(ctx.user.id, ctx.user.householdEnabled, filter),
+                    )
                     return Response.json(hits)
                   }
                   const url = new URL(path, ctx.publicUrl)

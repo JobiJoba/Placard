@@ -1,6 +1,7 @@
 import {
   type BulkAction,
   placeCategories as categories,
+  type HouseholdScope,
   type OpenWhen,
   type Place,
   type PlaceCategory,
@@ -52,6 +53,11 @@ const ResultsMap = lazy(() => import("@/components/library/results-map"))
 
 type Scope = LibraryScope
 
+const parseHouseholdScope = (value: string | null): HouseholdScope => {
+  if (value === "mine" || value === "shared" || value === "all") return value
+  return "all"
+}
+
 const parseOpen = (value: string | null): OpenWhen | undefined =>
   value === "now" || value === "tonight" ? value : undefined
 
@@ -72,6 +78,8 @@ export function LibraryPage() {
   const category = parseCategory(params.get("category"))
   const scopeParam = params.get("scope")
   const scope: Scope = isLibraryScope(scopeParam) ? scopeParam : "near"
+  const householdScope = parseHouseholdScope(params.get("household"))
+  const sharedBy = params.get("sharedBy") ?? undefined
   const radiusKm = Number(params.get("radius") ?? "5") || 5
   const view: LibraryView = params.get("view") === "map" ? "map" : "grid"
   const cityLat = params.get("lat") ? Number(params.get("lat")) : null
@@ -102,6 +110,12 @@ export function LibraryPage() {
   const { data: mapsConfig } = useLoad(useCallback(() => api((c) => c.google.config()), []))
   const { data: tags } = useLoad(useCallback(() => api((c) => c.tags.list()), []))
   const { data: lists } = useLoad(useCallback(() => api((c) => c.lists.list()), []))
+  const { data: householdMembers } = useLoad(
+    useCallback(() => {
+      if (!me.householdEnabled) return Promise.resolve([])
+      return api((c) => c.me.householdMembers())
+    }, [me.householdEnabled]),
+  )
 
   useEffect(() => {
     setTextDraft(text)
@@ -201,6 +215,8 @@ export function LibraryPage() {
       ...(status ? { status } : {}),
       ...(open ? { open } : {}),
       ...(category ? { category } : {}),
+      ...(me.householdEnabled && householdScope !== "all" ? { householdScope } : {}),
+      ...(me.householdEnabled && sharedBy ? { sharedBy } : {}),
     }
     if (scope === "near" && near) {
       return { ...next, near, radiusKm }
@@ -209,7 +225,22 @@ export function LibraryPage() {
       return { ...next, near: { lat: cityLat, lng: cityLng }, radiusKm }
     }
     return next
-  }, [text, tag, list, status, open, category, scope, near, radiusKm, cityLat, cityLng])
+  }, [
+    text,
+    tag,
+    list,
+    status,
+    open,
+    category,
+    scope,
+    near,
+    radiusKm,
+    cityLat,
+    cityLng,
+    me.householdEnabled,
+    householdScope,
+    sharedBy,
+  ])
 
   const waitingForGeo = scope === "near" && !near && !geoError
   const geoBlocked = scope === "near" && Boolean(geoError)
@@ -424,6 +455,61 @@ export function LibraryPage() {
             <ToggleGroupItem value="city">City</ToggleGroupItem>
             <ToggleGroupItem value="all">All</ToggleGroupItem>
           </ToggleGroup>
+          {me.householdEnabled ? (
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              spacing={0}
+              value={householdScope}
+              onValueChange={(value) => {
+                if (value !== "all" && value !== "mine" && value !== "shared") return
+                setParams(
+                  (prev) => {
+                    const next = new URLSearchParams(prev)
+                    if (value === "all") next.delete("household")
+                    else next.set("household", value)
+                    return next
+                  },
+                  { replace: true },
+                )
+                setSelected(new Set())
+              }}
+              aria-label="Household ownership"
+            >
+              <ToggleGroupItem value="all">Everyone</ToggleGroupItem>
+              <ToggleGroupItem value="mine">Mine</ToggleGroupItem>
+              <ToggleGroupItem value="shared">Shared</ToggleGroupItem>
+            </ToggleGroup>
+          ) : null}
+          {me.householdEnabled && (householdMembers?.length ?? 0) > 1 ? (
+            <Select
+              value={sharedBy ?? "any"}
+              onValueChange={(value) => {
+                setParams(
+                  (prev) => {
+                    const next = new URLSearchParams(prev)
+                    if (value === "any") next.delete("sharedBy")
+                    else next.set("sharedBy", value)
+                    return next
+                  },
+                  { replace: true },
+                )
+                setSelected(new Set())
+              }}
+            >
+              <SelectTrigger className="w-40" aria-label="Shared by">
+                <SelectValue placeholder="Shared by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">Anyone</SelectItem>
+                {householdMembers?.map((member) => (
+                  <SelectItem key={member.id} value={member.id}>
+                    {member.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
           {scope !== "all" && (
             <Select value={String(radiusKm)} onValueChange={(v) => setParam("radius", v)}>
               <SelectTrigger className="w-28" aria-label="Radius">
@@ -784,6 +870,8 @@ export function LibraryPage() {
                 selecting={showSelectChrome}
                 selected={selected.has(place.id)}
                 onToggle={() => toggle(place.id)}
+                viewerId={me.id}
+                householdEnabled={me.householdEnabled}
               />
             </li>
           ))}
@@ -1145,6 +1233,8 @@ function PlaceCard({
   selecting,
   selected,
   onToggle,
+  viewerId,
+  householdEnabled,
 }: {
   readonly place: Place
   readonly distanceMeters: number | null
@@ -1152,10 +1242,14 @@ function PlaceCard({
   readonly selecting: boolean
   readonly selected: boolean
   readonly onToggle: () => void
+  readonly viewerId: string
+  readonly householdEnabled: boolean
 }) {
   const Icon = categoryIcons[place.category]
   const coverSrc = place.coverThumbUrl
   const locality = coverLocality(place.address)
+  const sharedByOther =
+    householdEnabled && place.visibility === "household" && place.owner.id !== viewerId
   return (
     <article
       className={`place-cover relative aspect-square h-full overflow-hidden rounded-sm bg-[var(--crate)] text-[var(--parchment)] ${
@@ -1229,6 +1323,11 @@ function PlaceCard({
           <h2 className="cover-title font-catalog text-xl font-semibold leading-tight tracking-wide uppercase">
             {place.name}
           </h2>
+          {sharedByOther ? (
+            <p className="line-clamp-1 text-xs text-[color-mix(in_srgb,var(--parchment)_78%,transparent)]">
+              Shared by {place.owner.name}
+            </p>
+          ) : null}
           {locality ? (
             <p className="cover-address line-clamp-1 text-xs text-[color-mix(in_srgb,var(--parchment)_78%,transparent)]">
               {locality}

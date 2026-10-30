@@ -21,9 +21,13 @@ export const PlacesApiLive = HttpApiBuilder.group(
     const google = yield* GooglePlaces
     const enrichment = yield* Enrichment
     return handlers
-      .handle("list", ({ query }) => withMe((me) => places.list(me.id, query)))
+      .handle("list", ({ query }) =>
+        withMe((me) => places.list(me.id, me.householdEnabled, query)),
+      )
       .handle("deleted", () => withMe((me) => places.listDeleted(me.id)))
-      .handle("get", ({ params }) => withMe((me) => places.get(me.id, params.id)))
+      .handle("get", ({ params }) =>
+        withMe((me) => places.get(me.id, params.id, me.householdEnabled)),
+      )
       .handle("addFromGoogle", ({ payload }) =>
         Effect.gen(function* () {
           const me = yield* CurrentUser
@@ -33,7 +37,9 @@ export const PlacesApiLive = HttpApiBuilder.group(
           const saved = yield* places.addFromGoogle(me.id, details, payload.source)
           if (saved.created) {
             yield* enrichment.applyDetails(me.id, saved.place.id, details).pipe(Effect.orDie)
-            const place = yield* places.get(me.id, saved.place.id).pipe(Effect.orDie)
+            const place = yield* places
+              .get(me.id, saved.place.id, me.householdEnabled)
+              .pipe(Effect.orDie)
             return { place, created: true }
           }
           return saved
@@ -61,21 +67,21 @@ export const PlacesApiLive = HttpApiBuilder.group(
             force: true,
             mode: payload.mode ?? "merge",
           })
-          return yield* places.get(me.id, params.id)
+          return yield* places.get(me.id, params.id, me.householdEnabled)
         }),
       )
       .handle("setFact", ({ params, payload }) =>
         Effect.gen(function* () {
           const me = yield* CurrentUser
           yield* enrichment.setOverride(me.id, params.id, params.key, payload.value)
-          return yield* places.get(me.id, params.id)
+          return yield* places.get(me.id, params.id, me.householdEnabled)
         }),
       )
       .handle("clearFactOverride", ({ params }) =>
         Effect.gen(function* () {
           const me = yield* CurrentUser
           yield* enrichment.clearOverride(me.id, params.id, params.key)
-          return yield* places.get(me.id, params.id)
+          return yield* places.get(me.id, params.id, me.householdEnabled)
         }),
       )
       .handle("addCustomField", ({ params, payload }) =>
@@ -86,6 +92,16 @@ export const PlacesApiLive = HttpApiBuilder.group(
       )
       .handle("removeCustomField", ({ params }) =>
         withMe((me) => places.removeCustomField(me.id, params.id, params.fieldId)),
+      )
+      .handle("setVisibility", ({ params, payload }) =>
+        withMe((me) =>
+          places.setVisibility(me.id, params.id, payload.visibility, me.householdEnabled),
+        ),
+      )
+      .handle("copyInto", ({ params, payload }) =>
+        withMe((me) =>
+          places.copyInto(me.id, params.id, params.targetId, payload, me.householdEnabled),
+        ),
       )
   }),
 )

@@ -474,7 +474,7 @@ export class Import extends Context.Service<
                 listId = list.id
                 listCache.set(entry.source_list, listId)
               }
-              const current = yield* places.get(ownerId, placeId).pipe(Effect.orDie)
+              const current = yield* places.get(ownerId, placeId, false).pipe(Effect.orDie)
               if (!current.listIds.includes(listId)) {
                 yield* places
                   .setLists(ownerId, placeId, [...current.listIds, listId])
@@ -754,7 +754,7 @@ export class Import extends Context.Service<
 
             if (entry.source_list) {
               const list = yield* lists.ensure(ownerId, entry.source_list, { importRunId: runId })
-              const current = yield* places.get(ownerId, placeId).pipe(Effect.orDie)
+              const current = yield* places.get(ownerId, placeId, false).pipe(Effect.orDie)
               if (!current.listIds.includes(list.id)) {
                 yield* places
                   .setLists(ownerId, placeId, [...current.listIds, list.id])

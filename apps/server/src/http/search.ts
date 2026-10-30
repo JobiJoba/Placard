@@ -11,7 +11,7 @@ export const SearchApiLive = HttpApiBuilder.group(
     return handlers.handle("query", ({ payload }) =>
       Effect.gen(function* () {
         const me = yield* CurrentUser
-        return yield* search.query(me.id, payload)
+        return yield* search.query(me.id, me.householdEnabled, payload)
       }),
     )
   }),

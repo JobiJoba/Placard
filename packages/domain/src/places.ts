@@ -25,6 +25,10 @@ export const placeStatuses = ["want_to_go", "been_there"] as const
 export const PlaceStatus = Schema.Literals(placeStatuses)
 export type PlaceStatus = typeof PlaceStatus.Type
 
+export const placeVisibilities = ["private", "household"] as const
+export const PlaceVisibility = Schema.Literals(placeVisibilities)
+export type PlaceVisibility = typeof PlaceVisibility.Type
+
 export const LatLng = Schema.Struct({
   lat: Schema.Finite.pipe(Schema.check(Schema.isBetween({ minimum: -90, maximum: 90 }))),
   lng: Schema.Finite.pipe(Schema.check(Schema.isBetween({ minimum: -180, maximum: 180 }))),
@@ -39,6 +43,12 @@ export type EditableField = typeof EditableField.Type
 export const TagRef = Schema.Struct({ id: Schema.String, name: Schema.String })
 export type TagRef = typeof TagRef.Type
 
+export const PlaceOwner = Schema.Struct({
+  id: Schema.String,
+  name: Schema.String,
+})
+export type PlaceOwner = typeof PlaceOwner.Type
+
 export const Place = Schema.Struct({
   id: Schema.String,
   name: Schema.String,
@@ -49,6 +59,8 @@ export const Place = Schema.Struct({
   status: Schema.NullOr(PlaceStatus),
   notes: Schema.NullOr(Schema.String),
   source: PlaceSource,
+  visibility: PlaceVisibility,
+  owner: PlaceOwner,
   /** Fields the owner edited; refreshes from Google leave these alone. */
   editedFields: Schema.Array(EditableField),
   tags: Schema.Array(TagRef),
@@ -63,6 +75,19 @@ export const Place = Schema.Struct({
   createdAt: Schema.DateTimeUtcFromString,
 })
 export type Place = typeof Place.Type
+
+export const PlaceVisibilityUpdate = Schema.Struct({
+  visibility: PlaceVisibility,
+})
+export type PlaceVisibilityUpdate = typeof PlaceVisibilityUpdate.Type
+
+/** Optional fields to copy into a canonical household place when resolving a share conflict. */
+export const CopyIntoHouseholdInput = Schema.Struct({
+  notes: Schema.optional(Schema.Boolean),
+  status: Schema.optional(Schema.Boolean),
+  customFields: Schema.optional(Schema.Boolean),
+})
+export type CopyIntoHouseholdInput = typeof CopyIntoHouseholdInput.Type
 
 /** `created` is false when the place was already in the library. */
 export const SavedPlace = Schema.Struct({
@@ -153,6 +178,22 @@ export class PlaceNotFound extends Schema.TaggedError<PlaceNotFound>()(
   "PlaceNotFound",
   {},
   { httpApiStatus: 404 },
+) {}
+
+export class HouseholdDisabled extends Schema.TaggedError<HouseholdDisabled>()(
+  "HouseholdDisabled",
+  { message: Schema.String },
+  { httpApiStatus: 409 },
+) {}
+
+export class HouseholdPlaceConflict extends Schema.TaggedError<HouseholdPlaceConflict>()(
+  "HouseholdPlaceConflict",
+  {
+    existingPlaceId: Schema.String,
+    existingName: Schema.String,
+    owner: PlaceOwner,
+  },
+  { httpApiStatus: 409 },
 ) {}
 
 export class GoogleKeyMissing extends Schema.TaggedError<GoogleKeyMissing>()(

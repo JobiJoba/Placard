@@ -68,7 +68,7 @@ export class LibraryExport extends Context.Service<
       return LibraryExport.of({
         buildZip: (owner) =>
           Effect.gen(function* () {
-            const placeRows = yield* places.list(owner.id)
+            const placeRows = yield* places.list(owner.id, false)
             const listRows = yield* lists.list(owner.id)
             const tagRows = yield* tags.list(owner.id)
 

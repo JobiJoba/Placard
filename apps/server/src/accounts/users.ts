@@ -1,4 +1,4 @@
-import type { DistanceUnit, Me, UserSummary } from "@placard/domain"
+import type { DistanceUnit, HouseholdMember, Me, UserSummary } from "@placard/domain"
 import { Context, DateTime, Effect, Layer, Option } from "effect"
 import { SqlClient } from "effect/sql"
 import type { UserRole } from "../db/schema.ts"
@@ -12,7 +12,10 @@ interface UserRow {
   readonly created_at: Date
 }
 
-const toMe = (row: UserRow): Me => ({
+/** Session/user row without instance flags (those are attached by Auth / Me API). */
+export type MeBase = Omit<Me, "householdEnabled">
+
+const toMeBase = (row: UserRow): MeBase => ({
   id: row.id,
   name: row.name,
   email: row.email,
@@ -31,10 +34,11 @@ const toSummary = (row: UserRow): UserSummary => ({
 export class Users extends Context.Service<
   Users,
   {
-    readonly get: (id: string) => Effect.Effect<Option.Option<Me>>
+    readonly get: (id: string) => Effect.Effect<Option.Option<MeBase>>
     readonly list: Effect.Effect<ReadonlyArray<UserSummary>>
+    readonly householdMembers: Effect.Effect<ReadonlyArray<HouseholdMember>>
     readonly emailExists: (email: string) => Effect.Effect<boolean>
-    readonly setDistanceUnit: (id: string, unit: DistanceUnit) => Effect.Effect<Me>
+    readonly setDistanceUnit: (id: string, unit: DistanceUnit) => Effect.Effect<MeBase>
   }
 >()("placard/Users") {
   static readonly layer = Layer.effect(
@@ -46,11 +50,16 @@ export class Users extends Context.Service<
       return {
         get: (id) =>
           sql<UserRow>`select ${columns} from users where id = ${id}`.pipe(
-            Effect.map((rows) => Option.fromNullishOr(rows[0]).pipe(Option.map(toMe))),
+            Effect.map((rows) => Option.fromNullishOr(rows[0]).pipe(Option.map(toMeBase))),
             Effect.orDie,
           ),
         list: sql<UserRow>`select ${columns} from users order by created_at`.pipe(
           Effect.map((rows) => rows.map(toSummary)),
+          Effect.orDie,
+        ),
+        householdMembers: sql<{ id: string; name: string }>`
+          select id, name from users order by lower(name), created_at`.pipe(
+          Effect.map((rows) => rows.map((row) => ({ id: row.id, name: row.name }))),
           Effect.orDie,
         ),
         emailExists: (email) =>
@@ -63,7 +72,7 @@ export class Users extends Context.Service<
             update users set distance_unit = ${unit}, updated_at = now()
             where id = ${id} returning ${columns}`.pipe(
             Effect.flatMap((rows) =>
-              rows[0] ? Effect.succeed(toMe(rows[0])) : Effect.die(`user ${id} not found`),
+              rows[0] ? Effect.succeed(toMeBase(rows[0])) : Effect.die(`user ${id} not found`),
             ),
             Effect.orDie,
           ),

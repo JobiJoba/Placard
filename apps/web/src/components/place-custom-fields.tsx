@@ -73,9 +73,11 @@ const formatDisplayValue = (field: PlaceCustomField): { href?: string; text: str
 export function PlaceCustomFieldsSection({
   place,
   onChanged,
+  readOnly = false,
 }: {
   readonly place: Place
   readonly onChanged: (place: Place) => void
+  readonly readOnly?: boolean
 }) {
   const [adding, setAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -108,7 +110,7 @@ export function PlaceCustomFieldsSection({
         <h2 id="place-more-info-heading" className="text-lg font-medium">
           More info
         </h2>
-        {!adding && editingId == null ? (
+        {!readOnly && !adding && editingId == null ? (
           <Button
             type="button"
             size="sm"
@@ -129,7 +131,9 @@ export function PlaceCustomFieldsSection({
 
       {place.customFields.length === 0 && !adding ? (
         <p className="text-sm text-muted-foreground">
-          Add email, Instagram, open date, or any other detail you want on this card.
+          {readOnly
+            ? "No extra fields on this place."
+            : "Add email, Instagram, open date, or any other detail you want on this card."}
         </p>
       ) : null}
 
@@ -177,7 +181,7 @@ export function PlaceCustomFieldsSection({
                   })()}
                 </div>
                 <div className="flex shrink-0 gap-1">
-                  {confirmDeleteId === field.id ? (
+                  {readOnly ? null : confirmDeleteId === field.id ? (
                     <>
                       <Button
                         type="button"

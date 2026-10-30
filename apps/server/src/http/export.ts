@@ -18,7 +18,10 @@ export const ExportRoutesLive = HttpRouter.use(
         if (Option.isNone(user)) {
           return HttpServerResponse.empty({ status: 401 })
         }
-        const zip = yield* libraryExport.buildZip(user.value)
+        const zip = yield* libraryExport.buildZip({
+          ...user.value,
+          householdEnabled: false,
+        })
         return HttpServerResponse.uint8Array(zip, {
           contentType: "application/zip",
           headers: {

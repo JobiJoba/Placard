@@ -17,6 +17,8 @@ export const Me = Schema.Struct({
   email: Schema.String,
   role: UserRole,
   distanceUnit: DistanceUnit,
+  /** Instance admin toggle; gates share UI and household library filters. */
+  householdEnabled: Schema.Boolean,
 })
 export type Me = typeof Me.Type
 
@@ -28,6 +30,13 @@ export const UserSummary = Schema.Struct({
   createdAt: Schema.DateTimeUtcFromString,
 })
 export type UserSummary = typeof UserSummary.Type
+
+/** Lightweight member row for household “Shared by” filters. */
+export const HouseholdMember = Schema.Struct({
+  id: Schema.String,
+  name: Schema.String,
+})
+export type HouseholdMember = typeof HouseholdMember.Type
 
 export const InviteStatus = Schema.Literals(["pending", "accepted", "expired", "revoked"])
 export type InviteStatus = typeof InviteStatus.Type
@@ -65,6 +74,8 @@ export const InstanceSettingsView = Schema.Struct({
     source: GoogleKeySource,
     last4: Schema.NullOr(Schema.String),
   }),
+  /** When true, members can share places with everyone on this instance. */
+  householdEnabled: Schema.Boolean,
   /**
    * How often the worker checks GitHub-sourced plugins for newer releases.
    * `0` disables automatic checks (manual check still works).
@@ -79,6 +90,11 @@ export const ModuleUpdateCheckHoursUpdate = Schema.Struct({
   hours: Schema.Int.pipe(Schema.check(Schema.isBetween({ minimum: 0, maximum: 168 }))),
 })
 export type ModuleUpdateCheckHoursUpdate = typeof ModuleUpdateCheckHoursUpdate.Type
+
+export const HouseholdEnabledUpdate = Schema.Struct({
+  enabled: Schema.Boolean,
+})
+export type HouseholdEnabledUpdate = typeof HouseholdEnabledUpdate.Type
 
 export class Unauthorized extends Schema.TaggedError<Unauthorized>()(
   "Unauthorized",

@@ -6,6 +6,7 @@ import {
   type PlaceCategory,
   type PlaceSource,
   type PlaceStatus,
+  type PlaceVisibility,
   type SearchFilter,
   type SearchHit,
   type TagRef,
@@ -27,6 +28,9 @@ interface SearchRow {
   readonly status: PlaceStatus | null
   readonly notes: string | null
   readonly source: PlaceSource
+  readonly visibility: PlaceVisibility
+  readonly owner_id: string
+  readonly owner_name: string
   readonly manual_fields: ReadonlyArray<string>
   readonly cover_media_id: string | null
   readonly utc_offset_minutes: number | null
@@ -49,7 +53,8 @@ export class Search extends Context.Service<
   Search,
   {
     readonly query: (
-      ownerId: string,
+      actorId: string,
+      householdEnabled: boolean,
       filter: SearchFilter,
     ) => Effect.Effect<ReadonlyArray<SearchHit>>
   }
@@ -119,7 +124,7 @@ export class Search extends Context.Service<
             )
 
       return {
-        query: Effect.fn("Search.query")(function* (ownerId, filter) {
+        query: Effect.fn("Search.query")(function* (actorId, householdEnabled, filter) {
           const now = yield* Clock.currentTimeMillis
           const near = filter.near
           const radiusKm = filter.radiusKm
@@ -128,10 +133,19 @@ export class Search extends Context.Service<
           const text = filter.text
 
           const clauses = [
-            sql`p.owner_id = ${ownerId}`,
+            householdEnabled
+              ? sql`(p.owner_id = ${actorId} or p.visibility = 'household')`
+              : sql`p.owner_id = ${actorId}`,
             sql`p.deleted_at is null`,
             sql`p.location is not null`,
           ]
+
+          if (householdEnabled) {
+            const scope = filter.householdScope ?? "all"
+            if (scope === "mine") clauses.push(sql`p.owner_id = ${actorId}`)
+            if (scope === "shared") clauses.push(sql`p.visibility = 'household'`)
+            if (filter.sharedBy) clauses.push(sql`p.owner_id = ${filter.sharedBy}`)
+          }
 
           if (filter.category) clauses.push(sql`p.category = ${filter.category}`)
           if (filter.status) clauses.push(sql`p.status = ${filter.status}`)
@@ -141,7 +155,6 @@ export class Search extends Context.Service<
               select 1 from place_tags pt
               join tags t on t.id = pt.tag_id
               where pt.place_id = p.id
-                and t.owner_id = ${ownerId}
                 and lower(t.name) = lower(${filter.tag})
             )`)
           }
@@ -150,7 +163,7 @@ export class Search extends Context.Service<
               select 1 from list_items li
               join lists l on l.id = li.list_id
               where li.place_id = p.id
-                and l.owner_id = ${ownerId}
+                and l.owner_id = ${actorId}
                 and l.id = ${filter.list}
             )`)
           }
@@ -193,9 +206,11 @@ export class Search extends Context.Service<
               p.id, p.name, p.category,
               st_y(p.location::geometry) as lat, st_x(p.location::geometry) as lng,
               p.address, p.google_place_id, p.status, p.notes, p.source,
+              p.visibility, p.owner_id, u.name as owner_name,
               p.manual_fields, p.cover_media_id, p.utc_offset_minutes, p.created_at,
               ${distanceSelect}
             from places p
+            join users u on u.id = p.owner_id
             where ${sql.and(clauses)}
             order by ${orderBy}
             limit 500`.pipe(Effect.orDie)
@@ -251,6 +266,8 @@ export class Search extends Context.Service<
               status: row.status,
               notes: row.notes,
               source: row.source,
+              visibility: row.visibility,
+              owner: { id: row.owner_id, name: row.owner_name },
               editedFields: row.manual_fields.filter(isEditable),
               tags: tagMap.get(row.id) ?? [],
               listIds: listMap.get(row.id) ?? [],

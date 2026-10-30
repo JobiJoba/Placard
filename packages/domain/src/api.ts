@@ -8,6 +8,8 @@ import {
   Email,
   EmailAlreadyRegistered,
   GoogleKeyRejected,
+  HouseholdEnabledUpdate,
+  HouseholdMember,
   InstanceSettingsView,
   Invite,
   InviteLookup,
@@ -81,11 +83,14 @@ import {
 } from "./modules.ts"
 import {
   AutocompleteInput,
+  CopyIntoHouseholdInput,
   DeletedPlace,
   GoogleConfig,
   GoogleKeyMissing,
   GooglePlaceInput,
   GooglePlacesFailed,
+  HouseholdDisabled,
+  HouseholdPlaceConflict,
   ManualPlaceInput,
   Place,
   PlaceFilter,
@@ -93,6 +98,7 @@ import {
   PlacePreview,
   PlaceSuggestion,
   PlaceUpdate,
+  PlaceVisibilityUpdate,
   SavedPlace,
   TagRef,
 } from "./places.ts"
@@ -124,6 +130,9 @@ export class MeApi extends HttpApiGroup.make("me")
       payload: Schema.Struct({ distanceUnit: DistanceUnit }),
       success: Me,
     }),
+    HttpApiEndpoint.get("householdMembers", "/api/household/members", {
+      success: Schema.Array(HouseholdMember),
+    }),
   )
   .middleware(Authentication) {}
 
@@ -140,6 +149,10 @@ export class AdminApi extends HttpApiGroup.make("admin")
     }),
     HttpApiEndpoint.patch("setModuleUpdateCheckHours", "/settings/module-update-check", {
       payload: ModuleUpdateCheckHoursUpdate,
+      success: InstanceSettingsView,
+    }),
+    HttpApiEndpoint.patch("setHouseholdEnabled", "/settings/household", {
+      payload: HouseholdEnabledUpdate,
       success: InstanceSettingsView,
     }),
     HttpApiEndpoint.get("users", "/users", { success: Schema.Array(UserSummary) }),
@@ -250,6 +263,18 @@ export class PlacesApi extends HttpApiGroup.make("places")
       params: { id: Schema.String, fieldId: Schema.String },
       success: Place,
       error: [PlaceNotFound, CustomFieldNotFound],
+    }),
+    HttpApiEndpoint.patch("setVisibility", "/:id/visibility", {
+      params: { id: Schema.String },
+      payload: PlaceVisibilityUpdate,
+      success: Place,
+      error: [PlaceNotFound, HouseholdDisabled, HouseholdPlaceConflict],
+    }),
+    HttpApiEndpoint.post("copyInto", "/:id/copy-into/:targetId", {
+      params: { id: Schema.String, targetId: Schema.String },
+      payload: CopyIntoHouseholdInput,
+      success: Place,
+      error: [PlaceNotFound, HouseholdDisabled, CustomFieldInvalid],
     }),
   )
   .middleware(Authentication)

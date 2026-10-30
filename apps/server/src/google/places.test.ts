@@ -34,6 +34,8 @@ const setup = (apiKey: string | null = "test-key") => {
     clearGoogleApiKey: Effect.die("unused"),
     setModuleUpdateCheckHours: () => Effect.die("unused"),
     moduleUpdateCheckHours: Effect.succeed(24),
+    householdEnabled: Effect.succeed(false),
+    setHouseholdEnabled: () => Effect.die("unused"),
   })
   const layer = GooglePlaces.layer.pipe(Layer.provide([RecordingClient, Settings]))
   return { requests, layer }

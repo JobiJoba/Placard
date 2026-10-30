@@ -119,7 +119,7 @@ export class Enrichment extends Context.Service<
 
       const applyDetails = Effect.fn("Enrichment.applyDetails")(
         function* (ownerId, placeId, details) {
-          const place = yield* places.get(ownerId, placeId)
+          const place = yield* places.get(ownerId, placeId, false)
           const edited = applyFetched(
             {
               values: {
@@ -161,7 +161,7 @@ export class Enrichment extends Context.Service<
         applyDetails,
 
         enrichPlace: Effect.fn("Enrichment.enrichPlace")(function* (ownerId, placeId, options) {
-          const place = yield* places.get(ownerId, placeId)
+          const place = yield* places.get(ownerId, placeId, false)
           if (!place.googlePlaceId) return
           const mode = options?.mode ?? "merge"
           if (mode === "replace") {
@@ -184,7 +184,7 @@ export class Enrichment extends Context.Service<
         }),
 
         setOverride: Effect.fn("Enrichment.setOverride")(function* (ownerId, placeId, key, value) {
-          yield* places.get(ownerId, placeId)
+          yield* places.get(ownerId, placeId, false)
           if (value === null || value.trim() === "") {
             yield* sql`
               delete from place_facts
@@ -201,7 +201,7 @@ export class Enrichment extends Context.Service<
         }),
 
         clearOverride: Effect.fn("Enrichment.clearOverride")(function* (ownerId, placeId, key) {
-          yield* places.get(ownerId, placeId)
+          yield* places.get(ownerId, placeId, false)
           yield* sql`
             delete from place_facts
             where place_id = ${placeId} and key = ${key} and source = 'manual'`.pipe(Effect.orDie)

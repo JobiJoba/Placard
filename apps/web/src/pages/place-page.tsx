@@ -50,10 +50,17 @@ import {
   statusLabels,
 } from "@/lib/places"
 import { useLoad } from "@/lib/use-load"
+import { useMe } from "@/session"
 
 /** Set as router state when an add flow lands on a place the user already had. */
 export interface PlacePageState {
   readonly alreadySaved?: boolean
+}
+
+type ShareConflict = {
+  readonly existingPlaceId: string
+  readonly existingName: string
+  readonly ownerName: string
 }
 
 const sleeveTone: Record<PlaceCategory, string> = {
@@ -77,6 +84,7 @@ const priceLabels: Record<string, string> = {
 }
 
 export function PlacePage() {
+  const me = useMe()
   const { id = "" } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
@@ -96,7 +104,11 @@ export function PlacePage() {
   const [refreshing, setRefreshing] = useState(false)
   const [refreshError, setRefreshError] = useState<string | null>(null)
   const [refreshDone, setRefreshDone] = useState(false)
+  const [shareBusy, setShareBusy] = useState(false)
+  const [shareError, setShareError] = useState<string | null>(null)
+  const [shareConflict, setShareConflict] = useState<ShareConflict | null>(null)
   const [mapsProvider] = useMapsProvider()
+  const isOwner = place ? place.owner.id === me.id : false
 
   useEffect(() => {
     if (!place) {
@@ -147,6 +159,57 @@ export function PlacePage() {
     )
   }
 
+  const setVisibility = (visibility: "private" | "household") => {
+    setShareBusy(true)
+    setShareError(null)
+    setShareConflict(null)
+    void api((c) => c.places.setVisibility({ params: { id }, payload: { visibility } })).then(
+      (next) => {
+        setData(next)
+        setShareBusy(false)
+      },
+      (cause: unknown) => {
+        setShareBusy(false)
+        if (isTagged(cause, "HouseholdPlaceConflict")) {
+          const conflict = cause as {
+            existingPlaceId: string
+            existingName: string
+            owner: { name: string }
+          }
+          setShareConflict({
+            existingPlaceId: conflict.existingPlaceId,
+            existingName: conflict.existingName,
+            ownerName: conflict.owner.name,
+          })
+          return
+        }
+        setShareError(errorMessage(cause))
+      },
+    )
+  }
+
+  const resolveConflict = async (copyFields: boolean) => {
+    if (!shareConflict) return
+    setShareBusy(true)
+    setShareError(null)
+    try {
+      if (copyFields) {
+        await api((c) =>
+          c.places.copyInto({
+            params: { id, targetId: shareConflict.existingPlaceId },
+            payload: { notes: true, status: true, customFields: true },
+          }),
+        )
+      }
+      setShareConflict(null)
+      navigate(`/places/${shareConflict.existingPlaceId}`, { replace: true })
+    } catch (cause) {
+      setShareError(errorMessage(cause))
+    } finally {
+      setShareBusy(false)
+    }
+  }
+
   if (error) {
     return (
       <div className="flex flex-col items-start gap-4 pb-8">
@@ -193,6 +256,53 @@ export function PlacePage() {
 
       <PlaceHero place={place} Icon={Icon} />
 
+      {me.householdEnabled && !isOwner && place.visibility === "household" ? (
+        <Alert>
+          <AlertDescription>Shared by {place.owner.name}. You can view and add photos.</AlertDescription>
+        </Alert>
+      ) : null}
+      {me.householdEnabled && isOwner && place.visibility === "household" ? (
+        <Alert>
+          <AlertDescription>Shared with the household.</AlertDescription>
+        </Alert>
+      ) : null}
+      <ErrorAlert message={shareError} />
+      {shareConflict ? (
+        <Alert>
+          <AlertDescription className="flex flex-col gap-3">
+            <span>
+              {shareConflict.ownerName} already shared {shareConflict.existingName} with the
+              household. There is no automatic merge.
+            </span>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                disabled={shareBusy}
+                onClick={() => void resolveConflict(false)}
+              >
+                Use household place
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={shareBusy}
+                onClick={() => void resolveConflict(true)}
+              >
+                Copy empty fields, then open
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={shareBusy}
+                onClick={() => setShareConflict(null)}
+              >
+                Keep mine private
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex min-w-0">
           <Button asChild className="min-h-11 rounded-r-none sm:min-h-8">
@@ -236,7 +346,7 @@ export function PlacePage() {
                   </a>
                 </DropdownMenuItem>
               ))}
-              {place.googlePlaceId ? (
+              {isOwner && place.googlePlaceId ? (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -269,15 +379,30 @@ export function PlacePage() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          className="min-h-11 sm:min-h-8"
-          onClick={() => setEditing((v) => !v)}
-          aria-expanded={editing}
-        >
-          {editing ? "Close edit" : "Edit"}
-        </Button>
+        {me.householdEnabled && isOwner ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-11 sm:min-h-8"
+            disabled={shareBusy}
+            onClick={() =>
+              setVisibility(place.visibility === "household" ? "private" : "household")
+            }
+          >
+            {place.visibility === "household" ? "Unshare" : "Share with household"}
+          </Button>
+        ) : null}
+        {isOwner ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-11 sm:min-h-8"
+            onClick={() => setEditing((v) => !v)}
+            aria-expanded={editing}
+          >
+            {editing ? "Close edit" : "Edit"}
+          </Button>
+        ) : null}
       </div>
       {refreshing ? (
         <Alert aria-live="polite">
@@ -299,7 +424,7 @@ export function PlacePage() {
       ) : null}
       <ErrorAlert message={refreshError} />
 
-      {editing ? (
+      {editing && isOwner ? (
         <EditPlace
           place={place}
           lists={lists ?? []}
@@ -316,6 +441,7 @@ export function PlacePage() {
 
       <PlaceCustomFieldsSection
         place={place}
+        readOnly={!isOwner}
         onChanged={(next) => {
           setData(next)
         }}
@@ -337,9 +463,18 @@ export function PlacePage() {
             {DateTime.formatLocal(place.createdAt, { dateStyle: "medium" })} ·{" "}
             {sourceLabels[place.source]}
           </dd>
+          {me.householdEnabled ? (
+            <>
+              <dt className="text-muted-foreground">Owner</dt>
+              <dd>{place.owner.name}</dd>
+              <dt className="text-muted-foreground">Visibility</dt>
+              <dd>{place.visibility === "household" ? "Household" : "Private"}</dd>
+            </>
+          ) : null}
         </dl>
       </details>
 
+      {isOwner ? (
       <div className="flex flex-col items-start gap-3 border-t pt-6 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <ErrorAlert message={removeError} />
         {confirming ? (
@@ -375,6 +510,7 @@ export function PlacePage() {
           </Button>
         )}
       </div>
+      ) : null}
     </article>
   )
 }

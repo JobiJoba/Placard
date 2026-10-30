@@ -1,4 +1,4 @@
-import { type Me, Me as MeSchema } from "@placard/domain"
+import { DistanceUnit, type Me, UserRole } from "@placard/domain"
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { APIError } from "better-auth/api"
@@ -12,7 +12,23 @@ import { accounts, sessions, users, verifications } from "../db/schema.ts"
 
 export const AUTH_BASE_PATH = "/api/auth"
 
-const decodeMe = Schema.decodeUnknownEffect(MeSchema)
+/** Better Auth session user fields (household flag is attached in AuthenticationLive). */
+export type SessionUser = {
+  readonly id: string
+  readonly name: string
+  readonly email: string
+  readonly role: Me["role"]
+  readonly distanceUnit: Me["distanceUnit"]
+}
+
+const SessionUserSchema = Schema.Struct({
+  id: Schema.String,
+  name: Schema.String,
+  email: Schema.String,
+  role: UserRole,
+  distanceUnit: DistanceUnit,
+})
+const decodeSessionUser = Schema.decodeUnknownEffect(SessionUserSchema)
 
 const inviteTokenFrom = (context: { readonly body?: unknown } | null): string | undefined => {
   const body = context?.body
@@ -26,7 +42,7 @@ export class Auth extends Context.Service<
   Auth,
   {
     readonly handler: (request: Request) => Promise<Response>
-    readonly currentUser: (headers: Headers) => Effect.Effect<Option.Option<Me>>
+    readonly currentUser: (headers: Headers) => Effect.Effect<Option.Option<SessionUser>>
   }
 >()("placard/Auth") {
   static readonly layer = Layer.effect(
@@ -94,7 +110,9 @@ export class Auth extends Context.Service<
         currentUser: (headers) =>
           Effect.tryPromise(() => auth.api.getSession({ headers })).pipe(
             Effect.flatMap((session) =>
-              session ? decodeMe(session.user).pipe(Effect.map(Option.some)) : Effect.succeedNone,
+              session
+                ? decodeSessionUser(session.user).pipe(Effect.map(Option.some))
+                : Effect.succeedNone,
             ),
             Effect.orDie,
           ),

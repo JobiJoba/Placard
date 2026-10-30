@@ -6,9 +6,14 @@ export const openWhenValues = ["now", "tonight"] as const
 export const OpenWhen = Schema.Literals(openWhenValues)
 export type OpenWhen = typeof OpenWhen.Type
 
+export const householdScopes = ["all", "mine", "shared"] as const
+export const HouseholdScope = Schema.Literals(householdScopes)
+export type HouseholdScope = typeof HouseholdScope.Type
+
 /**
  * Structured library search. All fields combine (AND). Shared by UI, API, and MCP.
  * `near` + `radiusKm` together mean "within N km of this point"; either alone is ignored.
+ * `householdScope` / `sharedBy` only apply when household mode is on (ignored otherwise).
  */
 export const SearchFilter = Schema.Struct({
   text: Schema.optional(Schema.Trim.pipe(Schema.check(Schema.isBetweenLength(1, 200)))),
@@ -24,6 +29,10 @@ export const SearchFilter = Schema.Struct({
   tag: Schema.optional(Schema.String),
   list: Schema.optional(Schema.String),
   status: Schema.optional(PlaceStatus),
+  /** Ownership filter; default `all` when omitted. */
+  householdScope: Schema.optional(HouseholdScope),
+  /** Further narrow to places owned by this member (AND with householdScope). */
+  sharedBy: Schema.optional(Schema.String),
 })
 export type SearchFilter = typeof SearchFilter.Type
 

@@ -152,6 +152,7 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("accounts", (it) =
     run(async (app) => {
       expect((await admin.browser.get("/api/admin/settings")).body).toEqual({
         googleApiKey: { source: "none", last4: null },
+        householdEnabled: false,
         moduleUpdateCheckHours: 24,
       })
 
@@ -166,6 +167,7 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("accounts", (it) =
       })
       expect(saved.body).toEqual({
         googleApiKey: { source: "instance", last4: "9876" },
+        householdEnabled: false,
         moduleUpdateCheckHours: 24,
       })
 
@@ -179,6 +181,7 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("accounts", (it) =
       const cleared = await admin.browser.send("DELETE", "/api/admin/settings/google-api-key")
       expect(cleared.body).toEqual({
         googleApiKey: { source: "none", last4: null },
+        householdEnabled: false,
         moduleUpdateCheckHours: 24,
       })
     }),

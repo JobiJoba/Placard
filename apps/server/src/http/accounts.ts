@@ -26,12 +26,22 @@ export const MeApiLive = HttpApiBuilder.group(
   "me",
   Effect.fn(function* (handlers) {
     const users = yield* Users
+    const settings = yield* InstanceSettings
     return handlers
       .handle("get", () => CurrentUser)
       .handle("updateSettings", ({ payload }) =>
         Effect.gen(function* () {
           const me = yield* CurrentUser
-          return yield* users.setDistanceUnit(me.id, payload.distanceUnit)
+          const base = yield* users.setDistanceUnit(me.id, payload.distanceUnit)
+          const householdEnabled = yield* settings.householdEnabled
+          return { ...base, householdEnabled }
+        }),
+      )
+      .handle("householdMembers", () =>
+        Effect.gen(function* () {
+          const enabled = yield* settings.householdEnabled
+          if (!enabled) return []
+          return yield* users.householdMembers
         }),
       )
   }),
@@ -53,6 +63,9 @@ export const AdminApiLive = HttpApiBuilder.group(
       .handle("clearGoogleApiKey", () => settings.clearGoogleApiKey)
       .handle("setModuleUpdateCheckHours", ({ payload }) =>
         settings.setModuleUpdateCheckHours(payload.hours),
+      )
+      .handle("setHouseholdEnabled", ({ payload }) =>
+        settings.setHouseholdEnabled(payload.enabled),
       )
       .handle("users", () => users.list)
       .handle("invites", () => invites.list)

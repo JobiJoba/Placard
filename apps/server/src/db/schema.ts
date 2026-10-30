@@ -128,6 +128,8 @@ export const instanceSettings = pgTable(
     id: integer("id").primaryKey().default(1),
     googleApiKey: text("google_api_key"),
     signupOpen: boolean("signup_open").notNull().default(true),
+    /** When true, members can share places with the household (visibility=household). */
+    householdEnabled: boolean("household_enabled").notNull().default(false),
     /** Hours between GitHub plugin update checks; 0 disables automatic checks. */
     moduleUpdateCheckHours: integer("module_update_check_hours").notNull().default(24),
     updatedAt: timestamp("updated_at", { withTimezone: true })
@@ -172,7 +174,7 @@ export const places = pgTable(
     ...timestamps,
   },
   (table) => [
-    check("places_visibility_check", sql`${table.visibility} in ('private')`),
+    check("places_visibility_check", sql`${table.visibility} in ('private', 'household')`),
     check("places_category_check", sql`${table.category} in ${inList(placeCategories)}`),
     check("places_source_check", sql`${table.source} in ${inList(placeSources)}`),
     check("places_status_check", sql`${table.status} in ${inList(placeStatuses)}`),
@@ -186,6 +188,11 @@ export const places = pgTable(
     uniqueIndex("places_owner_google_place_id_idx")
       .on(table.ownerId, table.googlePlaceId)
       .where(sql`${table.googlePlaceId} is not null and ${table.deletedAt} is null`),
+    uniqueIndex("places_household_google_place_id_idx")
+      .on(table.googlePlaceId)
+      .where(
+        sql`${table.googlePlaceId} is not null and ${table.visibility} = 'household' and ${table.deletedAt} is null`,
+      ),
   ],
 )
 

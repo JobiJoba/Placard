@@ -77,7 +77,8 @@ mvp.md originally parked “third-party modules / SDK / manifest” under Later 
 
 | Item | Notes |
 | --- | --- |
-| Household shared/private + dinner **vote** | Visibility column exists; only `private` is allowed today |
+| Dinner **vote** module | Needs household (admin toggle + place sharing **shipped**) |
+| Household shared/private places | **Shipped** — admin toggle, `visibility=household`, claim-first conflict, library ownership filters |
 | Per-member Google key | Instance key only |
 | One-click backup UI | Documented `pg_dump` + volumes for now |
 | OSM enrichment / NL search / native apps / OIDC | Unchanged from mvp Out |

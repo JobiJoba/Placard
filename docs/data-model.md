@@ -8,8 +8,8 @@ Migrations live under `apps/server/drizzle/`. Phases 0–10 have added the full 
 
 - **IDs**: text, generated in the app (UUIDv7, so they sort by creation time). Better Auth also uses text IDs.
 - **Timestamps**: `timestamptz`, stored in UTC. `created_at` and `updated_at` on every table.
-- **Ownership**: every user-owned row has `owner_id → users.id`. Queries always filter by owner (or, later, by household membership).
-- **Visibility**: user-owned content carries `visibility` (`private` now; `household` arrives in v0.2). This keeps household from needing a migration on every table.
+- **Ownership**: every user-owned row has `owner_id → users.id`. Place reads filter by owner or (when household mode is on) `visibility = household`.
+- **Visibility**: places carry `visibility` (`private` \| `household`). Lists still `private` only until a follow-up.
 - **Soft delete**: places carry `deleted_at`. Rows with `deleted_at` set are hidden everywhere except "Recently deleted"; a job purges them after 30 days.
 - **Distances**: stored in metres, converted to km or miles only for display.
 - **Geo**: `geography(Point, 4326)` with a GiST index.
@@ -77,6 +77,7 @@ A single row (`id = 1`).
 | --- | --- | --- |
 | `google_api_key` | text null | Overrides the `GOOGLE_MAPS_API_KEY` env var when set |
 | `signup_open` | boolean | true until the first user exists; the first signup flips it atomically. Seeded by the migration (false if users already exist) |
+| `household_enabled` | boolean | Admin toggle; default false. Gates share UI and household library filters |
 | `updated_at` | timestamptz | |
 
 ### `places` (Phase 2)
@@ -85,7 +86,7 @@ A single row (`id = 1`).
 | --- | --- | --- |
 | `id` | text PK | |
 | `owner_id` | text FK users | |
-| `visibility` | text | `private` |
+| `visibility` | text | `private` \| `household` |
 | `name` | text | Current display name (manual override wins) |
 | `category` | text | `restaurant`, `cafe`, `bar`, `park`, `museum`, `cinema`, `hotel`, `trail`, `other` |
 | `location` | geography(Point) | Null only for unresolved import entries that were kept |
@@ -100,7 +101,7 @@ A single row (`id = 1`).
 | `deleted_at` | timestamptz null | Soft delete |
 | `created_at`, `updated_at` | timestamptz | |
 
-Indexes: GiST on `location`; unique `(owner_id, google_place_id)` where not null and not deleted; trigram on `name`; `(owner_id, deleted_at)`.
+Indexes: GiST on `location`; unique `(owner_id, google_place_id)` where not null and not deleted; unique `google_place_id` where `visibility = household` and not deleted (one household card per Google place); trigram on `name`; `(owner_id, deleted_at)`.
 
 ### `place_facts` (Phase 4)
 

@@ -10,6 +10,7 @@ import {
 import { Clock, Context, DateTime, Effect, Layer } from "effect"
 import { SqlClient } from "effect/sql"
 import { v7 as uuidv7 } from "uuid"
+import { InstanceSettings } from "../settings/instance-settings.ts"
 
 const TOKEN_PREFIX = "plc_"
 
@@ -72,6 +73,7 @@ export class Tokens extends Context.Service<
     Tokens,
     Effect.gen(function* () {
       const sql = yield* SqlClient.SqlClient
+      const settings = yield* InstanceSettings
 
       return Tokens.of({
         list: Effect.fn("Tokens.list")(function* (ownerId) {
@@ -135,6 +137,7 @@ export class Tokens extends Context.Service<
           if (!row) {
             return yield* new Unauthorized({ message: "Invalid or revoked access token." })
           }
+          const householdEnabled = yield* settings.householdEnabled
           return {
             tokenId: row.id,
             user: {
@@ -143,6 +146,7 @@ export class Tokens extends Context.Service<
               email: row.email,
               role: row.role,
               distanceUnit: row.distance_unit,
+              householdEnabled,
             },
           }
         }),

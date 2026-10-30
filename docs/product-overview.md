@@ -14,9 +14,9 @@ Deploy: [deployment.md](deployment.md).
 | Mode | Status | Who | What you see |
 | --- | --- | --- | --- |
 | **Solo chrome** (default) | **Shipped** | Multi-user accounts; each private library | Library, tags, lists, enrichment, **search**, dish photos, **MCP**, optional Marketplace modules (e.g. Pick). No voting chrome. |
-| **Household** (opt-in) | **Planned (v0.2)** | Multiple full members; **admin invites only** | Shared *and* **private** places; dinner **votes** (in-app only); optional dish attribution. No guest/kid seats. |
+| **Household** (opt-in) | **Partial (v0.2)** | Multiple full members; **admin invites** + **admin household toggle** | Shared *and* **private** places; library ownership filters; claim-first share conflicts. Dinner **votes** still later. No guest/kid seats. |
 
-Household will unlock features; it will not force every place to be shared. Today only `private` visibility is allowed.
+Household unlocks via the admin toggle; it does not force every place to be shared.
 
 Privacy: never public on the internet. Visibility = private to a user, or (later) shared within the household.
 

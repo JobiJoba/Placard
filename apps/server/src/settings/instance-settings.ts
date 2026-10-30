@@ -16,6 +16,8 @@ export class InstanceSettings extends Context.Service<
     readonly clearGoogleApiKey: Effect.Effect<InstanceSettingsView>
     readonly setModuleUpdateCheckHours: (hours: number) => Effect.Effect<InstanceSettingsView>
     readonly moduleUpdateCheckHours: Effect.Effect<number>
+    readonly householdEnabled: Effect.Effect<boolean>
+    readonly setHouseholdEnabled: (enabled: boolean) => Effect.Effect<InstanceSettingsView>
   }
 >()("placard/InstanceSettings") {
   static readonly layer = Layer.effect(
@@ -27,10 +29,19 @@ export class InstanceSettings extends Context.Service<
 
       const settingsRow = sql<{
         google_api_key: string | null
+        household_enabled: boolean
         module_update_check_hours: number
       }>`
-        select google_api_key, module_update_check_hours from instance_settings where id = 1`.pipe(
-        Effect.map((rows) => rows[0] ?? { google_api_key: null, module_update_check_hours: 24 }),
+        select google_api_key, household_enabled, module_update_check_hours
+        from instance_settings where id = 1`.pipe(
+        Effect.map(
+          (rows) =>
+            rows[0] ?? {
+              google_api_key: null,
+              household_enabled: false,
+              module_update_check_hours: 24,
+            },
+        ),
         Effect.orDie,
       )
 
@@ -47,6 +58,7 @@ export class InstanceSettings extends Context.Service<
               source,
               last4: Option.getOrNull(Option.map(key, (k) => k.slice(-4))),
             },
+            householdEnabled: row.household_enabled,
             moduleUpdateCheckHours: row.module_update_check_hours,
           }
         }),
@@ -84,6 +96,16 @@ export class InstanceSettings extends Context.Service<
         moduleUpdateCheckHours: settingsRow.pipe(
           Effect.map((row) => row.module_update_check_hours),
         ),
+        householdEnabled: settingsRow.pipe(Effect.map((row) => row.household_enabled)),
+        setHouseholdEnabled: Effect.fn("InstanceSettings.setHouseholdEnabled")(function* (
+          enabled,
+        ) {
+          yield* sql`
+            update instance_settings
+            set household_enabled = ${enabled}, updated_at = now()
+            where id = 1`.pipe(Effect.orDie)
+          return yield* view
+        }),
       }
     }),
   )

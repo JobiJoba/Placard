@@ -15,8 +15,9 @@ Resolved choices from product discussion. Update this file when something change
 | --- | --- |
 | **Privacy** | Private to the instance only. No public share pages. |
 | **Auth** | **Multi-user accounts from day one** (not “single password forever”). Solo use still feels simple; accounts are there when needed. |
-| **Single user vs household** | Solo is the default chrome. Household features unlock when a household is set up. |
-| **Household library** | **Both** shared and private: members can keep private places; household can also share lists/places. |
+| **Single user vs household** | Solo is the default chrome. Household unlocks via an **admin toggle** (Settings → People), not automatically when a second member joins. |
+| **Household library** | **Both** shared and private: members keep private places; owners can set place `visibility` to `household`. One household card per `google_place_id` (claim-first; no silent merge). |
+| **Shared place edits** | Owner edits core fields / unshares / deletes. Other members can view and add dish photos. |
 | **Invites** | **Admin only** can invite/remove members. |
 | **Votes** | **In-app only** for now (no guest couch links). |
 | **Kids / guests** | **No** lightweight guest or kid accounts. Full members only. |

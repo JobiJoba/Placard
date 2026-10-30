@@ -30,6 +30,8 @@ const saved: Place = {
   status: null,
   notes: null,
   source: "autocomplete",
+  visibility: "private",
+  owner: { id: "user-1", name: "Ada" },
   editedFields: [],
   tags: [],
   listIds: [],
@@ -74,6 +76,8 @@ const OneSavedPlace = Layer.succeed(
     removeCustomField: unused,
     listExpiredDeleted: Effect.succeed([]),
     purgeExpired: Effect.succeed(0),
+    setVisibility: unused,
+    copyInto: unused,
   }),
 )
 
@@ -110,6 +114,7 @@ const SignedIn = Layer.mergeAll(
         email: "ada@example.com",
         role: "member",
         distanceUnit: "km",
+        householdEnabled: false,
       }),
     ),
   ),
@@ -127,6 +132,8 @@ const Settings = Layer.succeed(InstanceSettings, {
   clearGoogleApiKey: Effect.die("not under test"),
   setModuleUpdateCheckHours: () => Effect.die("not under test"),
   moduleUpdateCheckHours: Effect.succeed(24),
+  householdEnabled: Effect.succeed(false),
+  setHouseholdEnabled: () => Effect.die("not under test"),
 })
 
 const StubEnrichment = Layer.succeed(

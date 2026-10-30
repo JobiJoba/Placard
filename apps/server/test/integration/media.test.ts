@@ -1,7 +1,7 @@
 import { access } from "node:fs/promises"
 import { join } from "node:path"
 import { expect, layer } from "@effect/vitest"
-import { Duration, Effect, Layer } from "effect"
+import { Duration, Effect, Layer, Option } from "effect"
 import { SqlClient } from "effect/sql"
 import { TestClock } from "effect/testing"
 import { v7 as uuidv7 } from "uuid"
@@ -11,6 +11,7 @@ import { Media } from "../../src/media/media.ts"
 import { Places, PURGE_AFTER } from "../../src/places/places.ts"
 import { purgeDeletedPlaces } from "../../src/places/purge.ts"
 import { Tags } from "../../src/places/tags.ts"
+import { InstanceSettings } from "../../src/settings/instance-settings.ts"
 import { type Browser, TestApp } from "../layers/app.ts"
 import { IntegrationLayer } from "../layers/postgis.ts"
 
@@ -113,11 +114,23 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("media http", (it)
   )
 })
 
+const StubSettings = Layer.succeed(InstanceSettings, {
+  googleApiKey: Effect.succeed(Option.none()),
+  view: Effect.die("unused"),
+  setGoogleApiKey: () => Effect.die("unused"),
+  clearGoogleApiKey: Effect.die("unused"),
+  setModuleUpdateCheckHours: () => Effect.die("unused"),
+  moduleUpdateCheckHours: Effect.succeed(24),
+  householdEnabled: Effect.succeed(false),
+  setHouseholdEnabled: () => Effect.die("unused"),
+})
+
 const PurgeStack = Layer.effectDiscard(runMigrations).pipe(
   Layer.provideMerge(Media.layer),
   Layer.provideMerge(Places.layer),
   Layer.provideMerge(Tags.layer),
   Layer.provideMerge(IntegrationLayer),
+  Layer.provide(StubSettings),
 )
 
 layer(PurgeStack, { timeout: 120_000 })("media purge", (it) => {

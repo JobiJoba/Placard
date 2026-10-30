@@ -5,10 +5,12 @@ import { ErrorAlert } from "@/components/error-alert"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { api, errorMessage } from "@/lib/api"
 import { useLoad } from "@/lib/use-load"
+import { useSession } from "@/session"
 import { SettingsCard } from "./settings-card"
 
 const formatDate = (value: DateTime.Utc) =>
@@ -16,6 +18,7 @@ const formatDate = (value: DateTime.Utc) =>
 
 const loadInvites = () => api((client) => client.admin.invites())
 const loadUsers = () => api((client) => client.admin.users())
+const loadSettings = () => api((client) => client.admin.settings())
 
 const statusVariant: Record<InviteStatus, "default" | "secondary" | "outline"> = {
   pending: "default",
@@ -27,9 +30,59 @@ const statusVariant: Record<InviteStatus, "default" | "secondary" | "outline"> =
 export function SettingsPeoplePage() {
   return (
     <div className="flex flex-col gap-6">
+      <HouseholdCard />
       <InvitesCard />
       <UsersCard />
     </div>
+  )
+}
+
+function HouseholdCard() {
+  const { refresh } = useSession()
+  const { data: settings, setData, error: loadError } = useLoad(loadSettings)
+  const [error, setError] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
+
+  const toggle = async (enabled: boolean) => {
+    setPending(true)
+    setError(null)
+    try {
+      const next = await api((client) =>
+        client.admin.setHouseholdEnabled({ payload: { enabled } }),
+      )
+      setData(next)
+      await refresh()
+    } catch (cause) {
+      setError(errorMessage(cause))
+    } finally {
+      setPending(false)
+    }
+  }
+
+  return (
+    <SettingsCard
+      title="Household"
+      description="When on, members can share places with everyone on this instance. Private places stay private."
+    >
+      <div className="flex flex-col gap-3">
+        <ErrorAlert message={error ?? loadError} />
+        <label className="flex items-start gap-3 text-sm">
+          <Checkbox
+            checked={settings?.householdEnabled ?? false}
+            disabled={pending || !settings}
+            onCheckedChange={(value) => void toggle(value === true)}
+            aria-label="Enable household mode"
+            className="mt-0.5"
+          />
+          <span className="flex flex-col gap-1">
+            <span className="font-medium">Enable household mode</span>
+            <span className="text-muted-foreground">
+              Unlocks sharing, library ownership filters, and household modules later.
+            </span>
+          </span>
+        </label>
+      </div>
+    </SettingsCard>
   )
 }
 
@@ -139,7 +192,7 @@ function UsersCard() {
   return (
     <SettingsCard
       title="People"
-      description="Everyone with an account. Each has a private library."
+      description="Everyone with an account. With household mode off, each person keeps a private library."
     >
       <ErrorAlert message={error} />
       <ul className="flex flex-col divide-y">

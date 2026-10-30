@@ -15,6 +15,7 @@ import sharp from "sharp"
 import { v7 as uuidv7 } from "uuid"
 import { AppConfig } from "../config.ts"
 import { Places } from "../places/places.ts"
+import { InstanceSettings } from "../settings/instance-settings.ts"
 
 const MAX_BYTES = 15 * 1024 * 1024
 const THUMB_EDGE = 480
@@ -136,6 +137,7 @@ export class Media extends Context.Service<
     Effect.gen(function* () {
       const sql = yield* SqlClient.SqlClient
       const places = yield* Places
+      const settings = yield* InstanceSettings
       const config = yield* AppConfig
       const root = config.mediaDir
 
@@ -150,13 +152,19 @@ export class Media extends Context.Service<
           ? Effect.promise(() => unlink(abs(relative)).catch(() => undefined)).pipe(Effect.asVoid)
           : Effect.void
 
-      const requirePlace = (ownerId: string, placeId: string) =>
-        places.get(ownerId, placeId).pipe(Effect.asVoid)
+      const requireVisiblePlace = (actorId: string, placeId: string) =>
+        Effect.gen(function* () {
+          const householdEnabled = yield* settings.householdEnabled
+          return yield* places.get(actorId, placeId, householdEnabled)
+        })
 
-      const coverIdFor = (ownerId: string, placeId: string) =>
+      const requireOwnedPlace = (ownerId: string, placeId: string) =>
+        places.get(ownerId, placeId, false)
+
+      const coverIdFor = (placeId: string) =>
         sql<{ cover_media_id: string | null }>`
           select cover_media_id from places
-          where id = ${placeId} and owner_id = ${ownerId}`.pipe(
+          where id = ${placeId}`.pipe(
           Effect.map((rows) => rows[0]?.cover_media_id ?? null),
           Effect.orDie,
         )
@@ -166,11 +174,11 @@ export class Media extends Context.Service<
           update places set cover_media_id = ${mediaId}, updated_at = now()
           where id = ${placeId} and owner_id = ${ownerId}`.pipe(Effect.orDie, Effect.asVoid)
 
-      const coverIsUser = (ownerId: string, placeId: string) =>
+      const coverIsUser = (placeId: string) =>
         sql<{ origin: MediaOrigin }>`
           select m.origin from places p
           join media m on m.id = p.cover_media_id
-          where p.id = ${placeId} and p.owner_id = ${ownerId}`.pipe(
+          where p.id = ${placeId}`.pipe(
           Effect.map((rows) => rows[0]?.origin === "user"),
           Effect.orDie,
         )
@@ -179,7 +187,7 @@ export class Media extends Context.Service<
         Effect.gen(function* () {
           const next = yield* sql<{ id: string }>`
             select id from media
-            where owner_id = ${ownerId} and place_id = ${placeId}
+            where place_id = ${placeId}
             order by
               case when origin = 'user' then 0 else 1 end,
               created_at desc, id desc
@@ -268,18 +276,18 @@ export class Media extends Context.Service<
         })
 
       return Media.of({
-        list: Effect.fn("Media.list")(function* (ownerId, placeId) {
-          yield* requirePlace(ownerId, placeId)
-          const coverMediaId = yield* coverIdFor(ownerId, placeId)
+        list: Effect.fn("Media.list")(function* (actorId, placeId) {
+          yield* requireVisiblePlace(actorId, placeId)
+          const coverMediaId = yield* coverIdFor(placeId)
           const rows = yield* sql<MediaRow>`
             select ${columns} from media
-            where owner_id = ${ownerId} and place_id = ${placeId}
+            where place_id = ${placeId}
             order by created_at desc, id desc`.pipe(Effect.orDie)
           return rows.map((row) => toItem(row, coverMediaId))
         }),
 
-        upload: Effect.fn("Media.upload")(function* (ownerId, placeId, input) {
-          yield* requirePlace(ownerId, placeId)
+        upload: Effect.fn("Media.upload")(function* (actorId, placeId, input) {
+          const place = yield* requireVisiblePlace(actorId, placeId)
 
           const mime = input.mimeType.toLowerCase()
           if (!ALLOWED_MIME.has(mime)) {
@@ -299,14 +307,14 @@ export class Media extends Context.Service<
           }
 
           const id = uuidv7()
-          const written = yield* writeImageFiles(ownerId, placeId, id, bytes, mime)
+          const written = yield* writeImageFiles(actorId, placeId, id, bytes, mime)
           const caption = input.caption === undefined ? null : input.caption
           const rows = yield* sql<MediaRow>`
             insert into media (
               id, owner_id, place_id, kind, origin, path, thumb_path, mime_type, bytes,
               width, height, caption
             ) values (
-              ${id}, ${ownerId}, ${placeId}, ${input.kind}, 'user', ${written.relative},
+              ${id}, ${actorId}, ${placeId}, ${input.kind}, 'user', ${written.relative},
               ${written.thumbRelative}, ${written.mime}, ${bytes.byteLength},
               ${written.width}, ${written.height}, ${caption}
             )
@@ -314,10 +322,12 @@ export class Media extends Context.Service<
           const row = rows[0]
           if (!row) return yield* new MediaRejected({ message: "Could not save media record." })
 
-          const userCover = yield* coverIsUser(ownerId, placeId)
-          if (!userCover) yield* setCoverId(ownerId, placeId, id)
+          if (place.owner.id === actorId) {
+            const userCover = yield* coverIsUser(placeId)
+            if (!userCover) yield* setCoverId(actorId, placeId, id)
+          }
 
-          const coverMediaId = yield* coverIdFor(ownerId, placeId)
+          const coverMediaId = yield* coverIdFor(placeId)
           return toItem(row, coverMediaId)
         }),
 
@@ -328,17 +338,17 @@ export class Media extends Context.Service<
             returning ${columns}`.pipe(Effect.orDie)
           const row = rows[0]
           if (!row) return yield* new MediaNotFound()
-          const coverMediaId = yield* coverIdFor(ownerId, row.place_id)
+          const coverMediaId = yield* coverIdFor(row.place_id)
           return toItem(row, coverMediaId)
         }),
 
         setCover: Effect.fn("Media.setCover")(function* (ownerId, id) {
           const rows = yield* sql<MediaRow>`
             select ${columns} from media
-            where id = ${id} and owner_id = ${ownerId}`.pipe(Effect.orDie)
+            where id = ${id}`.pipe(Effect.orDie)
           const row = rows[0]
           if (!row) return yield* new MediaNotFound()
-          yield* requirePlace(ownerId, row.place_id)
+          yield* requireOwnedPlace(ownerId, row.place_id)
           yield* setCoverId(ownerId, row.place_id, id)
           return toItem(row, id)
         }),
@@ -359,15 +369,20 @@ export class Media extends Context.Service<
           yield* unlinkQuiet(row.path)
           yield* unlinkQuiet(row.thumb_path)
 
-          const coverMediaId = yield* coverIdFor(ownerId, existing.place_id)
-          if (coverMediaId === null) {
-            yield* reassignCover(ownerId, existing.place_id)
+          const placeOwner = yield* sql<{ owner_id: string }>`
+            select owner_id from places where id = ${existing.place_id}`.pipe(
+            Effect.map((placeRows) => placeRows[0]?.owner_id),
+            Effect.orDie,
+          )
+          const coverMediaId = yield* coverIdFor(existing.place_id)
+          if (coverMediaId === null && placeOwner) {
+            yield* reassignCover(placeOwner, existing.place_id)
           }
         }),
 
         syncGoogleCover: Effect.fn("Media.syncGoogleCover")(function* (ownerId, placeId, raw) {
-          yield* requirePlace(ownerId, placeId)
-          if (yield* coverIsUser(ownerId, placeId)) return
+          yield* requireOwnedPlace(ownerId, placeId)
+          if (yield* coverIsUser(placeId)) return
 
           const mime = sniffMime(raw) ?? "image/jpeg"
           if (!ALLOWED_MIME.has(mime)) {
@@ -405,14 +420,22 @@ export class Media extends Context.Service<
           yield* setCoverId(ownerId, placeId, id)
         }),
 
-        resolveFile: Effect.fn("Media.resolveFile")(function* (ownerId, id, which) {
+        resolveFile: Effect.fn("Media.resolveFile")(function* (actorId, id, which) {
+          const householdEnabled = yield* settings.householdEnabled
           const rows = yield* sql<{
             path: string
             thumb_path: string | null
             mime_type: string
           }>`
-            select path, thumb_path, mime_type from media
-            where id = ${id} and owner_id = ${ownerId}`.pipe(Effect.orDie)
+            select m.path, m.thumb_path, m.mime_type
+            from media m
+            join places p on p.id = m.place_id
+            where m.id = ${id}
+              and p.deleted_at is null
+              and (
+                p.owner_id = ${actorId}
+                or (${householdEnabled} and p.visibility = 'household')
+              )`.pipe(Effect.orDie)
           const row = rows[0]
           if (!row) return yield* new MediaNotFound()
           if (which === "thumb") {
