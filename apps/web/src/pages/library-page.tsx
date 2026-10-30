@@ -757,7 +757,12 @@ export function LibraryPage() {
           <Suspense
             fallback={<Skeleton className="h-[min(60vh,520px)] min-h-[280px] rounded-sm" />}
           >
-            <ResultsMap apiKey={mapsConfig.mapsApiKey} hits={hits ?? []} center={mapCenter} />
+            <ResultsMap
+              apiKey={mapsConfig.mapsApiKey}
+              hits={hits ?? []}
+              center={mapCenter}
+              distanceUnit={me.distanceUnit}
+            />
           </Suspense>
         ) : (
           <p className="text-sm text-muted-foreground">

@@ -12,7 +12,10 @@ import { useMe } from "@/session"
 const GoogleMapPicker = lazy(() => import("@/components/add/google-map-picker"))
 const PinDropper = lazy(() => import("@/components/add/pin-dropper"))
 
-const mapFallback = <Skeleton className="h-[420px] rounded-xl" />
+const mapFallback = <Skeleton className="h-[420px] rounded-md" />
+
+const tabTriggerClass =
+  "data-active:bg-[color-mix(in_srgb,var(--spine-gold)_28%,var(--parchment))] data-active:text-[var(--crate)] data-active:shadow-none"
 
 export function AddPlacePage() {
   const me = useMe()
@@ -21,10 +24,12 @@ export function AddPlacePage() {
   return (
     <section className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-semibold tracking-tight">Add a place</h1>
-        <p className="text-sm text-muted-foreground">
-          Prefer Search when you know the name. Use Pick on map for a Google place, or Drop a pin
-          for somewhere Google doesn’t list.
+        <h1 className="font-catalog text-4xl font-semibold tracking-wide uppercase sm:text-5xl">
+          Add a place
+        </h1>
+        <p className="max-w-prose text-sm text-muted-foreground">
+          Prefer Search when you know the name. Map picks a Google place; Drop pin is for spots
+          Google misses.
         </p>
       </div>
       <ErrorAlert message={error} />
@@ -32,10 +37,19 @@ export function AddPlacePage() {
         !error && mapFallback
       ) : config.mapsApiKey ? (
         <Tabs defaultValue="search" className="gap-4">
-          <TabsList>
-            <TabsTrigger value="search">Search</TabsTrigger>
-            <TabsTrigger value="map">Google place</TabsTrigger>
-            <TabsTrigger value="pin">Custom pin</TabsTrigger>
+          <TabsList className="h-auto flex-wrap bg-[color-mix(in_srgb,var(--crate)_8%,var(--parchment))]">
+            <TabsTrigger value="search" className={tabTriggerClass}>
+              Search
+            </TabsTrigger>
+            <TabsTrigger value="map" className={tabTriggerClass}>
+              Map
+            </TabsTrigger>
+            <TabsTrigger
+              value="pin"
+              className={`${tabTriggerClass} text-muted-foreground data-active:text-[var(--crate)]`}
+            >
+              Drop pin
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="search">
             <SearchAdd />
