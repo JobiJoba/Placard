@@ -263,10 +263,8 @@ code {
 
 .crate-stage {
   position: relative;
-  min-height: min(52vh, 28rem);
-  padding: 1.5rem;
   border-radius: calc(var(--radius) + 0.15rem);
-  background: linear-gradient(145deg, var(--crate-raised) 0%, var(--crate) 55%, #120f0c 100%);
+  background: var(--crate);
   box-shadow:
     0 24px 48px rgb(26 22 18 / 0.28),
     inset 0 1px 0 rgb(196 165 116 / 0.12);
@@ -274,55 +272,18 @@ code {
   animation: stage-in 0.9s ease-out both;
 }
 
-.crate-stage-glow {
-  position: absolute;
-  inset: -20% 20% auto;
-  height: 50%;
-  background: radial-gradient(ellipse, rgb(196 165 116 / 0.22), transparent 65%);
-  pointer-events: none;
+.crate-stage-shot {
+  align-self: center;
+  width: 100%;
+  line-height: 0;
+  border: 1px solid var(--crate-edge);
 }
 
-.crate-grid {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
-  height: 100%;
-}
-
-.cover {
-  position: relative;
-  aspect-ratio: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 0.65rem;
-  border-radius: 0.225rem;
-  background:
-    linear-gradient(160deg, hsl(var(--cover-hue) / 0.55), transparent 60%),
-    linear-gradient(20deg, #241e18, #3a3128);
-  box-shadow: 0 6px 14px rgb(0 0 0 / 0.35);
-  animation: cover-rise 0.65s ease-out both;
-}
-
-.cover-spine {
-  position: absolute;
-  left: 0;
-  top: 8%;
-  bottom: 8%;
-  width: 3px;
-  border-radius: 1px;
-  background: linear-gradient(180deg, var(--spine-gold), transparent 80%);
-  opacity: 0.7;
-}
-
-.cover-title {
-  font-family: var(--font-catalog);
-  font-weight: 600;
-  font-size: clamp(0.85rem, 2vw, 1.05rem);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--parchment);
+.crate-shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
 }
 
 .band {
@@ -779,21 +740,9 @@ code {
   }
 }
 
-@keyframes cover-rise {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .hero-copy,
   .crate-stage,
-  .cover,
   .docs-layout,
   .btn {
     animation: none;
