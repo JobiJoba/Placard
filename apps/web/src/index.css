@@ -33,7 +33,8 @@
   --secondary: color-mix(in srgb, var(--crate) 8%, var(--parchment));
   --secondary-foreground: var(--parchment-ink);
   --muted: color-mix(in srgb, var(--crate) 6%, var(--parchment));
-  --muted-foreground: color-mix(in srgb, var(--parchment-ink) 58%, var(--parchment));
+  /* ~4.6:1 on parchment — keep secondary text readable without going full ink */
+  --muted-foreground: color-mix(in srgb, var(--parchment-ink) 64%, var(--parchment));
   --accent: color-mix(in srgb, var(--spine-gold) 22%, var(--parchment));
   --accent-foreground: var(--parchment-ink);
   --destructive: #9b2c1f;
@@ -145,16 +146,19 @@ body {
   letter-spacing: 0.01em;
 }
 
+/* Light marks on dark crate covers — ink marks vanish against --crate */
 .status-density-been {
-  background: var(--parchment-ink);
+  height: 0.2rem;
+  background: color-mix(in srgb, var(--parchment) 88%, var(--spine-gold));
 }
 
 .status-density-want {
+  height: 0.2rem;
   background: repeating-linear-gradient(
     -45deg,
-    var(--parchment-ink),
-    var(--parchment-ink) 1px,
-    transparent 1px,
+    color-mix(in srgb, var(--parchment) 85%, var(--spine-gold)),
+    color-mix(in srgb, var(--parchment) 85%, var(--spine-gold)) 1.5px,
+    transparent 1.5px,
     transparent 4px
   );
 }
@@ -205,13 +209,10 @@ body {
 
 @media (hover: hover) and (pointer: fine) {
   .place-cover {
-    transition:
-      box-shadow 160ms ease-out,
-      transform 160ms ease-out;
+    transition: box-shadow 160ms ease-out;
   }
 
   .place-cover:hover {
-    transform: scale(1.02);
     box-shadow:
       0 6px 18px color-mix(in srgb, var(--crate) 22%, transparent),
       0 0 0 1px color-mix(in srgb, var(--spine-gold) 35%, transparent);
@@ -221,9 +222,5 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .place-cover {
     transition: none;
-  }
-
-  .place-cover:hover {
-    transform: none;
   }
 }

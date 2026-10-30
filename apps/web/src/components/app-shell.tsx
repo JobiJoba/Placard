@@ -79,7 +79,7 @@ export function AppShell({ modules }: { readonly modules: ReadonlyArray<MyModule
             >
               Placard
             </Link>
-            <nav className="hidden gap-1 md:flex" aria-label="Main">
+            <nav className="hidden items-center gap-1 md:flex" aria-label="Main">
               {corePrimary.map((item) => (
                 <NavLink
                   key={item.to}
@@ -95,16 +95,31 @@ export function AppShell({ modules }: { readonly modules: ReadonlyArray<MyModule
                   {item.label}
                 </NavLink>
               ))}
-              {more.map((item) => (
-                <NavLink key={item.to} to={item.to} className={navLink}>
-                  {item.label}
-                </NavLink>
-              ))}
-              {morePlugins.map((item) => (
-                <NavLink key={item.to} to={item.to} className={navLink}>
-                  {item.label}
-                </NavLink>
-              ))}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto rounded-sm px-2.5 py-1.5 text-sm font-normal text-[color-mix(in_srgb,var(--parchment)_72%,transparent)] hover:bg-transparent hover:text-[var(--parchment)]"
+                  >
+                    More
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="min-w-48">
+                  {more.map((item) => (
+                    <DropdownMenuItem key={item.to} asChild>
+                      <Link to={item.to}>{item.label}</Link>
+                    </DropdownMenuItem>
+                  ))}
+                  {morePlugins.length > 0 ? <DropdownMenuSeparator /> : null}
+                  {morePlugins.map((item) => (
+                    <DropdownMenuItem key={item.to} asChild>
+                      <Link to={item.to}>{item.label}</Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </nav>
           </div>
           <div className="flex items-center gap-2">
@@ -184,7 +199,7 @@ export function AppShell({ modules }: { readonly modules: ReadonlyArray<MyModule
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-6 pb-24 sm:px-6 sm:py-8 md:pb-16">
+      <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-8 md:pb-16">
         <Outlet />
       </main>
       <nav

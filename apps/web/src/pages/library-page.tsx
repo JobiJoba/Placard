@@ -36,6 +36,13 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { api, errorMessage } from "@/lib/api"
 import { requestLocation } from "@/lib/geolocation"
+import {
+  isLibraryScope,
+  type LibraryScope,
+  type LibraryView,
+  readLibraryBrowsePrefs,
+  writeLibraryBrowsePrefs,
+} from "@/lib/library-browse-prefs"
 import { useLibraryDensity } from "@/lib/library-density"
 import { categoryIcons, categoryLabels, formatDistance, statusLabels } from "@/lib/places"
 import { useLoad } from "@/lib/use-load"
@@ -43,7 +50,7 @@ import { useMe } from "@/session"
 
 const ResultsMap = lazy(() => import("@/components/library/results-map"))
 
-type Scope = "near" | "city" | "all"
+type Scope = LibraryScope
 
 const parseOpen = (value: string | null): OpenWhen | undefined =>
   value === "now" || value === "tonight" ? value : undefined
@@ -63,9 +70,10 @@ export function LibraryPage() {
   const status = (params.get("status") as PlaceStatus | null) ?? undefined
   const open = parseOpen(params.get("open"))
   const category = parseCategory(params.get("category"))
-  const scope = (params.get("scope") as Scope | null) ?? "all"
+  const scopeParam = params.get("scope")
+  const scope: Scope = isLibraryScope(scopeParam) ? scopeParam : "near"
   const radiusKm = Number(params.get("radius") ?? "5") || 5
-  const view = params.get("view") === "map" ? "map" : "grid"
+  const view: LibraryView = params.get("view") === "map" ? "map" : "grid"
   const cityLat = params.get("lat") ? Number(params.get("lat")) : null
   const cityLng = params.get("lng") ? Number(params.get("lng")) : null
   const cityName = params.get("city") ?? null
@@ -85,6 +93,8 @@ export function LibraryPage() {
   const [filtersOpen, setFiltersOpen] = useState(() =>
     Boolean(tag || list || status || category || open),
   )
+  const [selecting, setSelecting] = useState(false)
+  const [browsePrefsReady, setBrowsePrefsReady] = useState(false)
 
   const { data: mapsConfig } = useLoad(useCallback(() => api((c) => c.google.config()), []))
   const { data: tags } = useLoad(useCallback(() => api((c) => c.tags.list()), []))
@@ -93,6 +103,31 @@ export function LibraryPage() {
   useEffect(() => {
     setTextDraft(text)
   }, [text])
+
+  // Restore last scope + view when landing on Library without those params.
+  useEffect(() => {
+    const prefs = readLibraryBrowsePrefs()
+    const next = new URLSearchParams(params)
+    let dirty = false
+    if (!isLibraryScope(params.get("scope")) && prefs.scope !== "near") {
+      next.set("scope", prefs.scope)
+      dirty = true
+    }
+    if (params.get("view") !== "map" && params.get("view") !== "grid" && prefs.view === "map") {
+      next.set("view", "map")
+      dirty = true
+    }
+    if (dirty) setParams(next, { replace: true })
+    setBrowsePrefsReady(true)
+    // Mount-only hydrate from device prefs; URL stays source of truth afterward.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setParams])
+
+  // Remember only scope + view across visits; filters/search stay ephemeral.
+  useEffect(() => {
+    if (!browsePrefsReady) return
+    writeLibraryBrowsePrefs({ scope, view })
+  }, [browsePrefsReady, scope, view])
 
   useEffect(() => {
     const id = window.setTimeout(() => {
@@ -167,9 +202,11 @@ export function LibraryPage() {
   }, [text, tag, list, status, open, category, scope, near, radiusKm, cityLat, cityLng])
 
   const waitingForGeo = scope === "near" && !near && !geoError
+  const geoBlocked = scope === "near" && Boolean(geoError)
   const waitingForCity =
     scope === "city" && (cityLat == null || cityLng == null || Number.isNaN(cityLat))
-  const searchBlocked = waitingForGeo || waitingForCity
+  // Near me must never fall through to an unscoped library search when geo fails.
+  const searchBlocked = waitingForGeo || waitingForCity || geoBlocked
 
   const {
     data: hits,
@@ -200,6 +237,12 @@ export function LibraryPage() {
 
   const clearSelection = () => setSelected(new Set())
 
+  const exitSelecting = () => {
+    clearSelection()
+    setSelecting(false)
+    setConfirmDelete(false)
+  }
+
   const runBulk = (action: BulkAction) => {
     const placeIds = [...selected]
     if (placeIds.length === 0) return
@@ -220,10 +263,25 @@ export function LibraryPage() {
   }
 
   const clearFilters = () => {
-    setParams(new URLSearchParams(), { replace: true })
+    const next = new URLSearchParams()
+    if (scope !== "near") next.set("scope", scope)
+    if (view === "map") next.set("view", "map")
+    if (scope === "city") {
+      if (cityName) next.set("city", cityName)
+      if (cityLat != null && !Number.isNaN(cityLat)) next.set("lat", String(cityLat))
+      if (cityLng != null && !Number.isNaN(cityLng)) next.set("lng", String(cityLng))
+    }
+    if (scope !== "all") next.set("radius", String(radiusKm))
+    setParams(next, { replace: true })
     setTextDraft("")
-    setSelected(new Set())
+    exitSelecting()
     setFiltersOpen(false)
+  }
+
+  const selectAllVisible = () => {
+    if (!hits) return
+    setSelecting(true)
+    setSelected(new Set(hits.map(({ place }) => place.id)))
   }
 
   const createListAndAdd = () => {
@@ -238,10 +296,12 @@ export function LibraryPage() {
     )
   }
 
-  const hasFilters = Boolean(text || tag || list || status || open || category || scope !== "all")
+  const hasSecondaryFilters = Boolean(text || tag || list || status || open || category)
+  const hasFilters = hasSecondaryFilters || scope !== "all"
   const secondaryFilterCount = [tag, list, status, category, open].filter(Boolean).length
   const filteredEmpty = hits !== null && hits.length === 0 && hasFilters && !searchBlocked
   const mapCenter = filter.near ?? (hits?.[0] ? hits[0].place.location : null)
+  const showSelectChrome = selecting || selected.size > 0
 
   if (error) return <ErrorAlert message={error} />
   if (!hits && !searchBlocked) {
@@ -257,10 +317,9 @@ export function LibraryPage() {
   if (
     hits &&
     hits.length === 0 &&
-    !filteredEmpty &&
     !searchBlocked &&
-    scope === "all" &&
-    !hasFilters
+    !hasSecondaryFilters &&
+    scope === "all"
   ) {
     return (
       <section className="flex flex-col items-center gap-4 py-16 text-center">
@@ -293,12 +352,26 @@ export function LibraryPage() {
           <p className="text-sm text-muted-foreground">Your places — browse the crate, open one.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline">
+          {showSelectChrome ? (
+            <>
+              <Button type="button" size="sm" variant="outline" onClick={selectAllVisible}>
+                Select all
+              </Button>
+              <Button type="button" size="sm" variant="ghost" onClick={exitSelecting}>
+                Done
+              </Button>
+            </>
+          ) : (
+            <Button type="button" size="sm" variant="outline" onClick={() => setSelecting(true)}>
+              Select
+            </Button>
+          )}
+          <Button asChild size="sm" variant="outline">
             <Link to="/import">Import</Link>
           </Button>
-          <Button asChild>
+          <Button asChild size="sm" variant="outline">
             <Link to="/add">
-              <Plus /> Add place
+              <Plus /> Add
             </Link>
           </Button>
         </div>
@@ -320,7 +393,8 @@ export function LibraryPage() {
             onValueChange={(value) => {
               if (value !== "near" && value !== "city" && value !== "all") return
               const next = new URLSearchParams(params)
-              if (value === "all") next.delete("scope")
+              // Near me is the default (omit param); All must stay explicit.
+              if (value === "near") next.delete("scope")
               else next.set("scope", value)
               if (value !== "city") {
                 next.delete("lat")
@@ -417,23 +491,43 @@ export function LibraryPage() {
           </p>
         )}
         {geoError && scope === "near" && (
-          <div className="flex flex-col items-start gap-2">
+          <div className="filter-sheet flex flex-col items-start gap-3 rounded-md px-4 py-4">
             <ErrorAlert message={geoError} />
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={geoLoading}
-              onClick={() => {
-                setNear(null)
-                setGeoAttempt((n) => n + 1)
-              }}
-            >
-              {geoLoading ? "Locating…" : "Try again"}
-            </Button>
+            <p className="text-sm text-muted-foreground">
+              Near me needs a location. Nothing from your full library is shown until we can place
+              you — try again, or switch to City / All.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={geoLoading}
+                onClick={() => {
+                  setNear(null)
+                  setGeoAttempt((n) => n + 1)
+                }}
+              >
+                {geoLoading ? "Locating…" : "Try again"}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  const next = new URLSearchParams(params)
+                  next.set("scope", "all")
+                  setParams(next, { replace: true })
+                }}
+              >
+                Show all places
+              </Button>
+            </div>
           </div>
         )}
         {filtersOpen && (
           <div className="filter-sheet flex flex-col gap-2 rounded-md p-3">
+            <p className="text-xs text-muted-foreground">
+              Cover marks: solid bar = been there · hatch = want to go
+            </p>
             <ToggleGroup
               type="single"
               variant="outline"
@@ -465,7 +559,7 @@ export function LibraryPage() {
       </div>
 
       {view === "grid" && selected.size > 0 && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl bg-muted/50 p-3">
+        <div className="filter-sheet flex flex-wrap items-center gap-2 rounded-md p-3">
           <span className="text-sm font-medium">{selected.size} selected</span>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -581,8 +675,8 @@ export function LibraryPage() {
               <Trash2 aria-hidden /> Delete
             </Button>
           )}
-          <Button size="sm" variant="ghost" onClick={clearSelection}>
-            Clear
+          <Button size="sm" variant="ghost" onClick={exitSelecting}>
+            Done
           </Button>
         </div>
       )}
@@ -592,7 +686,13 @@ export function LibraryPage() {
       {!searchBlocked && hits && (
         <p className="text-sm text-muted-foreground">
           {hits.length} place{hits.length === 1 ? "" : "s"}
-          {hasFilters ? " match" : ""}
+          {scope === "near" && !hasSecondaryFilters
+            ? " nearby"
+            : scope === "city" && !hasSecondaryFilters
+              ? " in this city"
+              : hasSecondaryFilters
+                ? " match"
+                : ""}
         </p>
       )}
 
@@ -602,10 +702,34 @@ export function LibraryPage() {
             <Skeleton key={i} className="aspect-square rounded-sm" />
           ))}
         </div>
-      ) : waitingForCity ? (
+      ) : geoBlocked ? null : waitingForCity ? (
         <p className="text-sm text-muted-foreground">
           Pick a city center above to search within {radiusKm} km.
         </p>
+      ) : filteredEmpty && !hasSecondaryFilters && scope === "near" ? (
+        <div className="filter-sheet flex flex-col items-start gap-3 rounded-md px-4 py-6">
+          <p className="text-sm text-muted-foreground">
+            Nothing within {radiusKm} km of you. Widen the radius or browse the whole crate.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                const next = new URLSearchParams(params)
+                next.set("scope", "all")
+                setParams(next, { replace: true })
+              }}
+            >
+              Show all places
+            </Button>
+            <Button size="sm" asChild variant="outline">
+              <Link to="/add">
+                <Plus /> Add place
+              </Link>
+            </Button>
+          </div>
+        </div>
       ) : filteredEmpty ? (
         <div className="filter-sheet flex flex-col items-start gap-3 rounded-md px-4 py-6">
           <p className="text-sm text-muted-foreground">No places match these filters.</p>
@@ -613,7 +737,7 @@ export function LibraryPage() {
             <Button size="sm" variant="outline" onClick={clearFilters}>
               Clear filters
             </Button>
-            <Button size="sm" asChild>
+            <Button size="sm" asChild variant="outline">
               <Link to="/add">
                 <Plus /> Add place
               </Link>
@@ -644,6 +768,7 @@ export function LibraryPage() {
                 place={place}
                 distanceMeters={distanceMeters}
                 distanceUnit={me.distanceUnit}
+                selecting={showSelectChrome}
                 selected={selected.has(place.id)}
                 onToggle={() => toggle(place.id)}
               />
@@ -980,21 +1105,44 @@ const sleeveTone: Record<PlaceCategory, string> = {
   other: "oklch(0.7 0.03 70)",
 }
 
+/** Short place line for covers — city/area, not the full postal wall. */
+const coverLocality = (address: string | null): string | null => {
+  if (!address) return null
+  const parts = address
+    .split(",")
+    .map((p) =>
+      p
+        .replace(/\b\d{3}-\d{4}\b/g, "")
+        .replace(/\b\d{4,6}\b/g, "")
+        .replace(/^[-\s]+|[-\s]+$/g, "")
+        .replace(/\s+/g, " ")
+        .trim(),
+    )
+    .filter(Boolean)
+  if (parts.length === 0) return null
+  const line = (parts.length === 1 ? parts[0] : parts.slice(-2).join(", ")) ?? null
+  if (!line) return null
+  return line.length > 42 ? `${line.slice(0, 40).trimEnd()}…` : line
+}
+
 function PlaceCard({
   place,
   distanceMeters,
   distanceUnit,
+  selecting,
   selected,
   onToggle,
 }: {
   readonly place: Place
   readonly distanceMeters: number | null
   readonly distanceUnit: "km" | "mi"
+  readonly selecting: boolean
   readonly selected: boolean
   readonly onToggle: () => void
 }) {
   const Icon = categoryIcons[place.category]
   const coverSrc = place.coverThumbUrl
+  const locality = coverLocality(place.address)
   return (
     <article
       className={`place-cover relative aspect-square h-full overflow-hidden rounded-sm bg-[var(--crate)] text-[var(--parchment)] ${
@@ -1032,25 +1180,30 @@ function PlaceCard({
       {place.status && (
         <span
           role="img"
-          className={`absolute top-0 left-0 z-[1] h-1.5 w-full ${
+          className={`absolute top-0 left-0 z-[1] w-full ${
             place.status === "been_there" ? "status-density-been" : "status-density-want"
           }`}
           aria-label={statusLabels[place.status]}
+          title={statusLabels[place.status]}
         />
       )}
-      <div className="cover-check absolute top-2 right-2 z-10">
-        <Checkbox
-          checked={selected}
-          onCheckedChange={onToggle}
-          aria-label={`Select ${place.name}`}
-          className="border-[var(--parchment)] data-[state=checked]:bg-[var(--action)] data-[state=checked]:text-[var(--action-fg)]"
-        />
-      </div>
+      {selecting ? (
+        <div className="cover-check absolute top-2 right-2 z-10">
+          <Checkbox
+            checked={selected}
+            onCheckedChange={onToggle}
+            aria-label={`Select ${place.name}`}
+            className="border-[var(--parchment)] data-[state=checked]:bg-[var(--action)] data-[state=checked]:text-[var(--action-fg)]"
+          />
+        </div>
+      ) : null}
       <Link
         to={`/places/${place.id}`}
-        className="cover-face relative z-[1] flex h-full flex-col justify-between gap-2 p-3 pr-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spine-gold)]"
+        className={`cover-face relative z-[1] flex h-full flex-col justify-between gap-2 p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spine-gold)] ${
+          selecting ? "pr-9" : ""
+        }`}
       >
-        <div className="cover-meta flex items-center gap-1.5 text-[0.65rem] font-medium tracking-wide text-[var(--parchment)] uppercase [text-shadow:0_1px_2px_rgb(26_22_18_/_70%)]">
+        <div className="cover-meta flex items-center gap-1.5 text-xs font-medium tracking-wide text-[var(--parchment)] uppercase [text-shadow:0_1px_2px_rgb(26_22_18_/_70%)]">
           <Icon className="size-3.5 shrink-0" aria-hidden />
           <span className="truncate">{categoryLabels[place.category]}</span>
           {distanceMeters != null && (
@@ -1063,11 +1216,11 @@ function PlaceCard({
           <h2 className="cover-title font-catalog text-xl font-semibold leading-tight tracking-wide uppercase">
             {place.name}
           </h2>
-          {place.address && (
-            <p className="cover-address line-clamp-2 text-xs text-[color-mix(in_srgb,var(--parchment)_70%,transparent)]">
-              {place.address}
+          {locality ? (
+            <p className="cover-address line-clamp-1 text-xs text-[color-mix(in_srgb,var(--parchment)_78%,transparent)]">
+              {locality}
             </p>
-          )}
+          ) : null}
           {(place.facts.cuisine || place.facts.rating != null) && (
             <p className="cover-meta text-xs text-[color-mix(in_srgb,var(--spine-gold)_90%,white)]">
               {[
