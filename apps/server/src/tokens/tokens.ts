@@ -41,6 +41,7 @@ const toToken = (row: TokenRow): ApiToken => ({
 
 interface AuthRow extends TokenRow {
   readonly user_name: string
+  readonly image: string | null
 }
 
 /** Personal access tokens for MCP bearer auth. */
@@ -129,7 +130,7 @@ export class Tokens extends Context.Service<
           const tokenHash = hashToken(secret)
           const rows = yield* sql<AuthRow>`
             select t.id, t.owner_id, t.name, t.token_hash, t.last_used_at, t.revoked_at, t.created_at,
-                   u.role, u.email, u.distance_unit, u.name as user_name
+                   u.role, u.email, u.distance_unit, u.image, u.name as user_name
             from api_tokens t
             join users u on u.id = t.owner_id
             where t.token_hash = ${tokenHash} and t.revoked_at is null`.pipe(Effect.orDie)
@@ -146,6 +147,7 @@ export class Tokens extends Context.Service<
               email: row.email,
               role: row.role,
               distanceUnit: row.distance_unit,
+              image: row.image,
               householdEnabled,
             },
           }

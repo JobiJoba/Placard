@@ -114,6 +114,7 @@ const SignedIn = Layer.mergeAll(
         email: "ada@example.com",
         role: "member",
         distanceUnit: "km",
+        image: null,
         householdEnabled: false,
       }),
     ),

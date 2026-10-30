@@ -148,6 +148,50 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("accounts", (it) =
     }),
   )
 
+  it.effect("a user can change their name and avatar", () =>
+    run(async () => {
+      const renamed = await member.browser.send("PATCH", "/api/me/profile", { name: "Robert" })
+      expect(renamed.status).toBe(200)
+      expect(renamed.body).toMatchObject({
+        email: "bob@example.com",
+        name: "Robert",
+        image: null,
+      })
+      expect((await member.browser.get("/api/me")).body.name).toBe("Robert")
+      expect((await admin.browser.get("/api/admin/users")).body).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ email: "bob@example.com", name: "Robert" }),
+        ]),
+      )
+
+      const empty = await member.browser.send("PATCH", "/api/me/profile", { name: "   " })
+      expect(empty.status).toBe(400)
+
+      // 1×1 PNG
+      const png = Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+        "base64",
+      )
+      const uploaded = await member.browser.send("PUT", "/api/me/avatar", {
+        filename: "dot.png",
+        mimeType: "image/png",
+        contentBase64: png.toString("base64"),
+      })
+      expect(uploaded.status).toBe(200)
+      expect(uploaded.body.image).toBe(`/api/avatars/${uploaded.body.id}`)
+      const served = await member.browser.getRaw(uploaded.body.image)
+      expect(served.status).toBe(200)
+      expect(served.contentType).toMatch(/image\/webp/)
+      expect(served.body.byteLength).toBeGreaterThan(0)
+      expect((await admin.browser.getRaw(uploaded.body.image)).status).toBe(200)
+
+      const userId = uploaded.body.id as string
+      const cleared = await member.browser.send("DELETE", "/api/me/avatar")
+      expect(cleared.body.image).toBeNull()
+      expect((await member.browser.getRaw(`/api/avatars/${userId}`)).status).toBe(404)
+    }),
+  )
+
   it.effect("the Google key is tested before it is saved", () =>
     run(async (app) => {
       expect((await admin.browser.get("/api/admin/settings")).body).toEqual({

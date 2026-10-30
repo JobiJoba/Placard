@@ -3,6 +3,7 @@ import { HttpApi, HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/http-api
 import {
   AdminAuthentication,
   Authentication,
+  AvatarUpload,
   CreatedInvite,
   DistanceUnit,
   Email,
@@ -16,6 +17,7 @@ import {
   InviteNotFound,
   Me,
   ModuleUpdateCheckHoursUpdate,
+  ProfileUpdate,
   SetupStatus,
   UserSummary,
 } from "./accounts.ts"
@@ -130,6 +132,16 @@ export class MeApi extends HttpApiGroup.make("me")
       payload: Schema.Struct({ distanceUnit: DistanceUnit }),
       success: Me,
     }),
+    HttpApiEndpoint.patch("updateProfile", "/api/me/profile", {
+      payload: ProfileUpdate,
+      success: Me,
+    }),
+    HttpApiEndpoint.put("setAvatar", "/api/me/avatar", {
+      payload: AvatarUpload,
+      success: Me,
+      error: MediaRejected,
+    }),
+    HttpApiEndpoint.delete("clearAvatar", "/api/me/avatar", { success: Me }),
     HttpApiEndpoint.get("householdMembers", "/api/household/members", {
       success: Schema.Array(HouseholdMember),
     }),

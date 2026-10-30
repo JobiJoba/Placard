@@ -14,7 +14,7 @@ import { Places } from "../places/places.ts"
 import { Search } from "../places/search.ts"
 import { Tags } from "../places/tags.ts"
 import { Tokens } from "../tokens/tokens.ts"
-import { AdminApiLive, MeApiLive, SetupApiLive } from "./accounts.ts"
+import { AdminApiLive, AvatarFileRoutesLive, MeApiLive, SetupApiLive } from "./accounts.ts"
 import { AdminAuthenticationLive, AuthenticationLive, AuthRoutesLive } from "./auth.ts"
 import { ExportRoutesLive } from "./export.ts"
 import { HealthApiLive } from "./health.ts"
@@ -76,6 +76,7 @@ export const ServicesLayer = Import.layer.pipe(
 export const RoutesLive = Layer.mergeAll(
   ApiLive,
   AuthRoutesLive,
+  AvatarFileRoutesLive,
   MediaFileRoutesLive,
   ModuleFileRoutesLive,
   McpRoutesLive,

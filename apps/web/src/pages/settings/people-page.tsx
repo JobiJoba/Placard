@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { UserAvatar } from "@/components/user-avatar"
 import { api, errorMessage } from "@/lib/api"
 import { useLoad } from "@/lib/use-load"
 import { useSession } from "@/session"
@@ -47,9 +48,7 @@ function HouseholdCard() {
     setPending(true)
     setError(null)
     try {
-      const next = await api((client) =>
-        client.admin.setHouseholdEnabled({ payload: { enabled } }),
-      )
+      const next = await api((client) => client.admin.setHouseholdEnabled({ payload: { enabled } }))
       setData(next)
       await refresh()
     } catch (cause) {
@@ -198,9 +197,12 @@ function UsersCard() {
       <ul className="flex flex-col divide-y">
         {(users ?? []).map((user: UserSummary) => (
           <li key={user.id} className="flex items-center justify-between gap-3 py-2">
-            <div className="flex min-w-0 flex-col">
-              <span className="truncate text-sm">{user.name}</span>
-              <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+            <div className="flex min-w-0 items-center gap-3">
+              <UserAvatar name={user.name} image={user.image} />
+              <div className="flex min-w-0 flex-col">
+                <span className="truncate text-sm">{user.name}</span>
+                <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+              </div>
             </div>
             <Badge variant={user.role === "admin" ? "default" : "secondary"}>{user.role}</Badge>
           </li>

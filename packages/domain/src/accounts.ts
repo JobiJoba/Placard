@@ -17,6 +17,8 @@ export const Me = Schema.Struct({
   email: Schema.String,
   role: UserRole,
   distanceUnit: DistanceUnit,
+  /** Public avatar URL path, or null when using the letter stand-in. */
+  image: Schema.NullOr(Schema.String),
   /** Instance admin toggle; gates share UI and household library filters. */
   householdEnabled: Schema.Boolean,
 })
@@ -27,6 +29,7 @@ export const UserSummary = Schema.Struct({
   name: Schema.String,
   email: Schema.String,
   role: UserRole,
+  image: Schema.NullOr(Schema.String),
   createdAt: Schema.DateTimeUtcFromString,
 })
 export type UserSummary = typeof UserSummary.Type
@@ -35,8 +38,23 @@ export type UserSummary = typeof UserSummary.Type
 export const HouseholdMember = Schema.Struct({
   id: Schema.String,
   name: Schema.String,
+  image: Schema.NullOr(Schema.String),
 })
 export type HouseholdMember = typeof HouseholdMember.Type
+
+export const ProfileUpdate = Schema.Struct({
+  name: Schema.Trim.pipe(
+    Schema.check(Schema.isBetweenLength(1, 80, { message: "Enter a name (1–80 characters)" })),
+  ),
+})
+export type ProfileUpdate = typeof ProfileUpdate.Type
+
+export const AvatarUpload = Schema.Struct({
+  filename: Schema.Trim.pipe(Schema.check(Schema.isBetweenLength(1, 260))),
+  mimeType: Schema.Trim.pipe(Schema.check(Schema.isBetweenLength(3, 100))),
+  contentBase64: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
+})
+export type AvatarUpload = typeof AvatarUpload.Type
 
 export const InviteStatus = Schema.Literals(["pending", "accepted", "expired", "revoked"])
 export type InviteStatus = typeof InviteStatus.Type

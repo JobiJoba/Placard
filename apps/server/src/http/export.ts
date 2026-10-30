@@ -20,6 +20,7 @@ export const ExportRoutesLive = HttpRouter.use(
         }
         const zip = yield* libraryExport.buildZip({
           ...user.value,
+          image: null,
           householdEnabled: false,
         })
         return HttpServerResponse.uint8Array(zip, {

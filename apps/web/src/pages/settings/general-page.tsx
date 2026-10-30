@@ -1,10 +1,11 @@
 import type { DistanceUnit } from "@placard/domain"
-import { type FormEvent, useState } from "react"
+import { type FormEvent, useEffect, useRef, useState } from "react"
 import { ErrorAlert } from "@/components/error-alert"
 import { Button } from "@/components/ui/button"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { UserAvatar } from "@/components/user-avatar"
 import { api, errorMessage } from "@/lib/api"
 import { changePassword } from "@/lib/auth-client"
 import { isLibraryDensity, LIBRARY_DENSITIES, useLibraryDensity } from "@/lib/library-density"
@@ -17,10 +18,27 @@ import {
 import { useMe, useSession } from "@/session"
 import { SettingsCard } from "./settings-card"
 
+const fileToBase64 = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error("Could not read file."))
+    reader.onload = () => {
+      const result = reader.result
+      if (typeof result !== "string") {
+        reject(new Error("Could not read file."))
+        return
+      }
+      const comma = result.indexOf(",")
+      resolve(comma >= 0 ? result.slice(comma + 1) : result)
+    }
+    reader.readAsDataURL(file)
+  })
+
 export function SettingsGeneralPage() {
   return (
     <div className="flex flex-col gap-6">
-      <AccountCard />
+      <ProfileCard />
+      <PasswordCard />
       <DistanceUnitCard />
       <MapsProviderCard />
       <LibraryDensityCard />
@@ -29,9 +47,145 @@ export function SettingsGeneralPage() {
   )
 }
 
-function AccountCard() {
+function ProfileCard() {
   const me = useMe()
-  const { signOut } = useSession()
+  const { setMe, signOut } = useSession()
+  const [name, setName] = useState(me.name)
+  const [error, setError] = useState<string | null>(null)
+  const [ok, setOk] = useState(false)
+  const [pending, setPending] = useState(false)
+  const [avatarPending, setAvatarPending] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setName(me.name)
+  }, [me.name])
+
+  const saveName = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const next = name.trim()
+    if (!next) {
+      setError("Enter a name.")
+      setOk(false)
+      return
+    }
+    setPending(true)
+    setError(null)
+    setOk(false)
+    try {
+      setMe(await api((client) => client.me.updateProfile({ payload: { name: next } })))
+      setOk(true)
+    } catch (cause) {
+      setError(errorMessage(cause))
+    } finally {
+      setPending(false)
+    }
+  }
+
+  const onPickAvatar = async (list: FileList | null) => {
+    const file = [...(list ?? [])].find((f) => f.type.startsWith("image/"))
+    if (!file) return
+    setAvatarPending(true)
+    setError(null)
+    setOk(false)
+    try {
+      const contentBase64 = await fileToBase64(file)
+      setMe(
+        await api((client) =>
+          client.me.setAvatar({
+            payload: {
+              filename: file.name || "avatar.jpg",
+              mimeType: file.type || "image/jpeg",
+              contentBase64,
+            },
+          }),
+        ),
+      )
+      setOk(true)
+    } catch (cause) {
+      setError(errorMessage(cause))
+    } finally {
+      setAvatarPending(false)
+      if (fileRef.current) fileRef.current.value = ""
+    }
+  }
+
+  const clearAvatar = async () => {
+    setAvatarPending(true)
+    setError(null)
+    setOk(false)
+    try {
+      setMe(await api((client) => client.me.clearAvatar()))
+      setOk(true)
+    } catch (cause) {
+      setError(errorMessage(cause))
+    } finally {
+      setAvatarPending(false)
+    }
+  }
+
+  return (
+    <SettingsCard title="Profile" description={`${me.email}. Your name and photo across Placard.`}>
+      <form onSubmit={saveName} className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <UserAvatar name={name || me.name} image={me.image} className="size-14 text-lg" />
+          <div className="flex flex-wrap gap-2">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              aria-label="Choose avatar image"
+              onChange={(event) => void onPickAvatar(event.target.files)}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              disabled={avatarPending}
+              onClick={() => fileRef.current?.click()}
+            >
+              {avatarPending ? "Uploading…" : "Change photo"}
+            </Button>
+            {me.image && (
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={avatarPending}
+                onClick={() => void clearAvatar()}
+              >
+                Remove photo
+              </Button>
+            )}
+          </div>
+        </div>
+        <Field>
+          <FieldLabel htmlFor="profileName">Name</FieldLabel>
+          <Input
+            id="profileName"
+            name="profileName"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            maxLength={80}
+            required
+            autoComplete="name"
+          />
+        </Field>
+        <ErrorAlert message={error} />
+        {ok && <p className="text-sm text-muted-foreground">Profile updated.</p>}
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" disabled={pending || name.trim() === me.name}>
+            {pending ? "Saving…" : "Save name"}
+          </Button>
+          <Button type="button" variant="outline" onClick={() => void signOut()}>
+            Sign out
+          </Button>
+        </div>
+      </form>
+    </SettingsCard>
+  )
+}
+
+function PasswordCard() {
   const [error, setError] = useState<string | null>(null)
   const [ok, setOk] = useState(false)
   const [pending, setPending] = useState(false)
@@ -65,10 +219,7 @@ function AccountCard() {
   }
 
   return (
-    <SettingsCard
-      title="Account"
-      description={`${me.name} · ${me.email}. Change your password or sign out.`}
-    >
+    <SettingsCard title="Password" description="Change the password for this account.">
       <form onSubmit={submit} className="flex flex-col gap-3">
         <FieldGroup>
           <Field>
@@ -106,14 +257,9 @@ function AccountCard() {
         </FieldGroup>
         <ErrorAlert message={error} />
         {ok && <p className="text-sm text-muted-foreground">Password updated.</p>}
-        <div className="flex flex-wrap gap-2">
-          <Button type="submit" disabled={pending}>
-            {pending ? "Updating…" : "Change password"}
-          </Button>
-          <Button type="button" variant="outline" onClick={() => void signOut()}>
-            Sign out
-          </Button>
-        </div>
+        <Button type="submit" disabled={pending} className="w-fit">
+          {pending ? "Updating…" : "Change password"}
+        </Button>
       </form>
     </SettingsCard>
   )
