@@ -10,6 +10,7 @@ export function DocsPage() {
   const source = getDocMarkdown(slug)
 
   useEffect(() => {
+    void slug
     window.scrollTo(0, 0)
   }, [slug])
 

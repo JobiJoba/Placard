@@ -33,10 +33,7 @@ export function writeLibraryDensity(density: LibraryDensity): void {
 }
 
 /** Device-local library card columns (4 / 5 / 6). Default 5. */
-export function useLibraryDensity(): readonly [
-  LibraryDensity,
-  (density: LibraryDensity) => void,
-] {
+export function useLibraryDensity(): readonly [LibraryDensity, (density: LibraryDensity) => void] {
   const [density, setDensityState] = useState(readLibraryDensity)
 
   useEffect(() => {

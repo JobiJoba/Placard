@@ -24,7 +24,8 @@ export function rewriteDocHref(href: string | undefined): string | undefined {
   const cleaned = pathPart.replace(/^\.\//, "")
 
   if (cleaned.endsWith(".md")) {
-    const file = cleaned.split("/").pop()!.replace(/\.md$/, "")
+    const file = cleaned.split("/").pop()?.replace(/\.md$/, "")
+    if (!file) return href
     if (PUBLISHED.has(file)) {
       return `/docs/${file}${hashSuffix}`
     }

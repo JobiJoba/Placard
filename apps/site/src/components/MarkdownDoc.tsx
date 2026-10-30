@@ -1,7 +1,7 @@
 import type { Components } from "react-markdown"
 import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
 import { Link } from "react-router"
+import remarkGfm from "remark-gfm"
 import { rewriteDocHref } from "../docs/links"
 import { CopySnippet } from "./CopySnippet"
 
@@ -60,10 +60,7 @@ const components: Components = {
       const props = (child as { props: { className?: string; children?: unknown } }).props
       const code = flattenText(props.children).replace(/\n$/, "")
       const rawLang = props.className?.replace(/^language-/, "") || ""
-      const lang =
-        rawLang === "text" || rawLang === "prompt"
-          ? "Copy brief"
-          : rawLang || "Commands"
+      const lang = rawLang === "text" || rawLang === "prompt" ? "Copy brief" : rawLang || "Commands"
       return <CopySnippet code={code} label={lang} />
     }
     return <pre>{children}</pre>

@@ -7,11 +7,7 @@ import { Input } from "@/components/ui/input"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { api, errorMessage } from "@/lib/api"
 import { changePassword } from "@/lib/auth-client"
-import {
-  isLibraryDensity,
-  LIBRARY_DENSITIES,
-  useLibraryDensity,
-} from "@/lib/library-density"
+import { isLibraryDensity, LIBRARY_DENSITIES, useLibraryDensity } from "@/lib/library-density"
 import { useMe, useSession } from "@/session"
 import { SettingsCard } from "./settings-card"
 
