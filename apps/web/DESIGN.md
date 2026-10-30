@@ -101,4 +101,4 @@ Placard’s Operate UI is the **Vinyl Crate Library**: dark crate chrome over a 
 - Collapse neighbors into spines or reflow the grid on hover
 - Use soft large-radius white cards as the Library structure
 - Invent public sharing or social proof
-- Put Decide / “what to eat tonight” chrome on this surface before modules ship
+- Keep “what to eat tonight” chrome off Library — that belongs to Marketplace modules

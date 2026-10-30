@@ -18,8 +18,8 @@ Scope comes from [mvp.md](mvp.md). Stack and testing rules come from [tech-stack
 | 5 | Search | **done** | "Pizza, open now, within 5 km" from your own library |
 | 6 | Takeout import | **done** | Import with free triage, Needs review, undo or bulk-delete |
 | 7 | Photos | **done** | Add dish photos; Google covers when Details has photos |
-| 8 | Decide module | **done** | Spin the wheel (Marketplace install + nav) |
-| 9 | MCP | **done** | Search, lists, and decide from Cursor or Claude |
+| 8 | Module host + Marketplace | **done** | Install modules (zip / GitHub); pages + `/api/m` |
+| 9 | MCP | **done** | Search, lists, and module tools from Cursor or Claude |
 | 10 | Release hardening | **code done** | Export, PWA, install guide, GHCR workflow (founder Coolify DoD open) |
 
 Order followed the original priorities: places and browsing first, then search, then import at scale, then modules and MCP. Manual add came before Takeout because it builds the Places + Google plumbing that import reuses.
@@ -28,11 +28,14 @@ Order followed the original priorities: places and browsing first, then search, 
 
 Work that landed between phases (or ahead of mvp “Later”) and should be treated as part of the product now:
 
-- **Trusted module marketplace** — catalog, instance install/uninstall/enable, admin **prebuilt zip** upload into `PLACARD_MODULES_DIR`, per-user “show in nav”, host routes for plugin pages and `/api/m/<id>/*`. See [architecture-modules.md](architecture-modules.md) (Phase B + C-lite) and [creating-modules.md](creating-modules.md).
+- **Trusted module marketplace** — catalog, instance install/uninstall/enable, admin **prebuilt zip** upload and **GitHub Release** install into `PLACARD_MODULES_DIR`, per-user “show in nav”, host routes for plugin pages and `/api/m/<id>/*`. See [architecture-modules.md](architecture-modules.md) (Phase B + C-lite) and [creating-modules.md](creating-modules.md).
 - **Settings side-nav** — General, MCP, Marketplace, Integrations, People; module prefs at `/settings/modules/:moduleId` (opened from Marketplace).
 - **Vinyl Crate Library UI** — card-first crate/covers design (`apps/web/DESIGN.md`).
 - **Google place covers** — Details photos → cover media on enrichment.
 - **City autocomplete** — library “City” center via Places `(cities)`, not hard-coded presets.
+- **Cmd+K palette** — search + module navigate actions; library grid density controls.
+- **Custom fields** — per-place typed fields; merge vs force Google refresh on enrichment.
+- **Preferred maps app** — device-local setting for “Open in maps”.
 - **MCP `list_lists`** — extra tool beyond the original Phase 9 set.
 
 ---
@@ -285,31 +288,30 @@ Work that landed between phases (or ahead of mvp “Later”) and should be trea
 
 ---
 
-## Phase 8 — Decide module
+## Phase 8 — Module host + Marketplace
 
 **Status:** done.
 
-**Goal:** "what should I eat tonight?" in one tap.
+**Goal:** install trusted modules that add pages, `/api/m/<id>` HTTP, and optional MCP tools — without forking core.
 
 **Build**
 
-- `restaurants.decide` as a **bundled Marketplace module** (`@placard/module-restaurants-decide`) that only uses the module host / core services
-- Pool: list, tag, or all restaurants (search-results pool not exposed in UI yet)
-- Filters: open tonight, distance; optional avoid-recent
-- Wheel / spinner reveal → result card; clear message when the pool is empty
-- Install / show-in-nav via Marketplace settings; route `/m/restaurants.decide` (`/decide` redirects)
+- Module SDK + manifest; host routes for plugin pages and `/api/m/<id>/*`
+- Marketplace: install/uninstall/enable; per-user show in nav + Allow MCP
+- Admin **prebuilt zip** upload and **public GitHub Release** install into `PLACARD_MODULES_DIR`
+- Skeleton starter in-repo; Pick wheel lives in sibling `placard-places-pick` (not bundled)
 
 **You check**
 
-- [x] Spin from your "Italian restaurants" list with "open tonight": only open places can win
-- [x] Turn on avoid-recent, spin twice: no immediate repeat
-- [x] Filter so nothing matches: you get a clear "nothing open" message
+- [x] Upload a zip (or skeleton): nav, page, and custom HTTP work
+- [x] Hide module: gone from nav; `/api/m/…` returns 404 for that user
+- [x] Disable for the instance: blocked for everyone; uninstall removes disk dir
+- [x] (Optional) Install Pick from GitHub / zip and spin a filtered pool
 
 **Automated**
 
-- Unit + property: picks are always inside the filtered pool; avoid-recent respected
-- Time-based: open-tonight filter at fixed times
-- Architecture check: the module imports nothing from core internals (lint rule or test)
+- Integration: upload, hide/disable/uninstall, GitHub install + update
+- Architecture: host does not hard-code module tool names or SQL helpers
 
 ---
 
@@ -323,8 +325,8 @@ Work that landed between phases (or ahead of mvp “Later”) and should be trea
 
 - Personal access tokens (create, list, revoke) in settings
 - `/mcp` with Streamable HTTP, stateless (Vite proxies `/mcp` in Aspire; Compose serves it on the app origin)
-- Tools: `search_places`, `get_place`, `create_place`, `add_to_list`, `set_status`, `list_lists`, `decide_restaurant`, with input schemas from Effect Schemas
-- Decide tool registered with the MCP tool set (same rules as the wheel)
+- Core tools: `search_places`, `get_place`, `create_place`, `add_to_list`, `set_status`, `list_lists`, with input schemas from Effect Schemas
+- Module tools discovered from installed modules (host-prefixed names); per-user Allow MCP toggle
 - Rate limit, audit log, `MCP_ENABLED` env switch
 - Settings → MCP page with Cursor and Claude snippets
 
@@ -333,7 +335,7 @@ Work that landed between phases (or ahead of mvp “Later”) and should be trea
 - [x] Connect Cursor to your instance with a token
 - [x] Ask "what pizza places are open near me?": correct answer from your library
 - [x] Ask it to add a place to a list: it appears in the UI
-- [x] Ask it to pick dinner: same rules as the wheel
+- [x] With a module installed + MCP allowed: its tools appear; toggle hides them
 - [x] Revoke the token: the client is refused
 
 **Automated**

@@ -22,7 +22,7 @@ CRUD, Takeout triage, OSM pin-drop, and MCP work **without** a Google key. See [
 | Click a POI on the Add map | OSM pin only | Maps JavaScript + Place ID |
 | Enrichment (hours, phone, website, rating, cover) | Manual / empty | Place Details (New) + photo media |
 | Takeout import matching | Name/coords only | Text Search / Details for Place IDs |
-| Open-now / Decide filters on hours | Only if you typed hours | Hours from Google, computed locally |
+| Open-now / pick-wheel filters on hours | Only if you typed hours | Hours from Google, computed locally |
 
 ## Which APIs to enable
 

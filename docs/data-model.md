@@ -30,7 +30,7 @@ instance_settings (single row)
 instance_modules (Marketplace installs)
 sessions, accounts, verifications   (Better Auth)
 
-Module-owned files (not core tables): e.g. restaurants.decide → data/picks.json under PLACARD_MODULES_DIR
+Module-owned files (not core tables): e.g. places.pick → data/ under PLACARD_MODULES_DIR
 ```
 
 ## Tables
@@ -177,13 +177,40 @@ The staging table for free triage. Nothing here costs an API call.
 
 Skips are remembered across re-imports through `(owner_id, dedupe_key)`.
 
-### Decide avoid-recent (module data, not a core table)
+### Module-private data (not a core table)
 
-`restaurants.decide` stores pick history in **`data/picks.json`** under the module root on the modules volume (`PLACARD_MODULES_DIR`). The old core `decide_picks` table was removed once Decide ran as a pure plugin. Core never reads module pick files.
+Installed modules may store files under their root on the modules volume (`PLACARD_MODULES_DIR/<id>/`, often `data/…`). Core never reads those files. (Historical: a core `decide_picks` table existed briefly and was dropped once pick history moved into plugins.)
+
+### `place_custom_fields`
+
+Per-place typed fields the user adds beyond Google facts.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | text PK | |
+| `place_id` | text FK places | CASCADE |
+| `label` | text | Display label |
+| `label_key` | text | Normalized key for grouping / search |
+| `type` | text | `text` \| `email` \| `url` \| `phone` \| `number` \| `date` |
+| `value` | text | Stored as text; typed in the UI |
+| `sort_order` | int | |
+| `created_at` | timestamptz | |
 
 ### `user_module_prefs`
 
 `user_id`, `module_id`, `visible` (nav), `mcp_enabled` (default true — when false, that module’s MCP tools are hidden for the user).
+
+### `instance_modules` (GitHub columns)
+
+In addition to `module_id`, `version`, `source` (`bundled` \| `upload` \| `folder` \| `github`), `package_name`, `enabled`, `config`, `load_error`, `installed_at`:
+
+| Column | Notes |
+| --- | --- |
+| `github_owner`, `github_repo`, `github_repo_url` | Set when `source = github` |
+| `github_release_tag`, `github_asset_name` | Last installed Release asset |
+| `latest_available_version`, `update_available`, `update_checked_at` | Update-check worker / Marketplace UI |
+
+`instance_settings.module_update_check_hours` (default 24; `0` disables) controls the worker interval.
 
 ### `api_tokens` (Phase 9)
 

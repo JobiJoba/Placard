@@ -1,6 +1,6 @@
 import { Schema } from "effect"
 
-export const moduleSources = ["bundled", "npm", "folder", "upload"] as const
+export const moduleSources = ["bundled", "npm", "folder", "upload", "github"] as const
 export const ModuleSource = Schema.Literals(moduleSources)
 export type ModuleSource = typeof ModuleSource.Type
 
@@ -56,6 +56,11 @@ export const InstalledModule = Schema.Struct({
   loadError: Schema.NullOr(Schema.String),
   iconUrl: Schema.NullOr(Schema.String),
   coverUrl: Schema.NullOr(Schema.String),
+  /** Canonical GitHub repo URL when source is github. */
+  githubRepoUrl: Schema.NullOr(Schema.String),
+  updateAvailable: Schema.Boolean,
+  latestAvailableVersion: Schema.NullOr(Schema.String),
+  updateCheckedAt: Schema.NullOr(Schema.DateTimeUtcFromString),
 })
 export type InstalledModule = typeof InstalledModule.Type
 
@@ -100,6 +105,18 @@ export const ModuleUpload = Schema.Struct({
   contentBase64: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
 })
 export type ModuleUpload = typeof ModuleUpload.Type
+
+/** Public GitHub repo URL or `owner/repo` shorthand — installs latest Release asset. */
+export const ModuleGithubInstall = Schema.Struct({
+  url: Schema.Trim.pipe(Schema.check(Schema.isBetweenLength(3, 500))),
+})
+export type ModuleGithubInstall = typeof ModuleGithubInstall.Type
+
+export const ModuleUpdateCheckResult = Schema.Struct({
+  checked: Schema.Number,
+  updatesAvailable: Schema.Number,
+})
+export type ModuleUpdateCheckResult = typeof ModuleUpdateCheckResult.Type
 
 export const ModuleEnabledUpdate = Schema.Struct({
   enabled: Schema.Boolean,

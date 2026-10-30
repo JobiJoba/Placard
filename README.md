@@ -2,7 +2,7 @@
 
 **Your places. On your cards. On your server.**
 
-Placard is a self-hosted place library: collect, organize, and enrich places you care about — then **act on them** with modules (restaurants first: Decide / wheel) and **MCP** (Cursor, Claude, …).
+Placard is a self-hosted place library: collect, organize, and enrich places you care about — then **act on them** with Marketplace modules (e.g. a pick / spin wheel) and **MCP** (Cursor, Claude, …).
 
 Think Immich, but for starred places: private to your instance, Docker-friendly, extensible.
 
@@ -89,7 +89,7 @@ Placard: **import → enrich → search/browse cards → run modules** — and t
 | [docs/decisions.md](docs/decisions.md) | Resolved product choices |
 | [docs/first-user.md](docs/first-user.md) | Founder priorities & scale |
 | [docs/product-overview.md](docs/product-overview.md) | Objects, modes, flows |
-| [docs/modules-restaurants.md](docs/modules-restaurants.md) | Decide / vote / dish memories |
+| [docs/modules-restaurants.md](docs/modules-restaurants.md) | Pick / vote / dish memories |
 | [docs/architecture-modules.md](docs/architecture-modules.md) | Core vs modules; trusted plugins |
 | [docs/creating-modules.md](docs/creating-modules.md) | **How to build a module** (step-by-step + Pick example) |
 | [docs/mcp.md](docs/mcp.md) | Agent access (must-ship, implemented) |
@@ -106,12 +106,12 @@ Placard: **import → enrich → search/browse cards → run modules** — and t
 
 ## Snapshot of decisions
 
-- **Import + browse + library search** are the top jobs; dinner spin is a flagship module
+- **Import + browse + library search** are the top jobs; dinner spin is a Marketplace module (not bundled)
 - ~500 places, near-me daily, multi-city library OK
 - **PWA** installable (manifest + icons); multi-user accounts ship now; **household sharing is v0.2**
 - Google Takeout must; instance Google key; force refresh, no auto mass cron
 - Want / been-there first-class; visit history optional & separate from dishes
-- **MCP ships**; trusted Marketplace plugins (Decide bundled; zip upload); AGPL-3.0
+- **MCP ships**; trusted Marketplace plugins (zip upload + GitHub Release); AGPL-3.0
 - Stack: Vite React + Effect HttpApi + Aspire (dev) + Compose (deploy)
 
 ## Positioning

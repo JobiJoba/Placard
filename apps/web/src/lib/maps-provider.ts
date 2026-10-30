@@ -52,7 +52,7 @@ export function writeMapsProvider(provider: MapsProvider): void {
   window.dispatchEvent(new Event(CHANGE_EVENT))
 }
 
-/** Device-local preferred maps app for place detail / Decide. */
+/** Device-local preferred maps app for place detail and module hand-offs. */
 export function useMapsProvider(): readonly [MapsProvider, (provider: MapsProvider) => void] {
   const [provider, setProviderState] = useState(readMapsProvider)
 

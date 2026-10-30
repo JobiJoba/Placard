@@ -1,11 +1,11 @@
 # How modules work
 
-Placard is a **core place library** plus optional **modules** for specialized workflows (Decide, custom tools, …). Modules do not fork the core.
+Placard is a **core place library** plus optional **modules** for specialized workflows (pick wheels, custom tools, …). Modules do not fork the core.
 
 ## Layers
 
 ```
-Modules (Decide, your uploads, …)
+Modules (Pick, your uploads, …)
         ↓  hostFetch + /api/m/<id>
 Core HTTP API + MCP transport
         ↓
@@ -21,8 +21,11 @@ Places, lists, tags, media, auth
 
 | Mode | Who | How |
 | --- | --- | --- |
-| **Bundled** | First-party (e.g. Decide) | Shipped inside the Placard image / Marketplace “Preinstalled” |
+| **Bundled** | Reserved | First-party catalog slot (empty today — no modules ship inside the image) |
 | **Upload** | You / third parties | Prebuilt zip → Settings → Module marketplace |
+| **GitHub** | You / third parties | Public repo URL → latest GitHub Release asset (`.placard-module` or `.zip`) |
+
+GitHub installs always take the **latest** Release. The worker checks for newer releases on a configurable interval (default 24h; `0` disables). Admins can also **Check now** / **Update** in Marketplace. Private repos are not supported.
 
 There is no “paste a package into MCP.” MCP discovers tools from **loaded modules** after install and user MCP prefs. See [mcp.md](mcp.md).
 
@@ -37,5 +40,6 @@ There is no “paste a package into MCP.” MCP discovers tools from **loaded mo
 ## Authoring
 
 - Skeleton zip starter: [`packages/modules/skeleton/`](../packages/modules/skeleton/)
+- Full wheel example: sibling repo `placard-places-pick` (`places.pick`)
 - Humans: [creating-modules.md](creating-modules.md)
 - Agents: [module-brief-for-ai.md](module-brief-for-ai.md)

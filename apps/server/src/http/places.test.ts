@@ -125,6 +125,8 @@ const Settings = Layer.succeed(InstanceSettings, {
   view: Effect.die("not under test"),
   setGoogleApiKey: () => Effect.die("not under test"),
   clearGoogleApiKey: Effect.die("not under test"),
+  setModuleUpdateCheckHours: () => Effect.die("not under test"),
+  moduleUpdateCheckHours: Effect.succeed(24),
 })
 
 const StubEnrichment = Layer.succeed(

@@ -1,6 +1,6 @@
 import { readFile, stat } from "node:fs/promises"
 import { extname, join } from "node:path"
-import { Api, CurrentUser } from "@placard/domain"
+import { Api, CurrentUser, ModuleInstallFailed } from "@placard/domain"
 import { Effect, Layer, Option } from "effect"
 import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/http"
 import { HttpApiBuilder } from "effect/http-api"
@@ -34,6 +34,29 @@ export const ModulesApiLive = HttpApiBuilder.group(
         Effect.gen(function* () {
           const me = yield* CurrentUser
           return yield* modules.upload(me.role, payload)
+        }),
+      )
+      .handle("fromGithub", ({ payload }) =>
+        Effect.gen(function* () {
+          const me = yield* CurrentUser
+          return yield* modules.installFromGithub(me.role, payload.url)
+        }),
+      )
+      .handle("checkUpdates", () =>
+        Effect.gen(function* () {
+          const me = yield* CurrentUser
+          if (me.role !== "admin") {
+            return yield* new ModuleInstallFailed({
+              message: "Only an admin can check for module updates.",
+            })
+          }
+          return yield* modules.checkUpdates({ force: true })
+        }),
+      )
+      .handle("updateFromGithub", ({ params }) =>
+        Effect.gen(function* () {
+          const me = yield* CurrentUser
+          return yield* modules.updateFromGithub(me.role, params.id)
         }),
       )
       .handle("uninstall", ({ params }) =>

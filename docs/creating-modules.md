@@ -17,7 +17,7 @@ A minimal uploadable starter lives in the repo:
 
 It exposes `GET /hello`, a small page, a CMD+K action (**Open Skeleton**), and MCP tool `skeleton_hello` so you can verify Marketplace + palette + MCP wiring before adding real behavior. Rename the id/paths when you turn it into a real module.
 
-Richer examples: **`places.pick`** (generic wheel, upload-oriented) and **`restaurants.decide`** (shipped restaurant wheel).
+Richer example: **`places.pick`** — generic “pick any category” wheel in sibling repo [`placard-places-pick`](https://github.com/JobiJoba/placard-places-pick) (next to this monorepo as `../placard-places-pick`). Install via zip upload or GitHub Release.
 
 ## What you ship
 
@@ -36,7 +36,7 @@ web/assets/…         # optional icon / cover
 | Server | HTTP under `/api/m/<id>/*` and optional MCP tools |
 | Web | Page at `/m/<id>` (export name from the manifest) |
 
-**Decide** (`restaurants.decide`) is the restaurant wheel that ships with Placard. Use it as product inspiration; for a third-party upload, mirror the **zip layout** and the open-source **`places.pick`** example (generic “pick any category” wheel), not a monorepo workspace package copy.
+No wheel ships inside the Placard image. For a real product module, mirror the **zip layout** of **`places.pick`** (or clone the skeleton), not a monorepo workspace package copy.
 
 ## Manifest (`placard.module.json`)
 
@@ -92,7 +92,7 @@ Export `createModule()` that returns optional `createHttpApp` and/or `mcpTools`.
 ## Web entry
 
 - Export a page component whose name matches `webRoutes[].exportName`
-- Bundle for the browser; **do not ship React** — use the host bridge (`globalThis.__PLACARD_PLUGIN__`) the same way `places.pick` does
+- Bundle for the browser; **do not ship React** — use the host bridge (`globalThis.__PLACARD_PLUGIN__`) the same way the skeleton / `places.pick` repos do
 - Call your HTTP API at `/api/m/<your.id>/…` with the user’s session cookies
 
 ## Build and pack
@@ -101,20 +101,20 @@ Export `createModule()` that returns optional `createHttpApp` and/or `mcpTools`.
 2. Assemble the zip layout above
 3. From this repo you can use `pnpm placard:pack ./path/to/pack` when the pack folder is ready
 
-Reference trees in the Placard repo:
+Reference trees:
 
 - Skeleton starter: `packages/modules/skeleton/`
-- Upload example: `packages/modules/places-pick/`
-- Shipped Decide (bundled in the image): `packages/modules/restaurants-decide/`
+- Upload / GitHub wheel: sibling repo `placard-places-pick` (next to this monorepo)
 
 ## Install on an instance
 
-1. Admin → **Settings → Module marketplace → Choose .zip**
-2. Placard extracts to `PLACARD_MODULES_DIR/<id>/` (Compose volume `modules`)
-3. Enable the module for the instance
-4. Each user: Marketplace → module → **Settings** → show in nav / allow MCP
+1. Admin → **Settings → Module marketplace → Choose .zip**, **or** paste a public GitHub repo URL / `owner/repo`
+2. For GitHub: publish a **Release** whose asset is the prebuilt plugin (prefer `*.placard-module`, else a clear `.zip` — not a source archive)
+3. Placard extracts to `PLACARD_MODULES_DIR/<id>/` (Compose volume `modules`)
+4. Enable the module for the instance
+5. Each user: Marketplace → module → **Settings** → show in nav / allow MCP
 
-After upload, module tools appear under **Settings → MCP** with their global names.
+After install, module tools appear under **Settings → MCP** with their global names. GitHub-sourced modules show an update badge when a newer Release is available.
 
 ## Checklist
 

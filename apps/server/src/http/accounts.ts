@@ -51,6 +51,9 @@ export const AdminApiLive = HttpApiBuilder.group(
       .handle("settings", () => settings.view)
       .handle("setGoogleApiKey", ({ payload }) => settings.setGoogleApiKey(payload.apiKey))
       .handle("clearGoogleApiKey", () => settings.clearGoogleApiKey)
+      .handle("setModuleUpdateCheckHours", ({ payload }) =>
+        settings.setModuleUpdateCheckHours(payload.hours),
+      )
       .handle("users", () => users.list)
       .handle("invites", () => invites.list)
       .handle("revokeInvite", ({ params }) => invites.revoke(params.id))

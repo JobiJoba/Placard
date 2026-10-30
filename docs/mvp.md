@@ -84,26 +84,20 @@ Distances show in km or miles according to a user setting. Results need to feel 
 - No background refresh job.
 - Manual edits override fetched values, and refreshes keep the override.
 
-### 5. Decide module (`restaurants.decide`)
-
-- Pool: a list, a tag, or all restaurants (search-results pool optional later).
-- Filters: open tonight and distance.
-- Wheel or spinner reveal, then the result card.
-- Optional "avoid recent picks" toggle.
-- Shipped as a **trusted Marketplace plugin** (`@placard/module-restaurants-decide`) behind the module boundary from [architecture-modules.md](architecture-modules.md).
-
-### 5b. Trusted modules (ahead of original “Later”)
+### 5. Trusted modules (ahead of original “Later”)
 
 - Module SDK + manifest (`@placard/module-sdk`)
 - In-app Marketplace: install/uninstall/enable; per-user show in nav
-- Admin upload of **prebuilt zip** into `PLACARD_MODULES_DIR` (no in-container compile; no sandbox)
+- Admin upload of **prebuilt zip**, or install from a **public GitHub Release** asset, into `PLACARD_MODULES_DIR` (no in-container compile; no sandbox)
+- Dinner-spin / pick wheels are **optional modules** (e.g. sibling `placard-places-pick` → `places.pick`), not bundled in the Placard image
 - Not a public app store — admin-trusted plugins only
 
 ### 6. MCP (must-ship)
 
 - Streamable HTTP endpoint at `/mcp` on the same app.
 - Personal access tokens created in settings.
-- Tools: `search_places`, `get_place`, `create_place` (from a Place ID or coordinates), `add_to_list`, `list_lists`, `set_status`, `decide_restaurant`.
+- Core tools: `search_places`, `get_place`, `create_place` (from a Place ID or coordinates), `add_to_list`, `list_lists`, `set_status`.
+- Installed modules may add more tools (host-prefixed names).
 - Same permission rules as the web UI.
 - A "Connect MCP" settings page with config snippets for Cursor and Claude.
 
@@ -147,8 +141,8 @@ v0.1 ships when, on a fresh `docker compose up`:
 1. Admin signs up, sets the Google key, triages a real Takeout export of ~500 places (skipping some without any API call), and imports the rest with lists preserved. Then bulk-deletes a few imported places. *(founder)*
 2. Admin adds a new place through autocomplete, and another by clicking it on the map. *(covered in CI e2e / integration)*
 3. "Pizza, open now, within 5 km" returns the right cards quickly. *(integration)*
-4. The Decide wheel picks from an open-tonight list. *(integration `/api/m/…`)*
-5. From Cursor or Claude via MCP: search, add to a list, and decide all work with a token. *(integration)*
+4. Admin installs a Marketplace module (zip or GitHub); its page and `/api/m/…` routes work. *(integration)*
+5. From Cursor or Claude via MCP: search and add to a list work with a token; installed module tools appear when allowed. *(integration)*
 6. Export produces a complete JSON/GeoJSON (+ media) zip. *(integration `GET /api/export`)*
 7. The same stack deploys on Coolify by following [install.md](install.md). *(founder)*
 8. PWA install on a phone home screen works (manifest + icons in tree). *(founder)*

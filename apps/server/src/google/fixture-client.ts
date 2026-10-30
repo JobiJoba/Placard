@@ -19,7 +19,10 @@ const INVALID_KEY = {
 const jsonBody = (request: HttpClientRequest.HttpClientRequest): Record<string, unknown> =>
   request.body._tag === "Uint8Array" ? JSON.parse(new TextDecoder().decode(request.body.body)) : {}
 
-const respond = (request: HttpClientRequest.HttpClientRequest, url: URL): Response => {
+export const respondGoogleFixture = (
+  request: HttpClientRequest.HttpClientRequest,
+  url: URL,
+): Response => {
   if (request.headers["x-goog-api-key"]?.includes("invalid")) {
     return Response.json(INVALID_KEY, { status: 400 })
   }
@@ -74,6 +77,6 @@ const respond = (request: HttpClientRequest.HttpClientRequest, url: URL): Respon
 export const GoogleFixtureClient = Layer.succeed(
   HttpClient.HttpClient,
   HttpClient.make((request, url) =>
-    Effect.sync(() => HttpClientResponse.fromWeb(request, respond(request, url))),
+    Effect.sync(() => HttpClientResponse.fromWeb(request, respondGoogleFixture(request, url))),
   ),
 )

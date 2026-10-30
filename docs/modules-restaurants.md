@@ -26,9 +26,9 @@ Household-only surfaces (voting) stay invisible in single-user mode. See [decisi
 
 ---
 
-## Module R1 — “What should we eat tonight?” (Decide)
+## Module R1 — “What should we eat tonight?” (Pick / spin)
 
-**Solo-friendly. Shipped** as Marketplace plugin `@placard/module-restaurants-decide` (+ MCP `decide_restaurant`).
+**Solo-friendly.** Not bundled in the Placard image — install a Marketplace wheel such as **`places.pick`** (sibling repo `placard-places-pick`, zip or GitHub Release). It can target restaurants or any category; MCP tool example `places_pick__pick_place`.
 
 ### Intent
 
@@ -56,7 +56,7 @@ Break decision paralysis: pick one restaurant from a curated pool.
 - Random is fine; weighted random can come later
 - Avoid-recent should be a clear toggle/setting, not silent magic
 - If the filtered pool is empty (“nothing open”), say so clearly and offer to relax filters
-- Same decide capability should be an **MCP tool**
+- Same pick capability should be an **MCP tool** on the module
 
 ---
 
@@ -71,7 +71,7 @@ Several people propose or shortlist restaurants; the household votes; one wins.
 ### Sketch flow
 
 1. Someone starts a **Dinner vote** (or “Tonight” session)
-2. Scope: list / tag / open-tonight filter (same as Decide)
+2. Scope: list / tag / open-tonight filter (same as R1)
 3. Members **nominate** restaurants from the library (or from the filtered pool)
 4. Members **vote** (rules TBD: single choice, ranked, veto, …)
 5. Result is shown; optional link out to navigate
@@ -79,7 +79,7 @@ Several people propose or shortlist restaurants; the household votes; one wins.
 
 ### UX constraint
 
-If the instance has no household, this module does not appear in navigation. Solo users only see Decide (R1) and dish memories (R3). Votes are **in-app only** (no guest couch links). Full member accounts only.
+If the instance has no household, this module does not appear in navigation. Solo users only see a pick wheel (R1, if installed) and dish memories (R3). Votes are **in-app only** (no guest couch links). Full member accounts only.
 
 ---
 
@@ -127,4 +127,4 @@ Same skeleton, different outcomes:
 | Cinema | “What’s on tonight among *our* cinemas” (needs showtimes connector) |
 | Park | “Kid-friendly near me with playground” |
 
-Restaurants stay first until Decide + Vote + Dish memories feel great.
+Restaurants stay first until Pick + Vote + Dish memories feel great.

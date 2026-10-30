@@ -207,7 +207,7 @@ function ConnectCard({ status }: { readonly status: McpStatus | null | undefined
           <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
             <li>Create a personal access token below.</li>
             <li>Paste the endpoint and token into your client config.</li>
-            <li>Ask the agent to search places, add to a list, or decide dinner.</li>
+            <li>Ask the agent to search places, add to a list, or run an installed module tool.</li>
           </ol>
         </div>
       )}

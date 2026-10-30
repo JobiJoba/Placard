@@ -65,8 +65,20 @@ export const InstanceSettingsView = Schema.Struct({
     source: GoogleKeySource,
     last4: Schema.NullOr(Schema.String),
   }),
+  /**
+   * How often the worker checks GitHub-sourced plugins for newer releases.
+   * `0` disables automatic checks (manual check still works).
+   */
+  moduleUpdateCheckHours: Schema.Int.pipe(
+    Schema.check(Schema.isBetween({ minimum: 0, maximum: 168 })),
+  ),
 })
 export type InstanceSettingsView = typeof InstanceSettingsView.Type
+
+export const ModuleUpdateCheckHoursUpdate = Schema.Struct({
+  hours: Schema.Int.pipe(Schema.check(Schema.isBetween({ minimum: 0, maximum: 168 }))),
+})
+export type ModuleUpdateCheckHoursUpdate = typeof ModuleUpdateCheckHoursUpdate.Type
 
 export class Unauthorized extends Schema.TaggedError<Unauthorized>()(
   "Unauthorized",

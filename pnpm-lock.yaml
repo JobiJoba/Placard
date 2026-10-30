@@ -235,9 +235,6 @@ importers:
       '@placard/domain':
         specifier: workspace:*
         version: link:../../packages/domain
-      '@placard/module-restaurants-decide':
-        specifier: workspace:*
-        version: link:../../packages/modules/restaurants-decide
       '@placard/module-sdk':
         specifier: workspace:*
         version: link:../../packages/module-sdk
@@ -460,61 +457,6 @@ importers:
         specifier: 4.0.6
         version: 4.0.6
     devDependencies:
-      typescript:
-        specifier: 6.0.3
-        version: 6.0.3
-
-  packages/modules/places-pick:
-    devDependencies:
-      '@placard/module-sdk':
-        specifier: workspace:*
-        version: link:../../module-sdk
-      '@types/react':
-        specifier: ^19.2.0
-        version: 19.3.0
-      esbuild:
-        specifier: ^0.28.2
-        version: 0.28.2
-      react:
-        specifier: ^19.2.0
-        version: 19.3.1
-      react-router:
-        specifier: ^7.9.0
-        version: 7.18.5(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      typescript:
-        specifier: 6.0.3
-        version: 6.0.3
-
-  packages/modules/restaurants-decide:
-    dependencies:
-      '@placard/domain':
-        specifier: workspace:*
-        version: link:../../domain
-      '@placard/module-sdk':
-        specifier: workspace:*
-        version: link:../../module-sdk
-      effect:
-        specifier: 4.0.6
-        version: 4.0.6
-      uuid:
-        specifier: ^14.0.3
-        version: 14.0.3
-    devDependencies:
-      '@types/node':
-        specifier: ^24.19.2
-        version: 24.19.2
-      '@types/react':
-        specifier: ^19.3.0
-        version: 19.3.0
-      esbuild:
-        specifier: ^0.28.2
-        version: 0.28.2
-      react:
-        specifier: ^19.3.1
-        version: 19.3.1
-      react-router:
-        specifier: ^7.18.4
-        version: 7.18.5(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       typescript:
         specifier: 6.0.3
         version: 6.0.3

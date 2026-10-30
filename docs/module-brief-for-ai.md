@@ -8,7 +8,7 @@ Human walkthrough: [creating-modules.md](creating-modules.md).
 You are building a Placard Marketplace module for a self-hosted Placard instance.
 
 ## Goal
-Ship a prebuilt zip the admin uploads under Settings → Module marketplace. There is no in-container TypeScript compile and no npm-install path into Placard.
+Ship a prebuilt zip the admin uploads under Settings → Module marketplace, or attach to a public GitHub Release for “Install from GitHub”. There is no in-container TypeScript compile and no npm-install path into Placard.
 
 ## Deliverable zip layout
 placard.module.json
@@ -44,12 +44,12 @@ export function createModule() {
 - Persist private data under ctx.rootDir (JSON files are fine).
 - Do NOT import core SQL, Effect services, or patch host tables.
 - HTTP and MCP should share the same business helpers.
-- Decide (restaurants.decide) is a shipped first-party module — do not “copy Decide into MCP”; implement your own createModule + optional mcpTools.
+- Do not hard-code tools into Placard’s core MCP set — implement createModule + optional mcpTools on the module.
 
 ## Web contract
 - Export the component named by webRoutes[].exportName.
 - Bundle for the browser. Do NOT ship React/react-dom/react-router in the zip.
-- Alias React / jsx-runtime / react-router Link to globalThis.__PLACARD_PLUGIN__ (host bridge), as in packages/modules/places-pick.
+- Alias React / jsx-runtime / react-router Link to globalThis.__PLACARD_PLUGIN__ (host bridge), as in packages/modules/skeleton (or sibling repo placard-places-pick).
 - Call your API at /api/m/<id>/… with credentials included (cookies).
 
 ## Build practice that works
@@ -58,10 +58,11 @@ export function createModule() {
 - Zip the pack directory; admin uploads the zip.
 
 ## Install / verify on an instance
-1. Settings → Module marketplace → Choose .zip
-2. Extract path: PLACARD_MODULES_DIR/<id>/ (Compose volume "modules")
-3. Enable instance module; user toggles “shown in nav” and “Allow MCP”
-4. UI at /m/<id>; HTTP at /api/m/<id>/*; MCP tools listed in Settings → MCP
+1. Settings → Module marketplace → Choose .zip, or paste a public GitHub repo URL
+2. For GitHub distribution: attach the zip as a Release asset (prefer *.placard-module)
+3. Extract path: PLACARD_MODULES_DIR/<id>/ (Compose volume "modules")
+4. Enable instance module; user toggles “shown in nav” and “Allow MCP”
+5. UI at /m/<id>; HTTP at /api/m/<id>/*; MCP tools listed in Settings → MCP
 
 ## Skeleton starter (prefer this as the base)
 - Path: packages/modules/skeleton/
@@ -75,10 +76,9 @@ export function createModule() {
   inventing a new layout.
 
 ## Other references
-- Upload-oriented example: packages/modules/places-pick/
-- Shipped restaurant wheel (bundled in the image): packages/modules/restaurants-decide/
+- Upload / GitHub wheel example: sibling repo placard-places-pick (next to the Placard monorepo)
 - SDK types: packages/module-sdk/
 
 ## Out of scope
-Sandboxing, public npm registry install into Placard, remote catalog URL, household-only gating in the manifest, compiling TS inside Docker.
+Sandboxing, public npm registry install into Placard, private GitHub repos / PATs, pinning a non-latest Release, remote catalog URL, household-only gating in the manifest, compiling TS inside Docker.
 ````

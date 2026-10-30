@@ -6,7 +6,7 @@ Ground truth for prioritization. Not every user will match this; it defines what
 
 1. **Import + browse** — Google Takeout in; card library that feels like *my* places
 2. **Search the library** — beat Google Maps saved-places search (filters: open, radius, cuisine/type, tags, lists)
-3. **Decide / spin for dinner** — “what should I eat tonight?” from my data
+3. **Pick / spin for dinner** — “what should I eat tonight?” from my data (Marketplace module)
 4. **Dish photos** — nice when used; upload now or later
 
 ## Scale & geography

@@ -50,7 +50,7 @@ export const ApiLive = HttpApiBuilder.layer(Api, {
 
 /**
  * Enrichment needs Places + Google + Media; Import needs Enrichment + Lists.
- * Decide and other plugins load via ModuleRuntime (HTTP /api/m + MCP tools).
+ * Marketplace plugins load via ModuleRuntime (HTTP /api/m + MCP tools).
  */
 export const ServicesLayer = Import.layer.pipe(
   Layer.provideMerge(Search.layer),

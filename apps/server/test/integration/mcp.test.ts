@@ -2,6 +2,7 @@ import { expect, layer } from "@effect/vitest"
 import { Client } from "@modelcontextprotocol/sdk/client/index.js"
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
 import { Effect } from "effect"
+import { strToU8, zipSync } from "fflate"
 import { type Browser, TestApp } from "../layers/app.ts"
 
 const password = "correct horse battery"
@@ -130,14 +131,12 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("mcp", (it) => {
 
       const tools = await client.listTools()
       const names = tools.tools.map((t) => t.name).sort()
-      expect(names).toContain("restaurants_decide__decide_restaurant")
       expect(names).toEqual(
         [
           "add_to_list",
           "create_place",
           "get_place",
           "list_lists",
-          "restaurants_decide__decide_restaurant",
           "search_places",
           "set_status",
         ].sort(),
@@ -167,19 +166,57 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("mcp", (it) => {
       expect(got.isError).toBeFalsy()
       expect((got.content as { text: string }[])[0]?.text).toContain("want_to_go")
 
-      const decided = await client.callTool({
-        name: "restaurants_decide__decide_restaurant",
-        arguments: { avoidRecent: false },
-      })
-      expect(decided.isError).toBeFalsy()
-
       await client.close()
     }),
   )
 
-  it.effect("disabling module MCP hides restaurants_decide__decide_restaurant", () =>
+  it.effect("disabling module MCP hides that module's tools", () =>
     run(async (app) => {
-      const off = await admin.browser.send("PATCH", "/api/modules/me/restaurants.decide/mcp", {
+      const zip = Buffer.from(
+        zipSync({
+          "placard.module.json": strToU8(
+            JSON.stringify({
+              id: "demo.mcp",
+              name: "MCP Demo",
+              version: "0.1.0",
+              description: "MCP toggle fixture",
+              permissions: ["places.read"],
+              nav: [{ path: "/m/demo.mcp", label: "Demo", slot: "more" }],
+              source: "upload",
+              sdkVersion: "0.1.0",
+              webRoutes: [{ path: "/m/demo.mcp", exportName: "DemoPage" }],
+              mcpTools: [{ name: "ping", title: "Ping", description: "Fixture ping" }],
+            }),
+          ),
+          "server/index.js": strToU8(`
+export function createModule() {
+  return {
+    mcpTools: [{
+      def: { name: "ping", description: "Fixture ping", inputSchema: { type: "object", properties: {} } },
+      handler: async () => ({ content: [{ type: "text", text: "pong" }] }),
+    }],
+  }
+}
+`),
+          "web/index.js": strToU8(`export const DemoPage = () => null\n`),
+        }),
+      ).toString("base64")
+
+      const uploaded = await admin.browser.send("POST", "/api/modules/upload", {
+        filename: "demo.mcp.zip",
+        contentBase64: zip,
+      })
+      expect(uploaded.status).toBe(200)
+
+      const transportOn = new StreamableHTTPClientTransport(new URL("/mcp", app.publicUrl), {
+        fetch: mcpFetch(app, secret),
+      })
+      const clientOn = new Client({ name: "placard-test", version: "0.0.0" })
+      await clientOn.connect(transportOn)
+      expect((await clientOn.listTools()).tools.map((t) => t.name)).toContain("demo_mcp__ping")
+      await clientOn.close()
+
+      const off = await admin.browser.send("PATCH", "/api/modules/me/demo.mcp/mcp", {
         enabled: false,
       })
       expect(off.status).toBe(200)
@@ -190,13 +227,8 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("mcp", (it) => {
       })
       const client = new Client({ name: "placard-test", version: "0.0.0" })
       await client.connect(transport)
-      const tools = await client.listTools()
-      expect(tools.tools.map((t) => t.name)).not.toContain("restaurants_decide__decide_restaurant")
+      expect((await client.listTools()).tools.map((t) => t.name)).not.toContain("demo_mcp__ping")
       await client.close()
-
-      await admin.browser.send("PATCH", "/api/modules/me/restaurants.decide/mcp", {
-        enabled: true,
-      })
     }),
   )
 

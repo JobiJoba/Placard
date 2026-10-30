@@ -61,7 +61,7 @@ Enrichment is not only for prettier cards. It unlocks tools. First focus: **rest
 
 Examples (see [modules-restaurants.md](modules-restaurants.md)):
 
-- **Decide for me** — pick a list/tag/selection, filter to open tonight, run a wheel, get one restaurant.
+- **Pick for me** — pick a list/tag/selection, filter to open tonight, run a wheel, get one restaurant.
 - **Household vote** — propose restaurants, vote as a household (only when household mode is on).
 - **Dish memories** — upload photos of what you ordered; see them on the restaurant card next visit.
 
@@ -108,8 +108,8 @@ Households on one instance (family dinner votes, shared lists) — without forci
 1. Import Google Takeout (~500 places) into a usable library
 2. Search: open + radius + cuisine/type from *my* data
 3. Enrich with BYOK Google; hours good enough for open-tonight; **Force refresh** available
-4. Run **Decide** (wheel) on a filtered pool (optional avoid-recent)
-5. MCP: search + get place + decide from an agent client
+4. Run a **pick / spin** Marketplace module on a filtered pool (optional avoid-recent)
+5. MCP: search + get place (+ installed module tools) from an agent client
 6. Dish photos and want/been-there status work on cards
 7. (Household later) private + shared places; admin invites; in-app vote only
 

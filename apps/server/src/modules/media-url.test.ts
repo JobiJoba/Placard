@@ -6,14 +6,17 @@ describe("resolveModuleMediaUrl", () => {
     expect(resolveModuleMediaUrl("x", "bundled", "https://cdn.example/cover.png")).toBe(
       "https://cdn.example/cover.png",
     )
-    expect(
-      resolveModuleMediaUrl("restaurants.decide", "bundled", "/module-covers/decide.svg"),
-    ).toBe("/module-covers/decide.svg")
+    expect(resolveModuleMediaUrl("example.mod", "bundled", "/module-covers/example.svg")).toBe(
+      "/module-covers/example.svg",
+    )
   })
 
-  it("maps relative upload paths to the asset route", () => {
+  it("maps relative upload and github paths to the asset route", () => {
     expect(resolveModuleMediaUrl("places.pick", "upload", "./web/assets/cover.svg")).toBe(
       "/api/modules/places.pick/assets/web/assets/cover.svg",
+    )
+    expect(resolveModuleMediaUrl("demo.github", "github", "./web/assets/cover.svg")).toBe(
+      "/api/modules/demo.github/assets/web/assets/cover.svg",
     )
   })
 

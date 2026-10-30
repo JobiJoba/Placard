@@ -128,6 +128,8 @@ export const instanceSettings = pgTable(
     id: integer("id").primaryKey().default(1),
     googleApiKey: text("google_api_key"),
     signupOpen: boolean("signup_open").notNull().default(true),
+    /** Hours between GitHub plugin update checks; 0 disables automatic checks. */
+    moduleUpdateCheckHours: integer("module_update_check_hours").notNull().default(24),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow()
@@ -427,12 +429,20 @@ export const importSkips = pgTable(
 export const instanceModules = pgTable("instance_modules", {
   moduleId: text("module_id").primaryKey(),
   version: text("version").notNull(),
-  source: text("source").$type<"bundled" | "npm" | "folder" | "upload">().notNull(),
+  source: text("source").$type<"bundled" | "npm" | "folder" | "upload" | "github">().notNull(),
   packageName: text("package_name"),
   enabled: boolean("enabled").notNull().default(true),
   config: jsonb("config").$type<Record<string, unknown>>().notNull().default({}),
   loadError: text("load_error"),
   installedAt: timestamp("installed_at", { withTimezone: true }).notNull().defaultNow(),
+  githubOwner: text("github_owner"),
+  githubRepo: text("github_repo"),
+  githubRepoUrl: text("github_repo_url"),
+  githubReleaseTag: text("github_release_tag"),
+  githubAssetName: text("github_asset_name"),
+  latestAvailableVersion: text("latest_available_version"),
+  updateAvailable: boolean("update_available").notNull().default(false),
+  updateCheckedAt: timestamp("update_checked_at", { withTimezone: true }),
 })
 
 /** Per-user visibility / prefs for installed modules. */

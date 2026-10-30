@@ -13,7 +13,7 @@ Deploy: [deployment.md](deployment.md).
 
 | Mode | Status | Who | What you see |
 | --- | --- | --- | --- |
-| **Solo chrome** (default) | **Shipped** | Multi-user accounts; each private library | Library, tags, lists, enrichment, **search**, restaurant **Decide**, dish photos, **MCP**. No voting chrome. |
+| **Solo chrome** (default) | **Shipped** | Multi-user accounts; each private library | Library, tags, lists, enrichment, **search**, dish photos, **MCP**, optional Marketplace modules (e.g. Pick). No voting chrome. |
 | **Household** (opt-in) | **Planned (v0.2)** | Multiple full members; **admin invites only** | Shared *and* **private** places; dinner **votes** (in-app only); optional dish attribution. No guest/kid seats. |
 
 Household will unlock features; it will not force every place to be shared. Today only `private` visibility is allowed.
@@ -52,7 +52,7 @@ Provenance + `fetched_at`. User overrides win. Instance Google key by default; o
 
 ### Module session
 
-Decide spins, dinner votes, etc.
+Pick / spin sessions, dinner votes, etc.
 
 ---
 
@@ -66,8 +66,9 @@ Decide spins, dinner votes, etc.
 | Lists | `/lists` | |
 | Import | `/import`, `/import/:runId` | Triage + Needs review |
 | Recently deleted | `/deleted` | |
-| Decide | `/m/restaurants.decide` | Marketplace module |
+| Module pages | `/m/<module.id>` | After Marketplace install |
 | Settings | `/settings/general\|mcp\|marketplace\|…` | Side-nav |
+| Cmd+K | palette | Search + module navigate actions |
 
 ### Search / filter — **core product**
 
@@ -75,7 +76,7 @@ Beat Google Maps Saved search. Structured filters first (text, category, open no
 
 ### Modules
 
-**Decide** ships as a trusted Marketplace plugin + MCP tool. Dish photos live in core media. **Vote** waits on household (v0.2).
+Pick / spin wheels install from Marketplace (zip or GitHub) — e.g. sibling `placard-places-pick`. Dish photos live in core media. **Vote** waits on household (v0.2).
 
 ---
 
@@ -99,9 +100,9 @@ On save: status, tags, lists, note. If the place already exists, open the existi
 
 “Near me + open + pizza + restaurants” → cards → open detail or navigate out.
 
-### C. Decide
+### C. Pick / spin (module)
 
-Pool (list/tag/all restaurants) → filters (open tonight, radius, optional **avoid recent**) → wheel → result.
+Install a wheel module → pool (list/tag/category) → filters (open tonight, radius, optional **avoid recent**) → wheel → result.
 
 ### D. Household vote (household only, in-app)
 
@@ -154,7 +155,7 @@ CRUD works without a Google key.
 
 > Binding scope: [mvp.md](mvp.md). Progress: [current-state.md](current-state.md).
 
-**Shipped for v0.1 (code)** — accounts; library CRUD; cards/map; tags/lists; Takeout triage; search filters; enrichment + force refresh; dish photos + Google covers; Decide (Marketplace); MCP; Compose; trusted zip plugins.
+**Shipped for v0.1 (code)** — accounts; library CRUD; cards/map; tags/lists; Takeout triage; search filters; enrichment + force refresh; custom fields; dish photos + Google covers; MCP; Compose; trusted Marketplace plugins (zip + GitHub).
 
 **Phase 10 code shipped** — export JSON/GeoJSON zip; PWA basics; install guide; GHCR release workflow. Founder Coolify / phone DoD still open.
 

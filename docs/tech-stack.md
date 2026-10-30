@@ -49,7 +49,7 @@ MCP client  ────┘     apps/web                    apps/server (/api, /
 Rules:
 
 1. **Core services are Effect services** (`Places`, `Lists`, `Search`, `Enrichment`, `Import`, `Media`), each defined as a service tag with a live Layer. HttpApi handlers, MCP tools, and modules all call these services. None of them talk to the database directly.
-2. **Modules** (e.g. `restaurants.decide`) live in-repo under their own folder and depend only on the core services' public interfaces ([architecture-modules.md](architecture-modules.md)). In Effect terms, a module is a Layer that requires core services and provides its own.
+2. **Modules** (e.g. `places.pick` from a sibling repo) are Marketplace plugins that call core HTTP only ([architecture-modules.md](architecture-modules.md)). The in-repo skeleton is the starter; product wheels are not bundled in the image.
 3. **The Node runtime only.** No edge runtime, because PostGIS, the filesystem, and pg-boss need Node.
 
 ## How Effect is used
@@ -190,12 +190,12 @@ Tests are a first-class deliverable, not cleanup work. A feature isn't done unti
 
 | Level | What it covers | How |
 | --- | --- | --- |
-| **Unit** | Pure logic: opening-hours evaluation, distance and unit conversion, Takeout parsing, dedupe, search filter building, Decide pool selection and avoid-recent | `@effect/vitest` (`it.effect`). Services swapped for test Layers. |
+| **Unit** | Pure logic: opening-hours evaluation, distance and unit conversion, Takeout parsing, dedupe, search filter building | `@effect/vitest` (`it.effect`). Services swapped for test Layers. |
 | **Property** | Invariants that examples miss: filters round-trip through their schema, open-now is consistent across time zones and midnight, dedupe is idempotent | `it.prop` with Arbitraries derived from Effect Schemas |
 | **Time-dependent** | "Open now / tonight", soft-delete 30-day purge, avoid-recent windows | `TestClock`, so tests control time instead of depending on it |
 | **Integration** | Real SQL: PostGIS radius queries, full-text search, migrations, transactions, import staging → commit, job handlers | Postgres + PostGIS in Testcontainers, shared per suite with `it.layer` |
 | **Contract** | Google Places client against recorded responses; MCP tools list and call schemas; HTTP API matches its OpenAPI | Recorded fixtures; `HttpApiTest`; MCP calls through the SDK client |
-| **End-to-end** | The definition-of-done flows from [mvp.md](mvp.md): sign up, triage + import, add place, search, decide, bulk delete, export | Playwright against `docker compose`, with a fake Google layer enabled by a test-only flag |
+| **End-to-end** | The definition-of-done flows from [mvp.md](mvp.md): sign up, triage + import, add place, search, bulk delete, export | Playwright against `docker compose`, with a fake Google layer enabled by a test-only flag |
 
 ### Rules
 

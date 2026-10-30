@@ -43,7 +43,7 @@ Formats are awkward but well-trodden (Remap and others already parse Saved JSON/
 With a user-supplied API key:
 
 - Place details: hours, phone, website, types, address, photos (ToS permitting), price level, etc.
-- Enough structure for **open tonight** filters in the Decide module
+- Enough structure for **open tonight** filters in pick / spin modules
 
 Assumptions to document in setup docs later:
 
@@ -64,7 +64,7 @@ Assumptions to document in setup docs later:
 
 | Module | Feasibility | Notes |
 | --- | --- | --- |
-| Decide / wheel + open-tonight | High | Needs hours + filter + fun UI |
+| Pick / wheel + open-tonight | High | Needs hours + filter + fun UI |
 | Dish memories on card | High | Upload + gallery on place detail |
 | Household vote | Medium | Needs members, session model, permissions; hide entirely in solo mode |
 
@@ -88,7 +88,7 @@ Unchanged: manual + links first; connectors later. Not blocking restaurant-first
 
 ### “Open tonight”
 
-Feasible when hours exist (Google details or manual). UI must handle missing hours without breaking Decide (warn + allow unfiltered spin).
+Feasible when hours exist (Google details or manual). UI must handle missing hours without breaking pick wheels (warn + allow unfiltered spin).
 
 ---
 
@@ -136,7 +136,7 @@ Map tiles: configurable; attribution as required by the tile/provider choices.
 | --- | --- |
 | Core library + Takeout? | **Yes — central** |
 | Rich enrichment without running our own Google bill? | **Yes — BYOK** |
-| Decide wheel + open tonight? | **Yes**, once hours exist |
+| Pick wheel + open tonight? | **Yes**, once hours exist |
 | Dish photo history on cards? | **Yes** |
 | Household vote without harming solo UX? | **Yes**, if gated hard |
 | OSM as primary? | **No** (optional only) |

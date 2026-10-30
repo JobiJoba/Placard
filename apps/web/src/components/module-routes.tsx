@@ -1,5 +1,5 @@
 import type { MyModule } from "@placard/domain"
-import { Navigate, Route } from "react-router"
+import { Route } from "react-router"
 import { PluginPageHost } from "@/components/plugin-page-host"
 import { pageForExport } from "@/modules/registry"
 
@@ -32,12 +32,5 @@ export function moduleRouteElements(modules: ReadonlyArray<MyModule>) {
       }
     }
   }
-  routes.push(
-    <Route
-      key="decide-redirect"
-      path="/decide"
-      element={<Navigate to="/m/restaurants.decide" replace />}
-    />,
-  )
   return routes
 }

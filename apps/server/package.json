@@ -19,7 +19,6 @@
     "@effect/sql-pg": "4.0.6",
     "@modelcontextprotocol/sdk": "1.32.2",
     "@placard/domain": "workspace:*",
-    "@placard/module-restaurants-decide": "workspace:*",
     "@placard/module-sdk": "workspace:*",
     "better-auth": "1.7.13",
     "drizzle-orm": "1.0.0-rc.5",

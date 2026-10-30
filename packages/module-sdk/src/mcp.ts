@@ -21,7 +21,7 @@ export type ModuleMcpToolDef = typeof ModuleMcpToolDef.Type
 
 /**
  * Global MCP tool name for a module-owned tool.
- * Example: `restaurants.decide` + `decide_restaurant` → `restaurants_decide__decide_restaurant`
+ * Example: `places.pick` + `pick_place` → `places_pick__pick_place`
  */
 export const moduleMcpToolName = (moduleId: string, localName: string): string => {
   const prefix = moduleId.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "")

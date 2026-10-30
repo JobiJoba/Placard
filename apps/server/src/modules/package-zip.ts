@@ -11,7 +11,7 @@ import {
 import { Effect, Schema } from "effect"
 import { unzipSync } from "fflate"
 
-const MAX_ZIP_BYTES = 25 * 1024 * 1024
+export const MAX_ZIP_BYTES = 25 * 1024 * 1024
 const MAX_UNCOMPRESSED_BYTES = 80 * 1024 * 1024
 const MAX_FILES = 2_000
 
@@ -40,18 +40,12 @@ const ensureInside = (root: string, target: string) => {
   }
 }
 
-/** Decode and unzip a prebuilt plugin package into `destRoot/<moduleId>/`. */
-export const extractModuleZip = (
-  contentBase64: string,
+/** Unzip a prebuilt plugin package into `destRoot/<moduleId>/`. */
+export const extractModuleZipBytes = (
+  bytes: Buffer,
   destRoot: string,
 ): Effect.Effect<ExtractedPackage, ModuleInstallFailed> =>
   Effect.gen(function* () {
-    let bytes: Buffer
-    try {
-      bytes = Buffer.from(contentBase64, "base64")
-    } catch {
-      return yield* fail("Plugin zip is not valid base64.")
-    }
     if (bytes.byteLength === 0) return yield* fail("Plugin zip is empty.")
     if (bytes.byteLength > MAX_ZIP_BYTES) {
       return yield* fail(`Plugin zip is too large (max ${MAX_ZIP_BYTES / (1024 * 1024)} MB).`)
@@ -163,6 +157,55 @@ export const extractModuleZip = (
       sha256,
       rootDir: finalDir,
     }
+  })
+
+/** Decode base64 and unzip a prebuilt plugin package into `destRoot/<moduleId>/`. */
+export const extractModuleZip = (
+  contentBase64: string,
+  destRoot: string,
+): Effect.Effect<ExtractedPackage, ModuleInstallFailed> =>
+  Effect.gen(function* () {
+    let bytes: Buffer
+    try {
+      bytes = Buffer.from(contentBase64, "base64")
+    } catch {
+      return yield* fail("Plugin zip is not valid base64.")
+    }
+    return yield* extractModuleZipBytes(bytes, destRoot)
+  })
+
+/** Read placard.module.json from a zip without installing (for update checks). */
+export const peekModuleManifestFromZip = (
+  bytes: Buffer,
+): Effect.Effect<typeof ModuleManifest.Type, ModuleInstallFailed> =>
+  Effect.gen(function* () {
+    if (bytes.byteLength === 0) return yield* fail("Plugin zip is empty.")
+    if (bytes.byteLength > MAX_ZIP_BYTES) {
+      return yield* fail(`Plugin zip is too large (max ${MAX_ZIP_BYTES / (1024 * 1024)} MB).`)
+    }
+    let unzipped: Record<string, Uint8Array>
+    try {
+      unzipped = unzipSync(bytes)
+    } catch {
+      return yield* fail("Could not read the plugin zip.")
+    }
+    const manifestEntry = Object.entries(unzipped).find(
+      ([path]) => path === "placard.module.json" && !path.endsWith("/"),
+    )
+    if (!manifestEntry) {
+      return yield* fail("Plugin zip must contain placard.module.json at the archive root.")
+    }
+    let manifestJson: unknown
+    try {
+      manifestJson = JSON.parse(Buffer.from(manifestEntry[1]).toString("utf8"))
+    } catch {
+      return yield* fail("placard.module.json is not valid JSON.")
+    }
+    return yield* Schema.decodeUnknownEffect(ModuleManifest)(manifestJson).pipe(
+      Effect.mapError(() =>
+        fail("placard.module.json does not match the Placard module manifest schema."),
+      ),
+    )
   })
 
 export const removeModuleDir = (destRoot: string, moduleId: string): Effect.Effect<void> =>

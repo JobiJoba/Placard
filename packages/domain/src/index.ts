@@ -17,7 +17,6 @@ export {
   TokensApi,
 } from "./api.ts"
 export * from "./custom-fields.ts"
-export * from "./decide.ts"
 export * from "./export.ts"
 export * from "./facts.ts"
 export {

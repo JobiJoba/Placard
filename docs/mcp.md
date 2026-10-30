@@ -1,13 +1,13 @@
 # Connect agents with MCP
 
-Placard exposes a [Model Context Protocol](https://modelcontextprotocol.io/) endpoint on your instance so tools like Cursor or Claude can search your library, add places, and run module tools (for example **Decide**) using a personal access token you control.
+Placard exposes a [Model Context Protocol](https://modelcontextprotocol.io/) endpoint on your instance so tools like Cursor or Claude can search your library, add places, and run **installed module** tools using a personal access token you control.
 
 ## What you get
 
 | Capability | Notes |
 | --- | --- |
 | Core tools | Search, get/create places, lists, want/been status |
-| Module tools | Optional tools from installed modules (e.g. Decide) |
+| Module tools | Optional tools from modules you install (zip or GitHub) |
 | Auth | Bearer PAT (`plc_…`) — same privacy rules as the UI |
 | Transport | Streamable HTTP at `$PUBLIC_URL/mcp` |
 
@@ -60,10 +60,10 @@ Examples after you install those modules:
 
 | Module | Local name | Name agents call |
 | --- | --- | --- |
-| Decide (`restaurants.decide`) | `decide_restaurant` | `restaurants_decide__decide_restaurant` |
-| Pick (`places.pick`, upload example) | `pick_place` | `places_pick__pick_place` |
+| Pick (`places.pick`, sibling `placard-places-pick`) | `pick_place` | `places_pick__pick_place` |
+| Skeleton (`example.skeleton`) | `skeleton_hello` | `example_skeleton__skeleton_hello` |
 
-**Decide** ships with Placard as a Marketplace module (restaurant wheel). It is not a copy of another package you paste into MCP — the host loads the module and exposes its tools when:
+Module tools are not part of the core MCP set. The host loads a module and exposes its tools when:
 
 1. The module is installed and enabled for the instance
 2. You allow MCP for that module under **Settings → Marketplace → [module] → Settings**

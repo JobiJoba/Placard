@@ -152,6 +152,7 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("accounts", (it) =
     run(async (app) => {
       expect((await admin.browser.get("/api/admin/settings")).body).toEqual({
         googleApiKey: { source: "none", last4: null },
+        moduleUpdateCheckHours: 24,
       })
 
       const rejected = await admin.browser.send("PUT", "/api/admin/settings/google-api-key", {
@@ -163,7 +164,10 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("accounts", (it) =
       const saved = await admin.browser.send("PUT", "/api/admin/settings/google-api-key", {
         apiKey: "  AIza-good-key-9876  ",
       })
-      expect(saved.body).toEqual({ googleApiKey: { source: "instance", last4: "9876" } })
+      expect(saved.body).toEqual({
+        googleApiKey: { source: "instance", last4: "9876" },
+        moduleUpdateCheckHours: 24,
+      })
 
       const otherSession = app.browser()
       await otherSession.send("POST", "/api/auth/sign-in/email", {
@@ -173,7 +177,10 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("accounts", (it) =
       expect((await otherSession.get("/api/admin/settings")).body.googleApiKey.last4).toBe("9876")
 
       const cleared = await admin.browser.send("DELETE", "/api/admin/settings/google-api-key")
-      expect(cleared.body).toEqual({ googleApiKey: { source: "none", last4: null } })
+      expect(cleared.body).toEqual({
+        googleApiKey: { source: "none", last4: null },
+        moduleUpdateCheckHours: 24,
+      })
     }),
   )
 

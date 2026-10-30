@@ -16,7 +16,7 @@ Primary visitor is a self-hoster evaluating whether to try Placard: already comf
 
 ## Positioning
 
-Immich-adjacent for starred places: Compose-up from GHCR, data on your disk, private to you (or later a household). Beats Google Maps Saved for structured use of *your* library. Tagline: *Your places. On your cards. On your server.* The site sells ownership + install simplicity; MCP and modules (e.g. Decide) support that story rather than replacing the install CTA.
+Immich-adjacent for starred places: Compose-up from GHCR, data on your disk, private to you (or later a household). Beats Google Maps Saved for structured use of *your* library. Tagline: *Your places. On your cards. On your server.* The site sells ownership + install simplicity; MCP and Marketplace modules support that story rather than replacing the install CTA.
 
 ## Operating Context
 
@@ -50,5 +50,5 @@ Vite + React marketing + docs site. Home (`/`) persuades and points to Install. 
 1. **Install is the win** — Every surface should make Compose-up the obvious next step for a convinced visitor.
 2. **Own the library** — Messaging centers self-hosted ownership; never imply a public social or cloud-SaaS default.
 3. **Short path on-site, depth in docs** — Keep Install scannable; link out for Coolify, APIs, backup, and source builds.
-4. **Honest claims only** — No invented social proof; position with Immich-class self-hosting and real capabilities (library, Decide, MCP).
+4. **Honest claims only** — No invented social proof; position with Immich-class self-hosting and real capabilities (library, modules, MCP).
 5. **Self-hoster-true** — Write for people who already run containers, not for onboarding tourists to Docker.

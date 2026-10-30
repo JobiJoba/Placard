@@ -58,10 +58,10 @@ export function HomePage() {
         </section>
 
         <section className="band">
-          <h2>Decide together</h2>
+          <h2>Modules that act</h2>
           <p>
-            Modules like Decide spin a shortlist from your library when &ldquo;where should we
-            eat?&rdquo; stalls. More modules plug in without forking the core.
+            Install a pick wheel from the Marketplace when &ldquo;where should we eat?&rdquo;
+            stalls. More modules plug in without forking the core.
           </p>
         </section>
 

@@ -12,7 +12,7 @@ Primary user is the founder / first user: self-hosts one long-lived instance, ke
 
 ## Product Purpose
 
-Placard is a self-hosted place library: build a private collection (import or manual add), arrange and enrich it (lists, facts, photos), then *use* it — browse, filter, Decide for tonight, and talk to it via MCP. Success is ownership of a living collection that becomes useful over time — not public discovery.
+Placard is a self-hosted place library: build a private collection (import or manual add), arrange and enrich it (lists, facts, photos), then *use* it — browse, filter, optional Marketplace pick wheels, and talk to it via MCP. Success is ownership of a living collection that becomes useful over time — not public discovery.
 
 ## Positioning
 
@@ -20,11 +20,11 @@ Immich-adjacent for starred places: Compose-up, data on your disk, private to yo
 
 ## Operating Context
 
-Web client (PWA in Phase 10) against a self-hosted API (Effect HttpApi, PostGIS, Better Auth). Lifecycle: (1) seed — Takeout or manual add; (2) curate — lists, enrichment, photos, status; (3) return — near-me/city library, Decide wheel, MCP. Google Places BYOK is optional; CRUD works without a key. No offline mode. Decide + MCP ship; household vote is later.
+Web client (PWA in Phase 10) against a self-hosted API (Effect HttpApi, PostGIS, Better Auth). Lifecycle: (1) seed — Takeout or manual add; (2) curate — lists, enrichment, photos, status; (3) return — near-me/city library, optional Marketplace modules, MCP. Google Places BYOK is optional; CRUD works without a key. No offline mode. MCP ships; pick wheels install from Marketplace; household vote is later.
 
 ## Capabilities and Constraints
 
-- Confirmed: places with want/been status, tags/lists, soft-delete, media + Google covers, Takeout triage/Needs review, city autocomplete library, Decide (Marketplace), MCP PATs, auth/settings.
+- Confirmed: places with want/been status, tags/lists, soft-delete, media + Google covers, Takeout triage/Needs review, city autocomplete library, custom fields, Cmd+K, Marketplace (zip + GitHub), MCP PATs, auth/settings.
 - Privacy: instance is for the operator (and later invited household members only). No public sharing.
 - Later: household chrome, natural-language search, native apps, PWA share-target.
 

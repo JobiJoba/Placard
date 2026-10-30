@@ -17,6 +17,9 @@ import { registerEnrichPlaceWorker } from "./jobs/enrich-place.ts"
 import { registerImportWorkers } from "./jobs/import-jobs.ts"
 import { JobQueue } from "./jobs/queue.ts"
 import { Media } from "./media/media.ts"
+import { ModuleRuntime } from "./modules/loader.ts"
+import { Modules } from "./modules/modules.ts"
+import { checkModuleUpdates, moduleUpdateCheckSchedule } from "./modules/update-check.ts"
 import { Enrichment } from "./places/enrichment.ts"
 import { Lists } from "./places/lists.ts"
 import { Places } from "./places/places.ts"
@@ -37,7 +40,7 @@ const beat = Effect.gen(function* () {
   }
 })
 
-/** Places, enrichment, import, media, and the job queue over the worker's database. */
+/** Places, enrichment, import, media, modules, and the job queue over the worker's database. */
 const WorkerServices = Import.layer.pipe(
   Layer.provideMerge(Enrichment.layer.pipe(Layer.provide(Media.layer))),
   Layer.provideMerge(Media.layer),
@@ -47,6 +50,7 @@ const WorkerServices = Import.layer.pipe(
   Layer.provideMerge(Tags.layer),
   Layer.provideMerge(AccountsLayer),
   Layer.provideMerge(JobQueue.layer),
+  Layer.provideMerge(Modules.layer.pipe(Layer.provide(ModuleRuntime.layer))),
 )
 
 const program = Effect.gen(function* () {
@@ -65,6 +69,7 @@ const program = Effect.gen(function* () {
     [
       beat.pipe(Effect.repeat(Schedule.spaced("10 seconds"))),
       purgeDeletedPlaces.pipe(Effect.repeat(purgeSchedule)),
+      checkModuleUpdates.pipe(Effect.repeat(moduleUpdateCheckSchedule)),
     ],
     { concurrency: "unbounded", discard: true },
   )

@@ -57,9 +57,9 @@ Resolved choices from product discussion. Update this file when something change
 
 | Topic | Decision |
 | --- | --- |
-| **Modules** | Trusted same-process plugins; SDK + instance install + per-user show; marketplace catalog UI + admin zip upload (**shipped** ahead of original “Later”). Restaurants first. |
-| **Decide wheel** | Reference plugin `@placard/module-restaurants-decide`; optional **“avoid recent picks”** toggle. |
-| **MCP** | **Must-ship** — Streamable HTTP `/mcp` + PATs (**shipped**). |
+| **Modules** | Trusted same-process plugins; SDK + instance install + per-user show; marketplace catalog UI + admin zip upload / GitHub Release (**shipped** ahead of original “Later”). No bundled first-party wheel — Pick lives in sibling `placard-places-pick`. |
+| **Pick / spin wheel** | External Marketplace module (e.g. `places.pick`); optional **“avoid recent picks”** toggle. |
+| **MCP** | **Must-ship** — Streamable HTTP `/mcp` + PATs (**shipped**); module tools discovered after install. |
 | **Install targets** | Docker Compose / Coolify first; beside Nextcloud, not inside it (v1). |
 | **Backups** | Aim for **one-click backup** (DB + media), Immich-like niceness — not only raw volume docs. |
 

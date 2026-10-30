@@ -10,6 +10,12 @@ and this project aims to follow [Semantic Versioning](https://semver.org/).
 ### Added
 
 - CI publishes `ghcr.io/<owner>/placard:nightly` (and `nightly-<sha>`) when `main` goes green — opt-in for testers; does not move `:latest`
+- Install modules from a public GitHub Release; update check + Marketplace Update
+- Per-place custom fields; preferred maps app; Cmd+K palette
+
+### Removed
+
+- Bundled Decide module (`restaurants.decide`) — use Marketplace Pick (sibling `placard-places-pick`) or another wheel instead
 
 ## [0.1.0] — 2026-10-29
 
@@ -20,7 +26,7 @@ First v0.1 release candidate after phases 0–10.
 - Self-hosted place library (accounts, places, tags, lists, search, enrichment)
 - Google Takeout import with free triage and undo
 - Dish photos and Google place covers
-- Trusted module Marketplace (Decide bundled; prebuilt zip upload)
+- Trusted module Marketplace (prebuilt zip upload; Decide was bundled in this release, later removed)
 - Streamable HTTP MCP with PATs; module-owned tools with host-prefixed names
 - Per-user library export (`GET /api/export` — JSON, GeoJSON, media zip)
 - Installable PWA basics (manifest + icons)

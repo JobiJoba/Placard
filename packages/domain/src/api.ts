@@ -13,6 +13,7 @@ import {
   InviteLookup,
   InviteNotFound,
   Me,
+  ModuleUpdateCheckHoursUpdate,
   SetupStatus,
   UserSummary,
 } from "./accounts.ts"
@@ -68,10 +69,12 @@ import {
   CatalogModule,
   InstalledModule,
   ModuleEnabledUpdate,
+  ModuleGithubInstall,
   ModuleInstallFailed,
   ModuleInstallInput,
   ModuleMcpEnabledUpdate,
   ModuleNotFound,
+  ModuleUpdateCheckResult,
   ModuleUpload,
   ModuleVisibleUpdate,
   MyModule,
@@ -133,6 +136,10 @@ export class AdminApi extends HttpApiGroup.make("admin")
       error: GoogleKeyRejected,
     }),
     HttpApiEndpoint.delete("clearGoogleApiKey", "/settings/google-api-key", {
+      success: InstanceSettingsView,
+    }),
+    HttpApiEndpoint.patch("setModuleUpdateCheckHours", "/settings/module-update-check", {
+      payload: ModuleUpdateCheckHoursUpdate,
       success: InstanceSettingsView,
     }),
     HttpApiEndpoint.get("users", "/users", { success: Schema.Array(UserSummary) }),
@@ -451,6 +458,20 @@ export class ModulesApi extends HttpApiGroup.make("modules")
       payload: ModuleUpload,
       success: InstalledModule,
       error: ModuleInstallFailed,
+    }),
+    HttpApiEndpoint.post("fromGithub", "/from-github", {
+      payload: ModuleGithubInstall,
+      success: InstalledModule,
+      error: ModuleInstallFailed,
+    }),
+    HttpApiEndpoint.post("checkUpdates", "/check-updates", {
+      success: ModuleUpdateCheckResult,
+      error: ModuleInstallFailed,
+    }),
+    HttpApiEndpoint.post("updateFromGithub", "/installed/:id/update", {
+      params: { id: Schema.String },
+      success: InstalledModule,
+      error: [ModuleNotFound, ModuleInstallFailed],
     }),
     HttpApiEndpoint.delete("uninstall", "/installed/:id", {
       params: { id: Schema.String },

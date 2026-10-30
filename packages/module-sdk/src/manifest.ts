@@ -5,7 +5,7 @@ export const modulePermissions = ["places.read", "search.query", "media.read"] a
 export const ModulePermission = Schema.Literals(modulePermissions)
 export type ModulePermission = typeof ModulePermission.Type
 
-export const moduleSources = ["bundled", "npm", "folder", "upload"] as const
+export const moduleSources = ["bundled", "npm", "folder", "upload", "github"] as const
 export const ModuleSource = Schema.Literals(moduleSources)
 export type ModuleSource = typeof ModuleSource.Type
 

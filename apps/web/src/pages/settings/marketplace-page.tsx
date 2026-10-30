@@ -1,9 +1,11 @@
 import type { CatalogModule, InstalledModule, ModuleSource } from "@placard/domain"
-import { useCallback, useMemo, useState } from "react"
+import { type FormEvent, useCallback, useMemo, useState } from "react"
 import { Link } from "react-router"
 import { ErrorAlert } from "@/components/error-alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
 import { api, errorMessage } from "@/lib/api"
 import { useLoad } from "@/lib/use-load"
 import { SettingsCard } from "./settings-card"
@@ -20,6 +22,9 @@ type MarketplaceCardModel = {
   readonly iconUrl: string | null
   readonly coverUrl: string | null
   readonly permissions: ReadonlyArray<string>
+  readonly updateAvailable: boolean
+  readonly latestAvailableVersion: string | null
+  readonly githubRepoUrl: string | null
 }
 
 const sourceBadge = (
@@ -27,6 +32,7 @@ const sourceBadge = (
 ): { label: string; variant: "default" | "secondary" | "outline" } => {
   if (source === "bundled") return { label: "Preinstalled", variant: "default" }
   if (source === "upload") return { label: "Uploaded", variant: "secondary" }
+  if (source === "github") return { label: "GitHub", variant: "secondary" }
   if (source === "folder") return { label: "Folder", variant: "outline" }
   return { label: "npm", variant: "outline" }
 }
@@ -50,9 +56,18 @@ export function SettingsMarketplacePage() {
     reload: reloadInstalled,
     setData: setInstalled,
   } = useLoad(useCallback(() => api((c) => c.modules.installed()), []))
+  const {
+    data: settings,
+    error: settingsError,
+    setData: setSettings,
+  } = useLoad(useCallback(() => api((c) => c.admin.settings()), []))
   const [actionError, setActionError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [githubUrl, setGithubUrl] = useState("")
+  const [installingGithub, setInstallingGithub] = useState(false)
+  const [checkingUpdates, setCheckingUpdates] = useState(false)
+  const [savingInterval, setSavingInterval] = useState(false)
 
   const refresh = () => {
     reloadCatalog()
@@ -83,6 +98,9 @@ export function SettingsMarketplacePage() {
         iconUrl: row.iconUrl,
         coverUrl: row.coverUrl,
         permissions: [],
+        updateAvailable: row.updateAvailable,
+        latestAvailableVersion: row.latestAvailableVersion,
+        githubRepoUrl: row.githubRepoUrl,
       })
     }
     return out
@@ -111,12 +129,83 @@ export function SettingsMarketplacePage() {
       })
   }
 
+  const installFromGithub = (event: FormEvent) => {
+    event.preventDefault()
+    const url = githubUrl.trim()
+    if (!url) return
+    setInstallingGithub(true)
+    setActionError(null)
+    void api((c) => c.modules.fromGithub({ payload: { url } })).then(
+      () => {
+        setInstallingGithub(false)
+        setGithubUrl("")
+        refresh()
+      },
+      (cause: unknown) => {
+        setInstallingGithub(false)
+        setActionError(errorMessage(cause))
+      },
+    )
+  }
+
+  const checkUpdates = () => {
+    setCheckingUpdates(true)
+    setActionError(null)
+    void api((c) => c.modules.checkUpdates()).then(
+      () => {
+        setCheckingUpdates(false)
+        refresh()
+      },
+      (cause: unknown) => {
+        setCheckingUpdates(false)
+        setActionError(errorMessage(cause))
+      },
+    )
+  }
+
+  const saveCheckInterval = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const hours = Number(new FormData(event.currentTarget).get("hours"))
+    if (!Number.isInteger(hours) || hours < 0 || hours > 168) {
+      setActionError("Check interval must be an integer from 0 to 168 hours.")
+      return
+    }
+    setSavingInterval(true)
+    setActionError(null)
+    void api((c) => c.admin.setModuleUpdateCheckHours({ payload: { hours } })).then(
+      (view) => {
+        setSavingInterval(false)
+        setSettings(view)
+      },
+      (cause: unknown) => {
+        setSavingInterval(false)
+        setActionError(errorMessage(cause))
+      },
+    )
+  }
+
   const install = (mod: MarketplaceCardModel) => {
     setBusyId(mod.id)
     setActionError(null)
     void api((c) => c.modules.install({ payload: { moduleId: mod.id } })).then(
       () => {
         setBusyId(null)
+        refresh()
+      },
+      (cause: unknown) => {
+        setBusyId(null)
+        setActionError(errorMessage(cause))
+      },
+    )
+  }
+
+  const updateFromGithub = (mod: MarketplaceCardModel) => {
+    setBusyId(mod.id)
+    setActionError(null)
+    void api((c) => c.modules.updateFromGithub({ params: { id: mod.id } })).then(
+      (updated) => {
+        setBusyId(null)
+        setInstalled((prev) => (prev ?? []).map((m) => (m.id === updated.id ? updated : m)))
         refresh()
       },
       (cause: unknown) => {
@@ -161,10 +250,11 @@ export function SettingsMarketplacePage() {
     <div className="flex flex-col gap-6">
       <SettingsCard
         title="Module marketplace"
-        description="Trusted plugins for this instance. Preinstalled modules ship with Placard; upload a zip for third-party packs. Disable is the kill switch (a restart may be needed to fully unload)."
+        description="Trusted plugins for this instance. Preinstalled modules ship with Placard; upload a zip or install from a public GitHub Release. Disable is the kill switch (a restart may be needed to fully unload)."
       >
-        <ErrorAlert message={catalogError ?? installedError ?? actionError} />
-        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-md border border-[var(--crate-edge)] bg-[color-mix(in_srgb,var(--crate)_6%,transparent)] p-3">
+        <ErrorAlert message={catalogError ?? installedError ?? settingsError ?? actionError} />
+
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-md border border-[var(--crate-edge)] bg-[color-mix(in_srgb,var(--crate)_6%,transparent)] p-3">
           <div className="min-w-0 flex-1">
             <p className="font-medium">Upload prebuilt plugin</p>
             <p className="text-xs text-muted-foreground">
@@ -188,6 +278,71 @@ export function SettingsMarketplacePage() {
           </Button>
         </div>
 
+        <form
+          onSubmit={installFromGithub}
+          className="mb-4 rounded-md border border-[var(--crate-edge)] bg-[color-mix(in_srgb,var(--crate)_6%,transparent)] p-3"
+        >
+          <FieldGroup>
+            <div>
+              <p className="font-medium">Install from GitHub</p>
+              <p className="text-xs text-muted-foreground">
+                Public repo URL or owner/repo. Installs the latest Release asset (.placard-module or
+                .zip).
+              </p>
+            </div>
+            <Field>
+              <FieldLabel htmlFor="githubRepoUrl">Repository</FieldLabel>
+              <div className="flex flex-wrap gap-2">
+                <Input
+                  id="githubRepoUrl"
+                  name="githubRepoUrl"
+                  value={githubUrl}
+                  onChange={(e) => setGithubUrl(e.target.value)}
+                  placeholder="https://github.com/owner/repo"
+                  spellCheck={false}
+                  autoComplete="off"
+                  className="min-w-[16rem] flex-1"
+                />
+                <Button type="submit" size="sm" disabled={installingGithub || !githubUrl.trim()}>
+                  {installingGithub ? "Installing…" : "Install"}
+                </Button>
+              </div>
+            </Field>
+          </FieldGroup>
+        </form>
+
+        <form
+          onSubmit={saveCheckInterval}
+          className="mb-6 flex flex-wrap items-end gap-3 rounded-md border border-[var(--crate-edge)] p-3"
+        >
+          <Field className="min-w-[10rem] flex-1">
+            <FieldLabel htmlFor="moduleUpdateCheckHours">Update check interval (hours)</FieldLabel>
+            <Input
+              id="moduleUpdateCheckHours"
+              name="hours"
+              type="number"
+              min={0}
+              max={168}
+              step={1}
+              key={settings?.moduleUpdateCheckHours ?? "loading"}
+              defaultValue={settings?.moduleUpdateCheckHours ?? 24}
+            />
+            <FieldDescription>0 disables automatic checks. Default is 24.</FieldDescription>
+          </Field>
+          <Button type="submit" size="sm" variant="outline" disabled={savingInterval || !settings}>
+            {savingInterval ? "Saving…" : "Save"}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            disabled={checkingUpdates}
+            onClick={checkUpdates}
+          >
+            {checkingUpdates ? "Checking…" : "Check now"}
+          </Button>
+        </form>
+
         {!catalog || !installed ? (
           <p className="text-sm text-muted-foreground">Loading modules…</p>
         ) : cards.length === 0 ? (
@@ -200,6 +355,7 @@ export function SettingsMarketplacePage() {
                   mod={mod}
                   busy={busyId === mod.id}
                   onInstall={() => install(mod)}
+                  onUpdate={() => updateFromGithub(mod)}
                   onUninstall={() => uninstall(mod)}
                   onSetEnabled={(enabled) => setEnabled(mod, enabled)}
                 />
@@ -224,18 +380,23 @@ const mergeCard = (mod: CatalogModule, row: InstalledModule | undefined): Market
   iconUrl: row?.iconUrl ?? mod.iconUrl,
   coverUrl: row?.coverUrl ?? mod.coverUrl,
   permissions: mod.permissions,
+  updateAvailable: row?.updateAvailable ?? false,
+  latestAvailableVersion: row?.latestAvailableVersion ?? null,
+  githubRepoUrl: row?.githubRepoUrl ?? null,
 })
 
 function ModuleCard({
   mod,
   busy,
   onInstall,
+  onUpdate,
   onUninstall,
   onSetEnabled,
 }: {
   readonly mod: MarketplaceCardModel
   readonly busy: boolean
   readonly onInstall: () => void
+  readonly onUpdate: () => void
   readonly onUninstall: () => void
   readonly onSetEnabled: (enabled: boolean) => void
 }) {
@@ -263,6 +424,7 @@ function ModuleCard({
         )}
         <div className="absolute top-2 left-2 flex flex-wrap gap-1">
           <Badge variant={badge.variant}>{badge.label}</Badge>
+          {mod.updateAvailable ? <Badge variant="default">Update available</Badge> : null}
         </div>
       </div>
 
@@ -285,8 +447,21 @@ function ModuleCard({
 
         <p className="text-xs text-muted-foreground">
           {mod.version} · {status}
+          {mod.updateAvailable && mod.latestAvailableVersion
+            ? ` · ${mod.latestAvailableVersion} available`
+            : ""}
           {mod.loadError ? ` · ${mod.loadError}` : ""}
         </p>
+        {mod.githubRepoUrl ? (
+          <a
+            href={mod.githubRepoUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs underline underline-offset-2"
+          >
+            {mod.githubRepoUrl.replace(/^https:\/\/github\.com\//, "")}
+          </a>
+        ) : null}
 
         <div className="mt-auto flex flex-wrap gap-2 border-t border-[var(--crate-edge)] pt-3">
           {!mod.installed ? (
@@ -300,6 +475,11 @@ function ModuleCard({
             </Button>
           ) : (
             <>
+              {mod.source === "github" && mod.updateAvailable ? (
+                <Button type="button" size="sm" disabled={busy} onClick={onUpdate}>
+                  Update
+                </Button>
+              ) : null}
               <Button type="button" size="sm" variant="secondary" asChild>
                 <Link to={`/settings/modules/${encodeURIComponent(mod.id)}`}>Settings</Link>
               </Button>

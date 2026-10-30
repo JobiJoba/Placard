@@ -38,11 +38,14 @@ const program = Effect.gen(function* () {
   yield* Effect.log(`Starting Placard on port ${config.port}`)
   yield* runMigrations.pipe(Effect.provide(withConfig(config)))
 
+  const http = config.fakeGoogle ? GoogleFixtureClient : FetchHttpClient.layer
   yield* Effect.gen(function* () {
     const modules = yield* Modules
     yield* modules.loadDiskModules
   }).pipe(
-    Effect.provide(Modules.layer.pipe(Layer.provide(ModuleRuntime.layer))),
+    Effect.provide(
+      Modules.layer.pipe(Layer.provide(ModuleRuntime.layer), Layer.provide(http)),
+    ),
     Effect.provide(withConfig(config)),
     Effect.catchCause((cause) =>
       Effect.logWarning("Could not load disk modules", { cause: String(cause) }),
@@ -50,7 +53,7 @@ const program = Effect.gen(function* () {
   )
 
   const ServerLive = HttpRouter.serve(Layer.mergeAll(RoutesLive, StaticLive)).pipe(
-    Layer.provide(config.fakeGoogle ? GoogleFixtureClient : FetchHttpClient.layer),
+    Layer.provide(http),
     Layer.provide(NodeHttpServer.layer(createServer, { port: config.port })),
     Layer.provide(withConfig(config)),
     Layer.provideMerge(ObservabilityLive),

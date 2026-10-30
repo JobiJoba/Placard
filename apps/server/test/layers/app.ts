@@ -4,9 +4,9 @@ import type { SqlClient } from "effect/sql"
 import { AppConfig } from "../../src/config.ts"
 import type { Database } from "../../src/db/database.ts"
 import { runMigrations } from "../../src/db/migrate.ts"
-import { GoogleFixtureClient } from "../../src/google/fixture-client.ts"
 import type { Health } from "../../src/health.ts"
 import { RoutesLive } from "../../src/http/api.ts"
+import { TestHttpFixtureClient } from "../../src/modules/github-fixture.ts"
 import { ModuleRuntime, setModuleHostFetch } from "../../src/modules/loader.ts"
 import { Modules } from "../../src/modules/modules.ts"
 import { IntegrationLayer } from "./postgis.ts"
@@ -49,7 +49,7 @@ export class TestApp extends Context.Service<TestApp, TestAppService>()("test/Te
       yield* modules.loadDiskModules
       const app = HttpRouter.toWebHandler(
         RoutesLive.pipe(
-          Layer.provide(GoogleFixtureClient),
+          Layer.provide(TestHttpFixtureClient),
           Layer.provide(Layer.succeedContext(services)),
           Layer.provide(HttpServer.layerServices),
         ),
@@ -121,7 +121,9 @@ export class TestApp extends Context.Service<TestApp, TestAppService>()("test/Te
       return { browser, fetch: fetchImpl, publicUrl: config.publicUrl }
     }),
   ).pipe(
-    Layer.provide(Modules.layer.pipe(Layer.provide(ModuleRuntime.layer))),
+    Layer.provide(
+      Modules.layer.pipe(Layer.provide(ModuleRuntime.layer), Layer.provide(TestHttpFixtureClient)),
+    ),
     Layer.provideMerge(IntegrationLayer),
   )
 }
