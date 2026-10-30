@@ -276,6 +276,7 @@ export class Modules extends Context.Service<
           source: row.source,
           nav: visible ? [...manifest.nav] : [],
           webRoutes: visible ? [...manifest.webRoutes] : [],
+          actions: visible ? [...(manifest.actions ?? [])] : [],
           mcpTools: mcpToolInfos(manifest, row.module_id),
           webEntryUrl: visible && disk ? webEntryUrlFor(row.module_id, webEntry) : null,
         }

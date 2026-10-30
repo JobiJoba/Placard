@@ -21,6 +21,15 @@ export const ModuleWebRoute = Schema.Struct({
 })
 export type ModuleWebRoute = typeof ModuleWebRoute.Type
 
+/** CMD+K action contributed by a module (navigate to `path`). */
+export const ModuleAction = Schema.Struct({
+  id: Schema.String,
+  label: Schema.String,
+  keywords: Schema.optional(Schema.String),
+  path: Schema.String,
+})
+export type ModuleAction = typeof ModuleAction.Type
+
 export const CatalogModule = Schema.Struct({
   id: Schema.String,
   name: Schema.String,
@@ -71,6 +80,8 @@ export const MyModule = Schema.Struct({
   source: ModuleSource,
   nav: Schema.Array(ModuleNavItem),
   webRoutes: Schema.Array(ModuleWebRoute),
+  /** CMD+K actions (empty when module is hidden from the user). */
+  actions: Schema.Array(ModuleAction),
   /** MCP tools declared by the module (defs only). */
   mcpTools: Schema.Array(ModuleMcpToolInfo),
   /** When set, the shell loads this ESM URL instead of a bundled registry page. */

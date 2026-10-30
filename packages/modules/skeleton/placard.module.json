@@ -22,6 +22,14 @@
       "exportName": "SkeletonPage"
     }
   ],
+  "actions": [
+    {
+      "id": "open",
+      "label": "Open Skeleton",
+      "keywords": "hello starter example",
+      "path": "/m/example.skeleton"
+    }
+  ],
   "mcpTools": [
     {
       "name": "skeleton_hello",

@@ -26,6 +26,8 @@ web/assets/…       # optional icon/cover
 - serverEntry: "./server/index.js"
 - webEntry: "./web/index.js"
 - webRoutes: [{ "path": "/m/<id>", "exportName": "YourPage" }]
+- actions (optional): [{ "id": "open", "label": "…", "keywords": "…", "path": "/m/<id>" }]
+  CMD+K Actions group; selecting navigates to `path`. Hidden when the user hides the module (same as nav).
 - mcpTools (optional): [{ "name": "local_tool_name", "title": "…", "description": "…" }]
   Local names only. Host exposes global MCP name:
   {id with "." → "_"}__{local_name}
@@ -66,7 +68,8 @@ export function createModule() {
 - Module id: example.skeleton
 - Build zip: pnpm --filter @placard/module-skeleton build:zip
 - Output: packages/modules/skeleton/dist/example.skeleton-0.1.0.zip
-- Includes GET /api/m/example.skeleton/hello, SkeletonPage, MCP tool skeleton_hello
+- Includes GET /api/m/example.skeleton/hello, SkeletonPage, CMD+K action "Open Skeleton"
+  (manifest actions → /m/example.skeleton), MCP tool skeleton_hello
   (global name example_skeleton__skeleton_hello), React host shims, build:zip script.
 - Clone/rename that package (change id, paths, API constant, page export) instead of
   inventing a new layout.

@@ -24,6 +24,14 @@
       "exportName": "DecidePage"
     }
   ],
+  "actions": [
+    {
+      "id": "open",
+      "label": "Decide where to eat",
+      "keywords": "spin wheel dinner restaurant tonight",
+      "path": "/m/restaurants.decide"
+    }
+  ],
   "mcpTools": [
     {
       "name": "decide_restaurant",

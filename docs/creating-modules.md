@@ -15,7 +15,7 @@ A minimal uploadable starter lives in the repo:
 | Build | `pnpm --filter @placard/module-skeleton build:zip` |
 | Zip | `packages/modules/skeleton/dist/example.skeleton-0.1.0.zip` |
 
-It exposes `GET /hello`, a small page, and MCP tool `skeleton_hello` so you can verify Marketplace + MCP wiring before adding real behavior. Rename the id/paths when you turn it into a real module.
+It exposes `GET /hello`, a small page, a CMD+K action (**Open Skeleton**), and MCP tool `skeleton_hello` so you can verify Marketplace + palette + MCP wiring before adding real behavior. Rename the id/paths when you turn it into a real module.
 
 Richer examples: **`places.pick`** (generic wheel, upload-oriented) and **`restaurants.decide`** (shipped restaurant wheel).
 
@@ -32,7 +32,7 @@ web/assets/…         # optional icon / cover
 
 | Piece | Role |
 | --- | --- |
-| Manifest | Id, nav, permissions, entries, optional MCP tool list |
+| Manifest | Id, nav, permissions, entries, optional CMD+K actions, optional MCP tool list |
 | Server | HTTP under `/api/m/<id>/*` and optional MCP tools |
 | Web | Page at `/m/<id>` (export name from the manifest) |
 
@@ -53,6 +53,14 @@ web/assets/…         # optional icon / cover
   "serverEntry": "./server/index.js",
   "webEntry": "./web/index.js",
   "webRoutes": [{ "path": "/m/places.pick", "exportName": "PickPage" }],
+  "actions": [
+    {
+      "id": "open",
+      "label": "Pick a place",
+      "keywords": "spin wheel random",
+      "path": "/m/places.pick"
+    }
+  ],
   "mcpTools": [
     {
       "name": "pick_place",
@@ -70,6 +78,7 @@ Rules:
 - `source` must be `upload` for Marketplace zips
 - `sdkVersion` major must match the host (`0.1.0` today)
 - Nav path and API prefix use the same id: `/m/<id>`, `/api/m/<id>/*`
+- Optional `actions` appear in **CMD+K → Actions** and navigate to `path` when selected (same visibility gate as `nav`)
 
 ## Server entry
 
@@ -114,7 +123,8 @@ After upload, module tools appear under **Settings → MCP** with their global n
 - [ ] Handlers use `hostFetch` only
 - [ ] UI calls `/api/m/<id>/…`
 - [ ] Optional MCP local names match `mcpTools` in the manifest
-- [ ] Upload works; nav and MCP toggles behave as expected
+- [ ] Optional `actions` use unique local `id`s and paths under `/m/<id>`
+- [ ] Upload works; nav, CMD+K actions, and MCP toggles behave as expected
 
 ## Related
 

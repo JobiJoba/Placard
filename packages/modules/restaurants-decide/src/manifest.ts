@@ -16,6 +16,9 @@ export const restaurantsDecideManifest = defineModule({
   icon: raw.icon,
   cover: raw.cover,
   webRoutes: raw.webRoutes as [{ path: string; exportName: string }],
+  actions: raw.actions as
+    | [{ id: string; label: string; keywords?: string; path: string }]
+    | undefined,
   mcpTools: raw.mcpTools as [{ name: string; title?: string; description: string }] | undefined,
 })
 

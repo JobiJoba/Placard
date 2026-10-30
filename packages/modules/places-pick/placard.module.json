@@ -24,6 +24,14 @@
       "exportName": "PickPage"
     }
   ],
+  "actions": [
+    {
+      "id": "open",
+      "label": "Pick a place",
+      "keywords": "spin wheel random surprise",
+      "path": "/m/places.pick"
+    }
+  ],
   "mcpTools": [
     {
       "name": "pick_place",

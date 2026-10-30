@@ -6,6 +6,7 @@ Minimal Placard Marketplace starter for **humans** and **AI agents**.
 
 - `GET /api/m/example.skeleton/hello` — JSON hello
 - Page at `/m/example.skeleton` — button that calls hello
+- CMD+K action **Open Skeleton** → navigates to `/m/example.skeleton` (manifest `actions`)
 - MCP tool `skeleton_hello` → global name `example_skeleton__skeleton_hello`
 - Host React bridge shims + `build:zip` script (same pattern as `places.pick`)
 

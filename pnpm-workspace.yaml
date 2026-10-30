@@ -4,6 +4,11 @@ packages:
   - "packages/modules/*"
   - "aspire-apphost"
 
+# @effect/platform-node@4.0.6 accepts ^4.0.6 of platform-node-shared; 4.1.0
+# requires effect@^4.1.0 (CommandLine) and breaks Vite/Node under effect@4.0.6.
+overrides:
+  "@effect/platform-node-shared": "4.0.6"
+
 allowBuilds:
   cpu-features: false
   protobufjs: false

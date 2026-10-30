@@ -27,6 +27,15 @@ export const ModuleWebRoute = Schema.Struct({
 })
 export type ModuleWebRoute = typeof ModuleWebRoute.Type
 
+/** CMD+K action — navigate to `path` when selected (handlers deferred). */
+export const ModuleAction = Schema.Struct({
+  id: Schema.String.pipe(Schema.check(Schema.isBetweenLength(1, 64))),
+  label: Schema.String,
+  keywords: Schema.optional(Schema.String),
+  path: Schema.String,
+})
+export type ModuleAction = typeof ModuleAction.Type
+
 /** MCP tool metadata for Settings (handlers live in createModule). */
 export const ModuleMcpToolManifest = Schema.Struct({
   name: Schema.String.pipe(Schema.check(Schema.isBetweenLength(1, 64))),
@@ -51,6 +60,10 @@ export const ModuleManifest = Schema.Struct({
   /** npm package name when source is npm or bundled workspace package. */
   packageName: Schema.optional(Schema.String),
   webRoutes: Schema.Array(ModuleWebRoute),
+  /**
+   * Optional CMD+K actions (navigate to `path`). Gated by user module visibility like `nav`.
+   */
+  actions: Schema.optional(Schema.Array(ModuleAction)),
   /** Semver of `@placard/module-sdk` the plugin was built against (major must match host). */
   sdkVersion: Schema.optional(Schema.String),
   /** Relative path to server ESM entry inside a prebuilt zip. */

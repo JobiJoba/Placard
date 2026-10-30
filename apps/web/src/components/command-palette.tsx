@@ -192,7 +192,7 @@ export function CommandPalette({
   }, [go, pluginNav])
 
   const actions = useMemo((): ReadonlyArray<PaletteCommand> => {
-    return [
+    const items: PaletteCommand[] = [
       {
         id: "act:add",
         label: "Add place",
@@ -227,7 +227,19 @@ export function CommandPalette({
         run: () => void signOut(),
       },
     ]
-  }, [go, signOut])
+    for (const mod of modules) {
+      if (!mod.visible) continue
+      for (const action of mod.actions) {
+        items.push({
+          id: `module:${mod.id}:action:${action.id}`,
+          label: action.label,
+          keywords: `${action.keywords ?? ""} ${mod.name} module plugin`,
+          run: () => go(action.path),
+        })
+      }
+    }
+    return items
+  }, [go, modules, signOut])
 
   const preferences = useMemo((): ReadonlyArray<PaletteCommand> => {
     const densityItems: PaletteCommand[] = LIBRARY_DENSITIES.map((n) => ({
