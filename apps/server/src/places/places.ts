@@ -1,6 +1,10 @@
 import {
   type BulkAction,
   type BulkResult,
+  type CustomFieldCreate,
+  CustomFieldInvalid,
+  CustomFieldNotFound,
+  type CustomFieldUpdate,
   type DeletedPlace,
   type EditableField,
   editableFields,
@@ -19,6 +23,12 @@ import { Clock, Context, DateTime, Duration, Effect, Layer, Option } from "effec
 import { SqlClient } from "effect/sql"
 import { v7 as uuidv7 } from "uuid"
 import type { GooglePlaceDetails } from "../google/places.ts"
+import {
+  createCustomField,
+  loadCustomFieldsMap,
+  removeCustomField,
+  updateCustomField,
+} from "./custom-fields.ts"
 import { emptyFacts, loadFactsMap } from "./facts.ts"
 import { applyEdit } from "./overrides.ts"
 import { Tags } from "./tags.ts"
@@ -117,6 +127,22 @@ export class Places extends Context.Service<
       ownerId: string,
       placeIds: ReadonlyArray<string>,
     ) => Effect.Effect<BulkResult, PlaceNotFound>
+    readonly addCustomField: (
+      ownerId: string,
+      placeId: string,
+      input: CustomFieldCreate,
+    ) => Effect.Effect<Place, PlaceNotFound | CustomFieldInvalid>
+    readonly updateCustomField: (
+      ownerId: string,
+      placeId: string,
+      fieldId: string,
+      patch: CustomFieldUpdate,
+    ) => Effect.Effect<Place, PlaceNotFound | CustomFieldNotFound | CustomFieldInvalid>
+    readonly removeCustomField: (
+      ownerId: string,
+      placeId: string,
+      fieldId: string,
+    ) => Effect.Effect<Place, PlaceNotFound | CustomFieldNotFound>
     /** Soft-deleted place ids older than {@link PURGE_AFTER} (files should be unlinked first). */
     readonly listExpiredDeleted: Effect.Effect<ReadonlyArray<string>>
     /** Hard-delete rows whose soft-delete is older than {@link PURGE_AFTER}. */
@@ -201,9 +227,15 @@ export class Places extends Context.Service<
               rows.map((row) => row.cover_media_id).filter((id): id is string => id != null),
             ),
           ]
-          const [tagMap, listMap, factsMap, thumbMap] = yield* Effect.all(
-            [loadTags(ids), loadListIds(ids), loadFactsMap(sql, ids), loadCoverThumbs(coverIds)],
-            { concurrency: 4 },
+          const [tagMap, listMap, factsMap, fieldsMap, thumbMap] = yield* Effect.all(
+            [
+              loadTags(ids),
+              loadListIds(ids),
+              loadFactsMap(sql, ids),
+              loadCustomFieldsMap(sql, ids),
+              loadCoverThumbs(coverIds),
+            ],
+            { concurrency: 5 },
           )
           return rows.map(
             (row): Place => ({
@@ -220,6 +252,7 @@ export class Places extends Context.Service<
               tags: tagMap.get(row.id) ?? [],
               listIds: listMap.get(row.id) ?? [],
               facts: factsMap.get(row.id) ?? emptyFacts(),
+              customFields: fieldsMap.get(row.id) ?? [],
               coverMediaId: row.cover_media_id,
               coverThumbUrl: coverThumbUrl(
                 row.cover_media_id,
@@ -525,6 +558,33 @@ export class Places extends Context.Service<
             returning id`.pipe(Effect.orDie)
           if (restored.length !== placeIds.length) return yield* new PlaceNotFound()
           return { affected: restored.length }
+        }),
+
+        addCustomField: Effect.fn("Places.addCustomField")(function* (ownerId, placeId, input) {
+          yield* requireAlive(ownerId, [placeId])
+          yield* createCustomField(sql, placeId, input)
+          return yield* one(ownerId, placeId)
+        }),
+
+        updateCustomField: Effect.fn("Places.updateCustomField")(function* (
+          ownerId,
+          placeId,
+          fieldId,
+          patch,
+        ) {
+          yield* requireAlive(ownerId, [placeId])
+          yield* updateCustomField(sql, placeId, fieldId, patch)
+          return yield* one(ownerId, placeId)
+        }),
+
+        removeCustomField: Effect.fn("Places.removeCustomField")(function* (
+          ownerId,
+          placeId,
+          fieldId,
+        ) {
+          yield* requireAlive(ownerId, [placeId])
+          yield* removeCustomField(sql, placeId, fieldId)
+          return yield* one(ownerId, placeId)
         }),
 
         listExpiredDeleted: Effect.gen(function* () {

@@ -147,6 +147,7 @@ export class LibraryExport extends Context.Service<
                 tagIds: place.tags.map((t) => t.id),
                 listIds: [...place.listIds],
                 facts: place.facts,
+                customFields: [...place.customFields],
                 coverMediaId: place.coverMediaId,
                 createdAt: iso(place.createdAt),
               })),

@@ -1,4 +1,5 @@
 import { Schema } from "effect"
+import { PlaceCustomField } from "./custom-fields.ts"
 import { PlaceFacts } from "./facts.ts"
 
 export const placeCategories = [
@@ -53,6 +54,8 @@ export const Place = Schema.Struct({
   tags: Schema.Array(TagRef),
   listIds: Schema.Array(Schema.String),
   facts: PlaceFacts,
+  /** Owner-defined labeled fields (email, Instagram, open date, …). */
+  customFields: Schema.Array(PlaceCustomField),
   /** Chosen cover media id (user or Google); null → sleeve fallback in UI. */
   coverMediaId: Schema.NullOr(Schema.String),
   /** Session-auth thumb URL for the cover, when one exists. */

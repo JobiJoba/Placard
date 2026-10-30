@@ -2,6 +2,7 @@ import {
   type Place,
   type PlaceCategory,
   type PlaceList,
+  type PlaceRefreshMode,
   type PlaceStatus,
   placeCategories,
 } from "@placard/domain"
@@ -10,6 +11,7 @@ import { ArrowLeft, ChevronDown, ExternalLink, MapPinned, RefreshCw } from "luci
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router"
 import { ErrorAlert } from "@/components/error-alert"
+import { PlaceCustomFieldsSection } from "@/components/place-custom-fields"
 import { PlaceMediaSection } from "@/components/place-media"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -93,6 +95,7 @@ export function PlacePage() {
   const [removeError, setRemoveError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [refreshError, setRefreshError] = useState<string | null>(null)
+  const [refreshDone, setRefreshDone] = useState(false)
   const [mapsProvider] = useMapsProvider()
 
   useEffect(() => {
@@ -105,6 +108,12 @@ export function PlacePage() {
       document.title = "Placard"
     }
   }, [place])
+
+  useEffect(() => {
+    if (!refreshDone) return
+    const timer = window.setTimeout(() => setRefreshDone(false), 4_000)
+    return () => window.clearTimeout(timer)
+  }, [refreshDone])
 
   const membershipLists = useMemo(() => {
     if (!place || !lists) return []
@@ -121,13 +130,15 @@ export function PlacePage() {
       (cause: unknown) => setRemoveError(errorMessage(cause)),
     )
 
-  const refresh = () => {
+  const refresh = (mode: PlaceRefreshMode = "merge") => {
     setRefreshing(true)
     setRefreshError(null)
-    void api((c) => c.places.refresh({ params: { id } })).then(
+    setRefreshDone(false)
+    void api((c) => c.places.refresh({ params: { id }, payload: { mode } })).then(
       (next) => {
         setData(next)
         setRefreshing(false)
+        setRefreshDone(true)
       },
       (cause: unknown) => {
         setRefreshError(errorMessage(cause))
@@ -191,9 +202,15 @@ export function PlacePage() {
               <Button
                 type="button"
                 className="min-h-11 rounded-l-none border-l border-[color-mix(in_srgb,var(--action-fg)_25%,transparent)] px-2 sm:min-h-8"
-                aria-label="More maps options"
+                aria-label={refreshing ? "Refreshing from Google" : "More maps options"}
+                aria-busy={refreshing}
+                disabled={refreshing}
               >
-                <ChevronDown aria-hidden className="size-3.5" />
+                {refreshing ? (
+                  <RefreshCw aria-hidden className="size-3.5 animate-spin" />
+                ) : (
+                  <ChevronDown aria-hidden className="size-3.5" />
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="min-w-48">
@@ -220,11 +237,27 @@ export function PlacePage() {
                   <DropdownMenuItem
                     disabled={refreshing}
                     onSelect={() => {
-                      void refresh()
+                      void refresh("merge")
                     }}
                   >
                     <RefreshCw aria-hidden className={refreshing ? "animate-spin" : undefined} />
                     {refreshing ? "Refreshing…" : "Refresh from Google"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={refreshing}
+                    onSelect={() => {
+                      if (
+                        !window.confirm(
+                          "Force full refresh? This replaces Google details and any overrides to name, category, address, and phone. Notes, lists, tags, and custom fields stay.",
+                        )
+                      ) {
+                        return
+                      }
+                      void refresh("replace")
+                    }}
+                  >
+                    <RefreshCw aria-hidden className={refreshing ? "animate-spin" : undefined} />
+                    Force full refresh…
                   </DropdownMenuItem>
                 </>
               ) : null}
@@ -241,6 +274,24 @@ export function PlacePage() {
           {editing ? "Close edit" : "Edit"}
         </Button>
       </div>
+      {refreshing ? (
+        <Alert aria-live="polite">
+          <AlertDescription className="flex items-center gap-2">
+            <RefreshCw aria-hidden className="size-4 shrink-0 animate-spin" />
+            Updating details from Google…
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {refreshDone && !refreshing ? (
+        <Alert aria-live="polite">
+          <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+            <span>Details updated from Google.</span>
+            <Button size="sm" variant="ghost" onClick={() => setRefreshDone(false)}>
+              Dismiss
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : null}
       <ErrorAlert message={refreshError} />
 
       {editing ? (
@@ -257,6 +308,13 @@ export function PlacePage() {
       ) : (
         <PlaceRecordSection place={place} membershipLists={membershipLists} />
       )}
+
+      <PlaceCustomFieldsSection
+        place={place}
+        onChanged={(next) => {
+          setData(next)
+        }}
+      />
 
       <PlaceFactsSection place={place} />
 
@@ -418,8 +476,7 @@ function PlaceRecordSection({
 }) {
   const hasNotes = Boolean(place.notes?.trim())
   const hasLists = membershipLists.length > 0
-  const hasPhone = Boolean(place.facts.phone)
-  if (!hasNotes && !hasLists && !hasPhone) return null
+  if (!hasNotes && !hasLists) return null
 
   return (
     <section className="flex flex-col gap-4 border-t pt-6" aria-labelledby="place-record-heading">
@@ -431,16 +488,6 @@ function PlaceRecordSection({
           <>
             <dt className="text-muted-foreground">Notes</dt>
             <dd className="whitespace-pre-wrap">{place.notes}</dd>
-          </>
-        ) : null}
-        {hasPhone ? (
-          <>
-            <dt className="text-muted-foreground">Phone</dt>
-            <dd>
-              <a href={`tel:${place.facts.phone}`} className="underline underline-offset-2">
-                {place.facts.phone}
-              </a>
-            </dd>
           </>
         ) : null}
         {hasLists ? (
@@ -467,6 +514,7 @@ function PlaceFactsSection({ place }: { readonly place: Place }) {
   const [hoursOpen, setHoursOpen] = useState(false)
 
   const hasFacts =
+    facts.phone ||
     facts.website ||
     facts.rating != null ||
     facts.priceLevel ||
@@ -510,6 +558,16 @@ function PlaceFactsSection({ place }: { readonly place: Place }) {
           <>
             <dt className="text-muted-foreground">Price</dt>
             <dd>{priceLabels[facts.priceLevel] ?? facts.priceLevel}</dd>
+          </>
+        )}
+        {facts.phone && (
+          <>
+            <dt className="text-muted-foreground">Phone</dt>
+            <dd>
+              <a href={`tel:${facts.phone}`} className="underline underline-offset-2">
+                {facts.phone}
+              </a>
+            </dd>
           </>
         )}
         {facts.website && (

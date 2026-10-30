@@ -101,6 +101,17 @@ export const RefreshAllPlan = Schema.Struct({
 })
 export type RefreshAllPlan = typeof RefreshAllPlan.Type
 
+/** How a single-place Google refresh treats owner overrides / edited fields. */
+export const placeRefreshModes = ["merge", "replace"] as const
+export const PlaceRefreshMode = Schema.Literals(placeRefreshModes)
+export type PlaceRefreshMode = typeof PlaceRefreshMode.Type
+
+export const PlaceRefreshInput = Schema.Struct({
+  /** Omit or `merge` keeps overrides; `replace` clears them then re-fetches. */
+  mode: Schema.optional(PlaceRefreshMode),
+})
+export type PlaceRefreshInput = typeof PlaceRefreshInput.Type
+
 export class EnrichmentBusy extends Schema.TaggedError<EnrichmentBusy>()(
   "EnrichmentBusy",
   { message: Schema.String },

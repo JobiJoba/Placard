@@ -12,6 +12,7 @@ import {
 } from "@placard/domain"
 import { Clock, Context, DateTime, Effect, Layer } from "effect"
 import { SqlClient } from "effect/sql"
+import { loadCustomFieldsMap } from "./custom-fields.ts"
 import { emptyFacts, loadFactsMap } from "./facts.ts"
 import { isOpenAt, isOpenTonight } from "./opening-hours.ts"
 
@@ -219,15 +220,16 @@ export class Search extends Context.Service<
                   Effect.orDie,
                 )
 
-          const [tagMap, listMap, factsMap, hoursMap, thumbMap] = yield* Effect.all(
+          const [tagMap, listMap, factsMap, fieldsMap, hoursMap, thumbMap] = yield* Effect.all(
             [
               loadTags(ids),
               loadListIds(ids),
               loadFactsMap(sql, ids),
+              loadCustomFieldsMap(sql, ids),
               loadHours(ids),
               loadCoverThumbs,
             ],
-            { concurrency: 5 },
+            { concurrency: 6 },
           )
 
           const hits: SearchHit[] = []
@@ -253,6 +255,7 @@ export class Search extends Context.Service<
               tags: tagMap.get(row.id) ?? [],
               listIds: listMap.get(row.id) ?? [],
               facts,
+              customFields: fieldsMap.get(row.id) ?? [],
               coverMediaId: row.cover_media_id,
               coverThumbUrl: coverThumbUrl(
                 row.cover_media_id,

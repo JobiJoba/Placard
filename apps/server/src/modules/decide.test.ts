@@ -28,6 +28,7 @@ const place = (id: string, name: string): Place => ({
   tags: [],
   listIds: [],
   facts: emptyFacts,
+  customFields: [],
   coverMediaId: null,
   coverThumbUrl: null,
   createdAt: DateTime.makeUnsafe(0),

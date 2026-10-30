@@ -1,4 +1,5 @@
 import { Schema } from "effect"
+import { PlaceCustomField } from "./custom-fields.ts"
 import { PlaceCategory, PlaceSource, PlaceStatus } from "./places.ts"
 
 /** Bump when the on-disk export document shape changes. */
@@ -25,6 +26,7 @@ export const ExportPlace = Schema.Struct({
   tagIds: Schema.Array(Schema.String),
   listIds: Schema.Array(Schema.String),
   facts: Schema.Unknown,
+  customFields: Schema.Array(PlaceCustomField),
   coverMediaId: Schema.NullOr(Schema.String),
   createdAt: Schema.String,
 })

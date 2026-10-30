@@ -54,10 +54,13 @@ export const PlacesApiLive = HttpApiBuilder.group(
         withMe((me) => places.bulk(me.id, payload.placeIds, payload.action)),
       )
       .handle("restore", ({ payload }) => withMe((me) => places.restore(me.id, payload.placeIds)))
-      .handle("refresh", ({ params }) =>
+      .handle("refresh", ({ params, payload }) =>
         Effect.gen(function* () {
           const me = yield* CurrentUser
-          yield* enrichment.enrichPlace(me.id, params.id, { force: true })
+          yield* enrichment.enrichPlace(me.id, params.id, {
+            force: true,
+            mode: payload.mode ?? "merge",
+          })
           return yield* places.get(me.id, params.id)
         }),
       )
@@ -74,6 +77,15 @@ export const PlacesApiLive = HttpApiBuilder.group(
           yield* enrichment.clearOverride(me.id, params.id, params.key)
           return yield* places.get(me.id, params.id)
         }),
+      )
+      .handle("addCustomField", ({ params, payload }) =>
+        withMe((me) => places.addCustomField(me.id, params.id, payload)),
+      )
+      .handle("updateCustomField", ({ params, payload }) =>
+        withMe((me) => places.updateCustomField(me.id, params.id, params.fieldId, payload)),
+      )
+      .handle("removeCustomField", ({ params }) =>
+        withMe((me) => places.removeCustomField(me.id, params.id, params.fieldId)),
       )
   }),
 )

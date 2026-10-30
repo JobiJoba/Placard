@@ -5,6 +5,7 @@ import {
   GoogleKeyMissing,
   type GooglePlacesError,
   type PlaceNotFound,
+  type PlaceRefreshMode,
 } from "@placard/domain"
 import { Context, DateTime, Effect, Layer, Option } from "effect"
 import { SqlClient } from "effect/sql"
@@ -35,7 +36,7 @@ export class Enrichment extends Context.Service<
     readonly enrichPlace: (
       ownerId: string,
       placeId: string,
-      options?: { readonly force?: boolean },
+      options?: { readonly force?: boolean; readonly mode?: PlaceRefreshMode },
     ) => Effect.Effect<void, PlaceNotFound | GooglePlacesError>
     readonly setOverride: (
       ownerId: string,
@@ -162,6 +163,20 @@ export class Enrichment extends Context.Service<
         enrichPlace: Effect.fn("Enrichment.enrichPlace")(function* (ownerId, placeId, options) {
           const place = yield* places.get(ownerId, placeId)
           if (!place.googlePlaceId) return
+          const mode = options?.mode ?? "merge"
+          if (mode === "replace") {
+            // Drop owner fact overrides and edited-field pins so Google can refill them.
+            yield* sql`
+              delete from place_facts
+              where place_id = ${placeId} and source = 'manual'`.pipe(Effect.orDie)
+            yield* sql`
+              update places set
+                manual_fields = ${[] as ReadonlyArray<string>},
+                updated_at = now()
+              where id = ${placeId} and owner_id = ${ownerId} and deleted_at is null`.pipe(
+              Effect.orDie,
+            )
+          }
           const details = yield* google.details(place.googlePlaceId, null, {
             force: options?.force ?? true,
           })

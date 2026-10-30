@@ -55,7 +55,7 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("enrichment", (it)
     }),
   )
 
-  it.effect("a manual phone override survives refresh", () =>
+  it.effect("a manual phone override and edited name survive merge refresh", () =>
     run(async () => {
       const overridden = await admin.browser.send("PUT", `/api/places/${micheleId}/facts/phone`, {
         value: "+49 30 999999",
@@ -63,16 +63,53 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("enrichment", (it)
       expect(overridden.status).toBe(200)
       expect(overridden.body.facts.phone).toBe("+49 30 999999")
 
-      const refreshed = await admin.browser.send("POST", `/api/places/${micheleId}/refresh`)
+      const renamed = await admin.browser.send("PATCH", `/api/places/${micheleId}`, {
+        name: "My Michele",
+      })
+      expect(renamed.status).toBe(200)
+      expect(renamed.body.name).toBe("My Michele")
+      expect(renamed.body.editedFields).toContain("name")
+
+      const refreshed = await admin.browser.send("POST", `/api/places/${micheleId}/refresh`, {
+        mode: "merge",
+      })
       expect(refreshed.status).toBe(200)
       expect(refreshed.body.facts.phone).toBe("+49 30 999999")
+      expect(refreshed.body.name).toBe("My Michele")
+      expect(refreshed.body.editedFields).toContain("name")
       expect(refreshed.body.facts.website).toBe("https://www.damichele.net/")
       expect(refreshed.body.facts.fromGoogle).toBe(true)
     }),
   )
 
+  it.effect("replace refresh clears overrides and edited fields, keeps notes", () =>
+    run(async () => {
+      const noted = await admin.browser.send("PATCH", `/api/places/${micheleId}`, {
+        notes: "Keep this note",
+      })
+      expect(noted.status).toBe(200)
+      expect(noted.body.notes).toBe("Keep this note")
+
+      const replaced = await admin.browser.send("POST", `/api/places/${micheleId}/refresh`, {
+        mode: "replace",
+      })
+      expect(replaced.status).toBe(200)
+      expect(replaced.body.facts.phone).toBe("+39 081 553 9204")
+      expect(replaced.body.name).toBe("L'Antica Pizzeria da Michele")
+      expect(replaced.body.editedFields).toEqual([])
+      expect(replaced.body.notes).toBe("Keep this note")
+      expect(replaced.body.facts.website).toBe("https://www.damichele.net/")
+      expect(replaced.body.facts.fromGoogle).toBe(true)
+    }),
+  )
+
   it.effect("clearing the override restores the Google phone", () =>
     run(async () => {
+      const overridden = await admin.browser.send("PUT", `/api/places/${micheleId}/facts/phone`, {
+        value: "+49 30 111",
+      })
+      expect(overridden.status).toBe(200)
+
       const cleared = await admin.browser.send("DELETE", `/api/places/${micheleId}/facts/phone`)
       expect(cleared.status).toBe(200)
       expect(cleared.body.facts.phone).toBe("+39 081 553 9204")

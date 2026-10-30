@@ -273,6 +273,32 @@ export const placeFacts = pgTable(
   ],
 )
 
+/** Owner-defined labeled fields on a place (email, Instagram, open date, …). */
+export const placeCustomFields = pgTable(
+  "place_custom_fields",
+  {
+    id: text("id").primaryKey(),
+    placeId: text("place_id")
+      .notNull()
+      .references(() => places.id, { onDelete: "cascade" }),
+    label: text("label").notNull(),
+    labelKey: text("label_key").notNull(),
+    type: text("type").notNull(),
+    value: text("value").notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check(
+      "place_custom_fields_type_check",
+      sql`${table.type} in ('text', 'email', 'url', 'phone', 'number', 'date')`,
+    ),
+    index("place_custom_fields_place_id_idx").on(table.placeId),
+    index("place_custom_fields_label_key_idx").on(table.labelKey),
+    index("place_custom_fields_label_key_value_idx").on(table.labelKey, table.value),
+  ],
+)
+
 export const enrichmentRuns = pgTable(
   "enrichment_runs",
   {

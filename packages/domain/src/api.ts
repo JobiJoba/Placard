@@ -17,11 +17,18 @@ import {
   UserSummary,
 } from "./accounts.ts"
 import {
+  CustomFieldCreate,
+  CustomFieldInvalid,
+  CustomFieldNotFound,
+  CustomFieldUpdate,
+} from "./custom-fields.ts"
+import {
   EnrichmentBusy,
   EnrichmentRun,
   FactKey,
   FactNotFound,
   FactOverrideInput,
+  PlaceRefreshInput,
   RefreshAllPlan,
 } from "./facts.ts"
 import { HealthError, HealthOk } from "./health.ts"
@@ -205,6 +212,7 @@ export class PlacesApi extends HttpApiGroup.make("places")
     }),
     HttpApiEndpoint.post("refresh", "/:id/refresh", {
       params: { id: Schema.String },
+      payload: PlaceRefreshInput,
       success: Place,
       error: [PlaceNotFound, GoogleKeyMissing, GooglePlacesFailed],
     }),
@@ -218,6 +226,23 @@ export class PlacesApi extends HttpApiGroup.make("places")
       params: { id: Schema.String, key: FactKey },
       success: Place,
       error: [PlaceNotFound, FactNotFound],
+    }),
+    HttpApiEndpoint.post("addCustomField", "/:id/fields", {
+      params: { id: Schema.String },
+      payload: CustomFieldCreate,
+      success: Place,
+      error: [PlaceNotFound, CustomFieldInvalid],
+    }),
+    HttpApiEndpoint.patch("updateCustomField", "/:id/fields/:fieldId", {
+      params: { id: Schema.String, fieldId: Schema.String },
+      payload: CustomFieldUpdate,
+      success: Place,
+      error: [PlaceNotFound, CustomFieldNotFound, CustomFieldInvalid],
+    }),
+    HttpApiEndpoint.delete("removeCustomField", "/:id/fields/:fieldId", {
+      params: { id: Schema.String, fieldId: Schema.String },
+      success: Place,
+      error: [PlaceNotFound, CustomFieldNotFound],
     }),
   )
   .middleware(Authentication)
