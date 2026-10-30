@@ -11,7 +11,7 @@ import {
   type TagSummary,
 } from "@placard/domain"
 import { LayoutGrid, Map as MapIcon, Plus, Trash2 } from "lucide-react"
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react"
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Link, useSearchParams } from "react-router"
 import { ErrorAlert } from "@/components/error-alert"
 import { Badge } from "@/components/ui/badge"
@@ -95,6 +95,9 @@ export function LibraryPage() {
   )
   const [selecting, setSelecting] = useState(false)
   const [browsePrefsReady, setBrowsePrefsReady] = useState(false)
+  // useSearchParams' setter identity changes whenever the URL does — guard so we
+  // hydrate from device prefs once, not after every Grid / Near me click.
+  const didHydrateBrowsePrefs = useRef(false)
 
   const { data: mapsConfig } = useLoad(useCallback(() => api((c) => c.google.config()), []))
   const { data: tags } = useLoad(useCallback(() => api((c) => c.tags.list()), []))
@@ -106,6 +109,8 @@ export function LibraryPage() {
 
   // Restore last scope + view when landing on Library without those params.
   useEffect(() => {
+    if (didHydrateBrowsePrefs.current) return
+    didHydrateBrowsePrefs.current = true
     const prefs = readLibraryBrowsePrefs()
     const next = new URLSearchParams(params)
     let dirty = false
@@ -130,16 +135,21 @@ export function LibraryPage() {
   }, [browsePrefsReady, scope, view])
 
   useEffect(() => {
+    if (textDraft === text) return
     const id = window.setTimeout(() => {
-      if (textDraft === text) return
-      const next = new URLSearchParams(params)
-      if (textDraft.trim()) next.set("q", textDraft.trim())
-      else next.delete("q")
-      setParams(next, { replace: true })
+      setParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          if (textDraft.trim()) next.set("q", textDraft.trim())
+          else next.delete("q")
+          return next
+        },
+        { replace: true },
+      )
       setSelected(new Set())
     }, 250)
     return () => window.clearTimeout(id)
-  }, [textDraft, text, params, setParams])
+  }, [textDraft, text, setParams])
 
   useEffect(() => {
     if (scope !== "near") return
@@ -220,10 +230,15 @@ export function LibraryPage() {
   )
 
   const setParam = (key: string, value: string | undefined) => {
-    const next = new URLSearchParams(params)
-    if (value) next.set(key, value)
-    else next.delete(key)
-    setParams(next, { replace: true })
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (value) next.set(key, value)
+        else next.delete(key)
+        return next
+      },
+      { replace: true },
+    )
     setSelected(new Set())
   }
 
@@ -392,22 +407,21 @@ export function LibraryPage() {
             value={scope}
             onValueChange={(value) => {
               if (value !== "near" && value !== "city" && value !== "all") return
-              const next = new URLSearchParams(params)
-              // Near me is the default (omit param); All must stay explicit.
-              if (value === "near") next.delete("scope")
-              else next.set("scope", value)
-              if (value !== "city") {
-                next.delete("lat")
-                next.delete("lng")
-                next.delete("city")
-              } else {
-                // Start empty — user picks a city via autocomplete.
-                next.delete("lat")
-                next.delete("lng")
-                next.delete("city")
-              }
-              if (value === "all") next.delete("radius")
-              setParams(next, { replace: true })
+              setParams(
+                (prev) => {
+                  const next = new URLSearchParams(prev)
+                  // Near me is the default (omit param); All must stay explicit.
+                  if (value === "near") next.delete("scope")
+                  else next.set("scope", value)
+                  // City needs a fresh center — clear any previous lat/lng/name.
+                  next.delete("lat")
+                  next.delete("lng")
+                  next.delete("city")
+                  if (value === "all") next.delete("radius")
+                  return next
+                },
+                { replace: true },
+              )
               setSelected(new Set())
             }}
             aria-label="Search area"
