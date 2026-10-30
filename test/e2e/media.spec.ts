@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer"
 import { expect, test } from "@playwright/test"
-import { signInAsAdmin } from "./support.ts"
+import { openAdd, signInAsAdmin } from "./support.ts"
 
 test.skip(Boolean(process.env.PLAYWRIGHT_BASE_URL), "needs the local stack")
 test.describe.configure({ mode: "serial" })
@@ -17,7 +17,7 @@ test.beforeEach(async ({ page, baseURL }) => {
 })
 
 test("upload a dish photo and see it on the place card", async ({ page }) => {
-  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Add" }).click()
+  await openAdd(page)
   await page.getByTestId("pin-map").click()
   await page.getByLabel("Name").fill("Photo test trattoria")
   await page.getByRole("combobox", { name: "Type" }).click()

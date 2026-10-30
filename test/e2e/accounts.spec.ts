@@ -1,13 +1,10 @@
-import { expect, type Page, test } from "@playwright/test"
-import { admin, signIn } from "./support.ts"
+import { expect, test } from "@playwright/test"
+import { admin, expectEmptyLibrary, openNav, signIn } from "./support.ts"
 
 test.skip(Boolean(process.env.PLAYWRIGHT_BASE_URL), "needs a fresh install")
 test.describe.configure({ mode: "serial" })
 
 const member = { name: "Ben Member", email: "ben@example.com", password: "another long password" }
-
-const emptyLibrary = (page: Page) =>
-  expect(page.getByRole("heading", { name: "Start your crate" })).toBeVisible()
 
 test("the first visitor creates the admin account, signs out and back in", async ({ page }) => {
   await page.goto("/")
@@ -18,7 +15,7 @@ test("the first visitor creates the admin account, signs out and back in", async
   await page.getByLabel("Email").fill(admin.email)
   await page.getByLabel("Password").fill(admin.password)
   await page.getByRole("button", { name: "Create admin account" }).click()
-  await emptyLibrary(page)
+  await expectEmptyLibrary(page)
 
   await page.getByRole("button", { name: "Sign out" }).click()
   await expect(page).toHaveURL(/\/login$/)
@@ -27,7 +24,7 @@ test("the first visitor creates the admin account, signs out and back in", async
   await expect(page.getByRole("alert")).toContainText(/invalid/i)
 
   await signIn(page, admin)
-  await emptyLibrary(page)
+  await expectEmptyLibrary(page)
 })
 
 test("a second visitor cannot sign up without an invite", async ({ page }) => {
@@ -38,8 +35,8 @@ test("a second visitor cannot sign up without an invite", async ({ page }) => {
 
 test("the admin invites a user who gets their own empty library", async ({ page, browser }) => {
   await signIn(page, admin)
-  await emptyLibrary(page)
-  await page.getByRole("link", { name: "Settings" }).click()
+  await expectEmptyLibrary(page)
+  await openNav(page, "Settings")
   await page.getByRole("link", { name: "People" }).click()
   await page.getByLabel("Email").fill(member.email)
   await page.getByRole("button", { name: "Create invite" }).click()
@@ -54,10 +51,10 @@ test("the admin invites a user who gets their own empty library", async ({ page,
   await memberPage.getByLabel("Name").fill(member.name)
   await memberPage.getByLabel("Password").fill(member.password)
   await memberPage.getByRole("button", { name: "Create account" }).click()
-  await emptyLibrary(memberPage)
+  await expectEmptyLibrary(memberPage)
   await expect(memberPage.getByText(`Welcome, ${member.name}.`)).toBeVisible()
 
-  await memberPage.getByRole("link", { name: "Settings" }).click()
+  await openNav(memberPage, "Settings")
   await expect(memberPage.getByText("Distance unit")).toBeVisible()
   await expect(memberPage.getByRole("link", { name: "People" })).toHaveCount(0)
   await expect(memberPage.getByRole("link", { name: "Marketplace" })).toHaveCount(0)

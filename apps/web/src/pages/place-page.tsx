@@ -159,7 +159,12 @@ export function PlacePage() {
   }
   if (!place) {
     return (
-      <div className="flex flex-col gap-4 pb-8" aria-busy="true" aria-label="Loading place">
+      <div
+        className="flex flex-col gap-4 pb-8"
+        role="status"
+        aria-busy="true"
+        aria-label="Loading place"
+      >
         <Skeleton className="h-8 w-24 rounded-md" />
         <Skeleton className="h-52 w-full rounded-sm sm:h-60 md:h-64" />
         <Skeleton className="h-10 w-48 rounded-md" />
@@ -757,7 +762,9 @@ function EditPlace({
         <h2 id="place-edit-heading" className="text-lg font-medium">
           Edit
         </h2>
-        <p className="text-xs text-muted-foreground">Your phone number survives a refresh from Google.</p>
+        <p className="text-xs text-muted-foreground">
+          Your phone number survives a refresh from Google.
+        </p>
       </div>
 
       <FieldGroup>

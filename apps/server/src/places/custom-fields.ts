@@ -4,8 +4,8 @@ import {
   CustomFieldNotFound,
   type CustomFieldType,
   type CustomFieldUpdate,
-  type PlaceCustomField,
   normalizeCustomFieldLabel,
+  type PlaceCustomField,
   validateCustomFieldValue,
 } from "@placard/domain"
 import { Effect } from "effect"

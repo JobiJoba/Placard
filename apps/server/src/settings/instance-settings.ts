@@ -30,10 +30,7 @@ export class InstanceSettings extends Context.Service<
         module_update_check_hours: number
       }>`
         select google_api_key, module_update_check_hours from instance_settings where id = 1`.pipe(
-        Effect.map(
-          (rows) =>
-            rows[0] ?? { google_api_key: null, module_update_check_hours: 24 },
-        ),
+        Effect.map((rows) => rows[0] ?? { google_api_key: null, module_update_check_hours: 24 }),
         Effect.orDie,
       )
 

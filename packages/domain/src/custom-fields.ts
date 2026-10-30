@@ -58,13 +58,16 @@ const urlOk = (value: string) => {
 }
 const phoneOk = (value: string) => value.replace(/[^\d+]/g, "").length >= 5
 const numberOk = (value: string) => Number.isFinite(Number(value)) && value.trim() !== ""
-const dateOk = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value))
+const dateOk = (value: string) =>
+  /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value))
 
 /** Validate and normalize a value for the given type. Returns a clean string or an error message. */
 export const validateCustomFieldValue = (
   type: CustomFieldType,
   raw: string,
-): { readonly ok: true; readonly value: string } | { readonly ok: false; readonly message: string } => {
+):
+  | { readonly ok: true; readonly value: string }
+  | { readonly ok: false; readonly message: string } => {
   const value = raw.trim()
   if (value.length === 0) return { ok: false, message: "Enter a value" }
   if (value.length > 2_000) return { ok: false, message: "Value is too long" }

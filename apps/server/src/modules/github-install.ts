@@ -47,7 +47,7 @@ export const parseGithubRepoUrl = (raw: string): GithubRepoRef | null => {
   const shorthand = trimmed.match(/^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/)
   if (shorthand) {
     const owner = shorthand[1]!
-    const repo = shorthand[2]!.replace(/\.git$/i, "")
+    const repo = shorthand[2]?.replace(/\.git$/i, "")
     return { owner, repo, repoUrl: `https://github.com/${owner}/${repo}` }
   }
 
@@ -63,7 +63,7 @@ export const parseGithubRepoUrl = (raw: string): GithubRepoRef | null => {
   const parts = url.pathname.split("/").filter(Boolean)
   if (parts.length < 2) return null
   const owner = parts[0]!
-  const repo = parts[1]!.replace(/\.git$/i, "")
+  const repo = parts[1]?.replace(/\.git$/i, "")
   if (!owner || !repo) return null
   return { owner, repo, repoUrl: `https://github.com/${owner}/${repo}` }
 }
@@ -117,14 +117,14 @@ export const fetchLatestRelease = (
     const client = yield* HttpClient.HttpClient
     const request = HttpClientRequest.get(
       `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/releases/latest`,
-    ).pipe(
-      HttpClientRequest.setHeaders(GITHUB_HEADERS),
-    )
-    const response = yield* client.execute(request).pipe(
-      Effect.mapError((cause) =>
-        fail(`Could not reach GitHub: ${cause instanceof Error ? cause.message : String(cause)}`),
-      ),
-    )
+    ).pipe(HttpClientRequest.setHeaders(GITHUB_HEADERS))
+    const response = yield* client
+      .execute(request)
+      .pipe(
+        Effect.mapError((cause) =>
+          fail(`Could not reach GitHub: ${cause instanceof Error ? cause.message : String(cause)}`),
+        ),
+      )
     if (response.status === 404) {
       return yield* fail(
         `No public releases found for ${owner}/${repo}. Publish a Release with a plugin zip asset.`,
@@ -157,9 +157,7 @@ export const downloadReleaseAsset = (
 ): Effect.Effect<Buffer, ModuleInstallFailed, HttpClient.HttpClient> =>
   Effect.gen(function* () {
     if (asset.size > MAX_ZIP_BYTES) {
-      return yield* fail(
-        `Release asset is too large (max ${MAX_ZIP_BYTES / (1024 * 1024)} MB).`,
-      )
+      return yield* fail(`Release asset is too large (max ${MAX_ZIP_BYTES / (1024 * 1024)} MB).`)
     }
     const client = yield* HttpClient.HttpClient
     const request = HttpClientRequest.get(asset.browserDownloadUrl).pipe(
@@ -168,13 +166,15 @@ export const downloadReleaseAsset = (
         "User-Agent": "placard",
       }),
     )
-    const response = yield* client.execute(request).pipe(
-      Effect.mapError((cause) =>
-        fail(
-          `Could not download release asset: ${cause instanceof Error ? cause.message : String(cause)}`,
+    const response = yield* client
+      .execute(request)
+      .pipe(
+        Effect.mapError((cause) =>
+          fail(
+            `Could not download release asset: ${cause instanceof Error ? cause.message : String(cause)}`,
+          ),
         ),
-      ),
-    )
+      )
     if (response.status < 200 || response.status >= 300) {
       return yield* fail(`Download failed with HTTP ${response.status}.`)
     }
@@ -184,9 +184,7 @@ export const downloadReleaseAsset = (
     const buffer = Buffer.from(bytes)
     if (buffer.byteLength === 0) return yield* fail("Release asset is empty.")
     if (buffer.byteLength > MAX_ZIP_BYTES) {
-      return yield* fail(
-        `Release asset is too large (max ${MAX_ZIP_BYTES / (1024 * 1024)} MB).`,
-      )
+      return yield* fail(`Release asset is too large (max ${MAX_ZIP_BYTES / (1024 * 1024)} MB).`)
     }
     return buffer
   })

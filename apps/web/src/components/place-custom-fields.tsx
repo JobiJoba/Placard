@@ -86,9 +86,7 @@ export function PlaceCustomFieldsSection({
   const remove = (fieldId: string) => {
     setBusy(true)
     setError(null)
-    void api((c) =>
-      c.places.removeCustomField({ params: { id: place.id, fieldId } }),
-    ).then(
+    void api((c) => c.places.removeCustomField({ params: { id: place.id, fieldId } })).then(
       (next) => {
         onChanged(next)
         setConfirmDeleteId(null)
@@ -102,7 +100,10 @@ export function PlaceCustomFieldsSection({
   }
 
   return (
-    <section className="flex flex-col gap-4 border-t pt-6" aria-labelledby="place-more-info-heading">
+    <section
+      className="flex flex-col gap-4 border-t pt-6"
+      aria-labelledby="place-more-info-heading"
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 id="place-more-info-heading" className="text-lg font-medium">
           More info

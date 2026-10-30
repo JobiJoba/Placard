@@ -34,9 +34,7 @@ export function PlaceMediaSection({ placeId }: { readonly placeId: string }) {
   } = useLoad(useCallback(() => api((c) => c.media.list({ params: { placeId } })), [placeId]))
 
   const [uploading, setUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(
-    null,
-  )
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 

@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test"
-import { signInAsAdmin } from "./support.ts"
+import { browseAllPlaces, openAdd, openNav, signInAsAdmin } from "./support.ts"
 
 // The server runs with PLACARD_FAKE_GOOGLE, so Google calls are answered from fixtures.
 test.skip(Boolean(process.env.PLAYWRIGHT_BASE_URL), "needs the fake Google layer")
@@ -12,11 +12,6 @@ test.beforeEach(async ({ page, baseURL }) => {
   await page.route(/tile\.openstreetmap\.org|maps\.googleapis\.com/, (route) => route.abort())
   await signInAsAdmin(page, baseURL as string)
 })
-
-const nav = (page: Page, name: string) =>
-  page.getByRole("navigation", { name: "Main" }).getByRole("link", { name, exact: true }).click()
-
-const openAdd = (page: Page) => nav(page, "Add")
 
 const searchFor = async (page: Page, text: string) => {
   await openAdd(page)
@@ -46,7 +41,7 @@ test("without a Google key, a place is added by dropping a pin", async ({ page }
 })
 
 test("with a key, a restaurant is added by typing its name", async ({ page }) => {
-  await nav(page, "Settings")
+  await openNav(page, "Settings")
   await page.getByRole("link", { name: "Integrations" }).click()
   await page.getByLabel("New key").fill("fake-key")
   await page.getByRole("button", { name: "Test and save" }).click()
@@ -65,7 +60,7 @@ test("with a key, a restaurant is added by typing its name", async ({ page }) =>
   )
   micheleUrl = page.url()
 
-  await nav(page, "Library")
+  await browseAllPlaces(page)
   await expect(page.getByRole("link", { name: new RegExp(MICHELE) })).toBeVisible()
   await expect(page.getByRole("link", { name: /Secret viewpoint/ })).toBeVisible()
 })
@@ -87,6 +82,7 @@ test("a removed place leaves the library", async ({ page }) => {
   await page.getByRole("button", { name: "Remove", exact: true }).click()
   await expect(page).toHaveURL(/\/deleted$/)
   await page.getByRole("link", { name: "Back to library" }).click()
+  await browseAllPlaces(page)
   await expect(page.getByRole("link", { name: /Secret viewpoint/ })).toBeVisible()
   await expect(page.getByRole("link", { name: new RegExp(MICHELE) })).toHaveCount(0)
 })

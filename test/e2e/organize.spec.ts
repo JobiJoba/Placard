@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test"
-import { signInAsAdmin } from "./support.ts"
+import { expect, type Page, test } from "@playwright/test"
+import { browseAllPlaces, openAdd, openNav, signInAsAdmin } from "./support.ts"
 
 test.skip(Boolean(process.env.PLAYWRIGHT_BASE_URL), "needs a fresh install")
 test.describe.configure({ mode: "serial" })
@@ -9,12 +9,8 @@ test.beforeEach(async ({ page, baseURL }) => {
   await signInAsAdmin(page, baseURL as string)
 })
 
-const dropPin = async (
-  page: import("@playwright/test").Page,
-  name: string,
-  category = "Restaurant",
-) => {
-  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Add" }).click()
+const dropPin = async (page: Page, name: string, category = "Restaurant") => {
+  await openAdd(page)
   // Without a Google key the pin form is the only option.
   if (await page.getByRole("tab", { name: "Drop a pin" }).count()) {
     await page.getByRole("tab", { name: "Drop a pin" }).click()
@@ -32,15 +28,12 @@ test("create a list, tag a place, edit it, bulk-delete and restore", async ({ pa
   await dropPin(page, "Sorbillo")
   await dropPin(page, "Starita")
 
-  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Lists" }).click()
+  await openNav(page, "Lists")
   await page.getByLabel("New list").fill("Italian restaurants")
   await page.getByRole("button", { name: "Create" }).click()
   await expect(page.getByRole("link", { name: "Italian restaurants" })).toBeVisible()
 
-  await page
-    .getByRole("navigation", { name: "Main" })
-    .getByRole("link", { name: "Library" })
-    .click()
+  await browseAllPlaces(page)
   for (const name of ["Da Michele", "Sorbillo", "Starita"]) {
     await page.getByRole("checkbox", { name: `Select ${name}` }).check()
   }
@@ -59,10 +52,7 @@ test("create a list, tag a place, edit it, bulk-delete and restore", async ({ pa
   await expect(page.getByText("Been there", { exact: true })).toBeVisible()
   await expect(page.getByText("date-night", { exact: true })).toBeVisible()
 
-  await page
-    .getByRole("navigation", { name: "Main" })
-    .getByRole("link", { name: "Library" })
-    .click()
+  await browseAllPlaces(page)
   await page.getByRole("checkbox", { name: "Select L'Antica da Michele" }).check()
   await page.getByRole("checkbox", { name: "Select Sorbillo" }).check()
   await page.getByRole("button", { name: "Delete" }).click()
@@ -70,9 +60,10 @@ test("create a list, tag a place, edit it, bulk-delete and restore", async ({ pa
   await expect(page.getByRole("link", { name: /Starita/ })).toBeVisible()
   await expect(page.getByRole("link", { name: /Sorbillo/ })).toHaveCount(0)
 
-  await page.getByRole("link", { name: "Recently deleted" }).click()
+  await openNav(page, "Recently deleted")
   await expect(page.getByText("L'Antica da Michele")).toBeVisible()
   await page.getByRole("button", { name: "Restore", exact: true }).first().click()
   await page.getByRole("link", { name: "Back to library" }).click()
+  await browseAllPlaces(page)
   await expect(page.getByRole("link", { name: /L'Antica da Michele|Starita/ })).toHaveCount(2)
 })

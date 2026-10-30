@@ -43,9 +43,7 @@ const program = Effect.gen(function* () {
     const modules = yield* Modules
     yield* modules.loadDiskModules
   }).pipe(
-    Effect.provide(
-      Modules.layer.pipe(Layer.provide(ModuleRuntime.layer), Layer.provide(http)),
-    ),
+    Effect.provide(Modules.layer.pipe(Layer.provide(ModuleRuntime.layer), Layer.provide(http))),
     Effect.provide(withConfig(config)),
     Effect.catchCause((cause) =>
       Effect.logWarning("Could not load disk modules", { cause: String(cause) }),

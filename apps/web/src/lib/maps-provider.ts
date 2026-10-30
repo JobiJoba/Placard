@@ -1,9 +1,4 @@
-import {
-  appleMapsUrl,
-  googleMapsUrl,
-  organicMapsUrl,
-  type Place,
-} from "@placard/domain"
+import { appleMapsUrl, googleMapsUrl, organicMapsUrl, type Place } from "@placard/domain"
 import { useEffect, useState } from "react"
 
 export const MAPS_PROVIDERS = ["google", "apple", "organic"] as const

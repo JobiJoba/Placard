@@ -2,8 +2,8 @@ import {
   type BulkAction,
   type BulkResult,
   type CustomFieldCreate,
-  CustomFieldInvalid,
-  CustomFieldNotFound,
+  type CustomFieldInvalid,
+  type CustomFieldNotFound,
   type CustomFieldUpdate,
   type DeletedPlace,
   type EditableField,
@@ -566,26 +566,21 @@ export class Places extends Context.Service<
           return yield* one(ownerId, placeId)
         }),
 
-        updateCustomField: Effect.fn("Places.updateCustomField")(function* (
-          ownerId,
-          placeId,
-          fieldId,
-          patch,
-        ) {
-          yield* requireAlive(ownerId, [placeId])
-          yield* updateCustomField(sql, placeId, fieldId, patch)
-          return yield* one(ownerId, placeId)
-        }),
+        updateCustomField: Effect.fn("Places.updateCustomField")(
+          function* (ownerId, placeId, fieldId, patch) {
+            yield* requireAlive(ownerId, [placeId])
+            yield* updateCustomField(sql, placeId, fieldId, patch)
+            return yield* one(ownerId, placeId)
+          },
+        ),
 
-        removeCustomField: Effect.fn("Places.removeCustomField")(function* (
-          ownerId,
-          placeId,
-          fieldId,
-        ) {
-          yield* requireAlive(ownerId, [placeId])
-          yield* removeCustomField(sql, placeId, fieldId)
-          return yield* one(ownerId, placeId)
-        }),
+        removeCustomField: Effect.fn("Places.removeCustomField")(
+          function* (ownerId, placeId, fieldId) {
+            yield* requireAlive(ownerId, [placeId])
+            yield* removeCustomField(sql, placeId, fieldId)
+            return yield* one(ownerId, placeId)
+          },
+        ),
 
         listExpiredDeleted: Effect.gen(function* () {
           const cutoff = new Date((yield* Clock.currentTimeMillis) - Duration.toMillis(PURGE_AFTER))

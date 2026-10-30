@@ -16,12 +16,12 @@ import { SqlClient } from "effect/sql"
 import { AppConfig } from "../config.ts"
 import { allCatalogManifests, catalogManifest } from "./catalog.ts"
 import {
+  downloadReleaseAsset,
   fetchLatestPluginZip,
   fetchLatestRelease,
   isNewerSemver,
   parseGithubRepoUrl,
   pickReleaseAsset,
-  downloadReleaseAsset,
 } from "./github-install.ts"
 import { ModuleRuntime, webEntryUrlFor } from "./loader.ts"
 import {
@@ -515,7 +515,8 @@ export class Modules extends Context.Service<
           return yield* installGithubPackage({
             owner: row.github_owner,
             repo: row.github_repo,
-            repoUrl: row.github_repo_url ?? `https://github.com/${row.github_owner}/${row.github_repo}`,
+            repoUrl:
+              row.github_repo_url ?? `https://github.com/${row.github_owner}/${row.github_repo}`,
           })
         }),
 
@@ -529,7 +530,9 @@ export class Modules extends Context.Service<
           }
 
           const rows = yield* listRows()
-          const githubRows = rows.filter((r) => r.source === "github" && r.github_owner && r.github_repo)
+          const githubRows = rows.filter(
+            (r) => r.source === "github" && r.github_owner && r.github_repo,
+          )
           const now = Date.now()
           const intervalMs = hours * 60 * 60 * 1000
           let checked = 0

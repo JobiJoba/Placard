@@ -1,9 +1,5 @@
 import { describe, expect, it } from "@effect/vitest"
-import {
-  isNewerSemver,
-  parseGithubRepoUrl,
-  pickReleaseAsset,
-} from "./github-install.ts"
+import { isNewerSemver, parseGithubRepoUrl, pickReleaseAsset } from "./github-install.ts"
 
 describe("parseGithubRepoUrl", () => {
   it("accepts owner/repo shorthand", () => {

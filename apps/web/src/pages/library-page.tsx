@@ -108,6 +108,8 @@ export function LibraryPage() {
   }, [text])
 
   // Restore last scope + view when landing on Library without those params.
+  // Mount-only hydrate from device prefs; URL stays source of truth afterward.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only prefs hydrate
   useEffect(() => {
     if (didHydrateBrowsePrefs.current) return
     didHydrateBrowsePrefs.current = true
@@ -124,8 +126,6 @@ export function LibraryPage() {
     }
     if (dirty) setParams(next, { replace: true })
     setBrowsePrefsReady(true)
-    // Mount-only hydrate from device prefs; URL stays source of truth afterward.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setParams])
 
   // Remember only scope + view across visits; filters/search stay ephemeral.
@@ -329,13 +329,7 @@ export function LibraryPage() {
     )
   }
 
-  if (
-    hits &&
-    hits.length === 0 &&
-    !searchBlocked &&
-    !hasSecondaryFilters &&
-    scope === "all"
-  ) {
+  if (hits && hits.length === 0 && !searchBlocked && !hasSecondaryFilters && scope === "all") {
     return (
       <section className="flex flex-col items-center gap-4 py-16 text-center">
         <h1 className="font-catalog text-4xl font-semibold tracking-wide uppercase sm:text-5xl">

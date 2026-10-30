@@ -64,7 +64,9 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("modules marketpla
     run(async () => {
       const catalog = await admin.browser.get("/api/modules/catalog")
       expect(catalog.status).toBe(200)
-      expect(catalog.body.find((m: { id: string }) => m.id === "restaurants.decide")).toBeUndefined()
+      expect(
+        catalog.body.find((m: { id: string }) => m.id === "restaurants.decide"),
+      ).toBeUndefined()
       expect(catalog.body.filter((m: { source: string }) => m.source === "bundled")).toEqual([])
     }),
   )
@@ -190,7 +192,11 @@ export function createModule() {
         latestAvailableVersion: "0.2.0",
       })
 
-      const updated = await admin.browser.send("POST", "/api/modules/installed/demo.github/update", {})
+      const updated = await admin.browser.send(
+        "POST",
+        "/api/modules/installed/demo.github/update",
+        {},
+      )
       expect(updated.status).toBe(200)
       expect(updated.body).toMatchObject({
         version: "0.2.0",
