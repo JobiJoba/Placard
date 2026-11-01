@@ -59,7 +59,7 @@ jobs:
       - run: pnpm --filter @placard/web build
       # Playwright's webServer starts its own PostGIS via Testcontainers.
       - run: pnpm test:e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
