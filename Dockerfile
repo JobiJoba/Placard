@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM node:24-slim AS base
+FROM node:26-slim AS base
 RUN npm install -g pnpm@12.4.1
 WORKDIR /app
 
@@ -41,7 +41,7 @@ COPY apps/server/src ./apps/server/src
 COPY apps/server/drizzle ./apps/server/drizzle
 COPY --from=build /app/apps/web/dist ./web-dist
 
-FROM node:24-slim AS runner
+FROM node:26-slim AS runner
 ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0 \
     PORT=3000 \
