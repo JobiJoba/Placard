@@ -49,7 +49,7 @@ jobs:
           touch apps/site/dist/.nojekyll
           cp apps/site/dist/index.html apps/site/dist/404.html
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: apps/site/dist
 
