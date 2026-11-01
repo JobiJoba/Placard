@@ -7,6 +7,7 @@ import { AppConfig, loadConfigOrExit } from "./config.ts"
 import { runMigrations } from "./db/migrate.ts"
 import { GoogleFixtureClient } from "./google/fixture-client.ts"
 import { RoutesLive } from "./http/api.ts"
+import { SecurityHeadersLive } from "./http/security.ts"
 import { ModuleRuntime } from "./modules/loader.ts"
 import { Modules } from "./modules/modules.ts"
 import { ObservabilityLive } from "./observability.ts"
@@ -50,7 +51,9 @@ const program = Effect.gen(function* () {
     ),
   )
 
-  const ServerLive = HttpRouter.serve(Layer.mergeAll(RoutesLive, StaticLive)).pipe(
+  const ServerLive = HttpRouter.serve(
+    Layer.mergeAll(RoutesLive, StaticLive, SecurityHeadersLive),
+  ).pipe(
     Layer.provide(http),
     Layer.provide(NodeHttpServer.layer(createServer, { port: config.port })),
     Layer.provide(withConfig(config)),

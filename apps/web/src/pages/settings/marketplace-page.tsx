@@ -2,6 +2,7 @@ import type { CatalogModule, InstalledModule, ModuleSource } from "@placard/doma
 import { type FormEvent, useCallback, useMemo, useState } from "react"
 import { Link } from "react-router"
 import { ErrorAlert } from "@/components/error-alert"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
@@ -36,6 +37,12 @@ const sourceBadge = (
   if (source === "folder") return { label: "Folder", variant: "outline" }
   return { label: "npm", variant: "outline" }
 }
+
+const PLUGIN_TRUST_WARNING =
+  "Plugins run with full access to this Placard instance. A plugin can read or change every place, photo, user and token, and can break the whole instance. Placard does not sandbox or verify plugin code. Back up your database and media volume before installing, and ask an AI assistant to review the plugin source for suspicious network calls, credential access or destructive writes."
+
+const confirmPluginInstall = (action: string) =>
+  window.confirm(`${action}\n\n${PLUGIN_TRUST_WARNING}\n\nContinue?`)
 
 const initials = (name: string) =>
   name
@@ -108,6 +115,7 @@ export function SettingsMarketplacePage() {
 
   const uploadZip = (file: File | undefined) => {
     if (!file) return
+    if (!confirmPluginInstall(`Install the plugin from ${file.name}?`)) return
     setUploading(true)
     setActionError(null)
     void file
@@ -133,6 +141,7 @@ export function SettingsMarketplacePage() {
     event.preventDefault()
     const url = githubUrl.trim()
     if (!url) return
+    if (!confirmPluginInstall(`Install the plugin from ${url}?`)) return
     setInstallingGithub(true)
     setActionError(null)
     void api((c) => c.modules.fromGithub({ payload: { url } })).then(
@@ -185,6 +194,7 @@ export function SettingsMarketplacePage() {
   }
 
   const install = (mod: MarketplaceCardModel) => {
+    if (!confirmPluginInstall(`Install ${mod.name}?`)) return
     setBusyId(mod.id)
     setActionError(null)
     void api((c) => c.modules.install({ payload: { moduleId: mod.id } })).then(
@@ -200,6 +210,12 @@ export function SettingsMarketplacePage() {
   }
 
   const updateFromGithub = (mod: MarketplaceCardModel) => {
+    if (
+      !confirmPluginInstall(
+        `Update ${mod.name}? Updates run new code from the plugin's GitHub release.`,
+      )
+    )
+      return
     setBusyId(mod.id)
     setActionError(null)
     void api((c) => c.modules.updateFromGithub({ params: { id: mod.id } })).then(
@@ -250,9 +266,25 @@ export function SettingsMarketplacePage() {
     <div className="flex flex-col gap-6">
       <SettingsCard
         title="Module marketplace"
-        description="Trusted plugins for this instance. Preinstalled modules ship with Placard; upload a zip or install from a public GitHub Release. Disable is the kill switch (a restart may be needed to fully unload)."
+        description="Install plugins for this instance. Preinstalled modules ship with Placard; upload a zip or install from a public GitHub Release. Disable is the kill switch (a restart may be needed to fully unload)."
       >
         <ErrorAlert message={catalogError ?? installedError ?? settingsError ?? actionError} />
+
+        <Alert variant="destructive">
+          <AlertTitle>Plugins are trusted, unsandboxed code</AlertTitle>
+          <AlertDescription>
+            <p>
+              A plugin runs inside Placard with full access to every place, photo, user and token,
+              and can break the whole instance. Only install code you trust.
+            </p>
+            <p>
+              Back up your database and media volume before installing or updating anything. Then
+              ask an AI assistant to review the plugin source for suspicious network calls,
+              credential access or destructive writes. Placard does not verify or sandbox plugin
+              code for you.
+            </p>
+          </AlertDescription>
+        </Alert>
 
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-md border border-[var(--crate-edge)] bg-[color-mix(in_srgb,var(--crate)_6%,transparent)] p-3">
           <div className="min-w-0 flex-1">

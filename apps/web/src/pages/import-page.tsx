@@ -1,4 +1,5 @@
 import type { ImportDecision, ImportEntry } from "@placard/domain"
+import { MAX_IMPORT_ZIP_BYTES } from "@placard/domain"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router"
 import { ErrorAlert } from "@/components/error-alert"
@@ -20,7 +21,7 @@ export function ImportPage() {
   return <ImportUploadPage />
 }
 
-const MAX_ZIP_BYTES = 80 * 1024 * 1024
+const MAX_ZIP_MB = Math.round(MAX_IMPORT_ZIP_BYTES / (1024 * 1024))
 
 const statusLabel = (status: string) => {
   switch (status) {
@@ -49,8 +50,10 @@ function ImportUploadPage() {
   const { data: runs, reload } = useLoad(useCallback(() => api((c) => c.import.listRuns()), []))
 
   const onZip = async (file: File) => {
-    if (file.size > MAX_ZIP_BYTES) {
-      setError(`Zip is too large (${(file.size / (1024 * 1024)).toFixed(0)} MB). Max 80 MB.`)
+    if (file.size > MAX_IMPORT_ZIP_BYTES) {
+      setError(
+        `Zip is too large (${(file.size / (1024 * 1024)).toFixed(0)} MB). Max ${MAX_ZIP_MB} MB.`,
+      )
       return
     }
     setBusy(true)
@@ -92,7 +95,7 @@ function ImportUploadPage() {
         </label>
         <p className="text-xs text-muted-foreground">
           Expects <code>Maps (your places)/Saved Places.json</code> and/or <code>Saved/*.csv</code>.
-          Max 80 MB.
+          Max {MAX_ZIP_MB} MB.
         </p>
         <Input
           id="takeout-zip"

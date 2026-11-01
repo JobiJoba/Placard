@@ -3,6 +3,12 @@
  * Format notes: docs/takeout-format.md
  */
 import { createHash } from "node:crypto"
+import {
+  MAX_IMPORT_FILES,
+  MAX_IMPORT_TEXT_BYTES,
+  MAX_IMPORT_ZIP_BASE64_LENGTH,
+  MAX_IMPORT_ZIP_BYTES,
+} from "@placard/domain"
 import { unzipSync } from "fflate"
 
 export interface TakeoutFile {
@@ -250,7 +256,38 @@ export const parseTakeoutFiles = (files: ReadonlyArray<TakeoutFile>): ParseResul
 
 /** Unpack a Takeout zip into text files the parser understands. */
 export const unzipTakeout = (bytes: Uint8Array): TakeoutFile[] => {
-  const unzipped = unzipSync(bytes)
+  if (bytes.byteLength === 0) throw new Error("Takeout zip is empty")
+  if (bytes.byteLength > MAX_IMPORT_ZIP_BYTES) {
+    throw new Error(`Takeout zip is too large (max ${MAX_IMPORT_ZIP_BYTES / (1024 * 1024)} MB).`)
+  }
+
+  // Only Maps entries are inflated, and only until the size budget is spent.
+  // This keeps zip bombs from expanding arbitrary content into memory.
+  let count = 0
+  let total = 0
+  let exceeded: string | null = null
+
+  const unzipped = unzipSync(bytes, {
+    filter: (file) => {
+      if (exceeded) return false
+      if (file.name.endsWith("/")) return false
+      const normalized = normalizePath(file.name)
+      if (!isSavedPlacesJson(normalized) && !isSavedCsv(normalized)) return false
+      count += 1
+      total += file.originalSize
+      if (count > MAX_IMPORT_FILES) {
+        exceeded = `Too many files in the Takeout zip (max ${MAX_IMPORT_FILES}).`
+        return false
+      }
+      if (total > MAX_IMPORT_TEXT_BYTES) {
+        exceeded = `Takeout zip expands to too many bytes (max ${MAX_IMPORT_TEXT_BYTES / (1024 * 1024)} MB).`
+        return false
+      }
+      return true
+    },
+  })
+  if (exceeded) throw new Error(exceeded)
+
   const files: TakeoutFile[] = []
   for (const [path, data] of Object.entries(unzipped)) {
     if (path.endsWith("/") || data === undefined) continue
@@ -263,6 +300,9 @@ export const unzipTakeout = (bytes: Uint8Array): TakeoutFile[] => {
 }
 
 export const decodeBase64Zip = (contentBase64: string): Uint8Array => {
+  if (contentBase64.length > MAX_IMPORT_ZIP_BASE64_LENGTH) {
+    throw new Error(`Takeout zip is too large (max ${MAX_IMPORT_ZIP_BYTES / (1024 * 1024)} MB).`)
+  }
   const binary = Buffer.from(contentBase64, "base64")
   return new Uint8Array(binary)
 }

@@ -1,7 +1,7 @@
 name: placard
 
 x-placard-env: &placard-env
-  DATABASE_URL: postgres://placard:${POSTGRES_PASSWORD:-placard}@db:5432/placard
+  DATABASE_URL: postgres://placard:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (openssl rand -hex 24)}@db:5432/placard
   PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3000}
   BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env (openssl rand -base64 32)}
   MEDIA_DIR: /data/media
@@ -17,7 +17,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: placard
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-placard}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (openssl rand -hex 24)}
       POSTGRES_DB: placard
     volumes:
       - pgdata:/var/lib/postgresql

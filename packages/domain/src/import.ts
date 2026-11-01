@@ -84,11 +84,24 @@ export const ImportResolveInput = Schema.Struct({
 export type ImportResolveInput = typeof ImportResolveInput.Type
 
 /** Zip bytes as base64, or already-extracted text files. */
+export const MAX_IMPORT_ZIP_BYTES = 50 * 1024 * 1024
+/** base64 inflates by 4/3; keep the encoded payload within the same budget. */
+export const MAX_IMPORT_ZIP_BASE64_LENGTH = Math.ceil(MAX_IMPORT_ZIP_BYTES / 3) * 4
+export const MAX_IMPORT_FILES = 5_000
+export const MAX_IMPORT_TEXT_BYTES = 128 * 1024 * 1024
+
 export const ImportUpload = Schema.Union([
   Schema.Struct({
     kind: Schema.Literal("zip"),
     filename: Schema.Trim.pipe(Schema.check(Schema.isBetweenLength(1, 260))),
-    contentBase64: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
+    contentBase64: Schema.String.pipe(
+      Schema.check(Schema.isMinLength(1)),
+      Schema.check(
+        Schema.isMaxLength(MAX_IMPORT_ZIP_BASE64_LENGTH, {
+          message: `Takeout zip is too large (max ${MAX_IMPORT_ZIP_BYTES / (1024 * 1024)} MB).`,
+        }),
+      ),
+    ),
   }),
   Schema.Struct({
     kind: Schema.Literal("files"),
@@ -97,7 +110,14 @@ export const ImportUpload = Schema.Union([
         path: Schema.Trim.pipe(Schema.check(Schema.isBetweenLength(1, 500))),
         text: Schema.String,
       }),
-    ).pipe(Schema.check(Schema.isMinLength(1))),
+    ).pipe(
+      Schema.check(Schema.isMinLength(1)),
+      Schema.check(
+        Schema.isMaxLength(MAX_IMPORT_FILES, {
+          message: `Too many files for one import (max ${MAX_IMPORT_FILES}).`,
+        }),
+      ),
+    ),
   }),
 ])
 export type ImportUpload = typeof ImportUpload.Type

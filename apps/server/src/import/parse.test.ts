@@ -2,13 +2,17 @@ import { readdirSync, readFileSync, statSync } from "node:fs"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "@effect/vitest"
+import { MAX_IMPORT_FILES, MAX_IMPORT_ZIP_BYTES } from "@placard/domain"
+import { zipSync } from "fflate"
 import {
+  decodeBase64Zip,
   dedupeKeyFor,
   extractMapsSignals,
   extractSearchCoords,
   parseTakeoutFiles,
   splitCsvLine,
   type TakeoutFile,
+  unzipTakeout,
 } from "./parse.ts"
 
 const fixtureRoot = fileURLToPath(new URL("../../../../test/fixtures/takeout", import.meta.url))
@@ -119,5 +123,23 @@ describe("Takeout parser", () => {
     // Café Sperl appears in Saved Places and 旅行メモ → cross-list candidates.
     const sperl = result.entries.filter((e) => e.name === "Café Sperl")
     expect(sperl.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it("rejects an oversized zip before inflating it", () => {
+    const oversized = new Uint8Array(MAX_IMPORT_ZIP_BYTES + 1)
+    expect(() => unzipTakeout(oversized)).toThrow(/too large/)
+  })
+
+  it("rejects a zip with too many Maps files", () => {
+    const files: Record<string, Uint8Array> = {}
+    for (let i = 0; i <= MAX_IMPORT_FILES; i += 1) {
+      files[`Saved/list-${i}.csv`] = new Uint8Array()
+    }
+    expect(() => unzipTakeout(zipSync(files))).toThrow(/Too many files/)
+  })
+
+  it("decodes a base64 zip", () => {
+    const bytes = decodeBase64Zip(Buffer.from("PK").toString("base64"))
+    expect(Array.from(bytes)).toEqual([0x50, 0x4b])
   })
 })

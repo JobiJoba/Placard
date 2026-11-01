@@ -10,6 +10,8 @@ import {
   type ImportRun,
   type ImportUndoPreview,
   type ImportUpload,
+  MAX_IMPORT_FILES,
+  MAX_IMPORT_TEXT_BYTES,
   TakeoutParseError,
 } from "@placard/domain"
 import { Context, DateTime, Effect, Layer, Option } from "effect"
@@ -103,7 +105,21 @@ const toEntry = (row: EntryRow): ImportEntry => ({
 const filesFromUpload = (upload: ImportUpload): Effect.Effect<TakeoutFile[], TakeoutParseError> =>
   Effect.try({
     try: () => {
-      if (upload.kind === "files") return [...upload.files]
+      if (upload.kind === "files") {
+        if (upload.files.length > MAX_IMPORT_FILES) {
+          throw new Error(`Too many files for one import (max ${MAX_IMPORT_FILES}).`)
+        }
+        const totalBytes = upload.files.reduce(
+          (sum, file) => sum + Buffer.byteLength(file.text, "utf8"),
+          0,
+        )
+        if (totalBytes > MAX_IMPORT_TEXT_BYTES) {
+          throw new Error(
+            `Import files are too large (max ${MAX_IMPORT_TEXT_BYTES / (1024 * 1024)} MB).`,
+          )
+        }
+        return [...upload.files]
+      }
       const files = unzipTakeout(decodeBase64Zip(upload.contentBase64))
       if (files.length === 0) {
         throw new Error("Zip has no Saved Places.json or Saved/*.csv files")

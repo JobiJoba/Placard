@@ -77,9 +77,13 @@ Edit `.env` and set at least:
 
 | Variable | Notes |
 | --- | --- |
-| `POSTGRES_PASSWORD` | Database password (use letters and digits; avoid special chars that confuse Compose) |
+| `POSTGRES_PASSWORD` | Database password — `openssl rand -hex 24`. Required; set it **before the first start** (the database volume keeps the initial password) |
 | `BETTER_AUTH_SECRET` | Session signing secret — `openssl rand -base64 32` |
 | `PUBLIC_URL` | Exact URL users open (e.g. `https://placard.example.com` or `http://localhost:3000`) |
+
+Both Compose files refuse to start if `POSTGRES_PASSWORD` or `BETTER_AUTH_SECRET` is unset or
+empty. Rotating `POSTGRES_PASSWORD` later requires changing the role inside Postgres (`ALTER ROLE`)
+or restoring a dump; editing `.env` alone is not enough once the volume exists.
 
 Optional:
 
@@ -102,7 +106,11 @@ docker compose up -d
 
 Open `$PUBLIC_URL`. Health: `$PUBLIC_URL/api/health`.
 
-The first account to sign up becomes **admin**.
+The first account to sign up becomes **admin**. Complete that sign-up before exposing the instance
+to the internet.
+
+Back up the database and media volume before installing plugins or upgrading. See
+[SECURITY.md](../SECURITY.md) for the plugin trust model.
 
 ### Upgrade
 
@@ -133,7 +141,7 @@ Migrations run on boot. Keep named volumes so the library and photos survive. Se
 
 1. New Resource → **Docker Compose**
 2. Paste the release `docker-compose.yml` from the [latest release](https://github.com/JobiJoba/Placard/releases/latest)
-3. Set env from `example.env` (`BETTER_AUTH_SECRET`, `POSTGRES_PASSWORD`, `PUBLIC_URL=https://your-domain`)
+3. Set env from `example.env` (`POSTGRES_PASSWORD` ← `openssl rand -hex 24`, `BETTER_AUTH_SECRET` ← `openssl rand -base64 32`, `PUBLIC_URL=https://your-domain`)
 4. Map the domain to the **app** service on port **3000**
 5. Deploy; wait for healthchecks on `app` and `db`
 
@@ -151,7 +159,7 @@ Paste repo [`compose.ghcr.yaml`](../compose.ghcr.yaml) instead of the release fi
 Same Compose stack as Coolify — create a **Docker Compose** service (not a single-image app).
 
 1. Paste the release `docker-compose.yml` from the [latest release](https://github.com/JobiJoba/Placard/releases/latest)
-2. Set env from `example.env` (`BETTER_AUTH_SECRET`, `POSTGRES_PASSWORD`, `PUBLIC_URL=https://your-domain`)
+2. Set env from `example.env` (`POSTGRES_PASSWORD` ← `openssl rand -hex 24`, `BETTER_AUTH_SECRET` ← `openssl rand -base64 32`, `PUBLIC_URL=https://your-domain`)
 3. **Domains → Add Domain** → select the **app** service → container port **3000** (Dokploy/Traefik routes to that internal port; do not confuse this with host port publish)
 4. Deploy; wait for healthchecks. HTTPS certs may take a few seconds after the first deploy
 
@@ -196,7 +204,8 @@ For forks and local image builds, use the repo [`compose.yaml`](../compose.yaml)
 git clone https://github.com/JobiJoba/Placard.git
 cd Placard
 cp .env.example .env
-# Set POSTGRES_PASSWORD, BETTER_AUTH_SECRET, PUBLIC_URL
+# Set POSTGRES_PASSWORD (openssl rand -hex 24), BETTER_AUTH_SECRET
+# (openssl rand -base64 32) and PUBLIC_URL
 docker compose up -d --build
 ```
 

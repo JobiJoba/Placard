@@ -21,7 +21,8 @@ curl -fsSL -o docker-compose.yml \
 curl -fsSL -o example.env \
   https://github.com/JobiJoba/Placard/releases/latest/download/example.env
 cp example.env .env
-# Edit .env: POSTGRES_PASSWORD, BETTER_AUTH_SECRET (openssl rand -base64 32), PUBLIC_URL
+# Edit .env: POSTGRES_PASSWORD (openssl rand -hex 24),
+# BETTER_AUTH_SECRET (openssl rand -base64 32), PUBLIC_URL
 docker compose up -d
 ```
 
