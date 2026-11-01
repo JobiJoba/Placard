@@ -14,11 +14,11 @@ Deploy: [deployment.md](deployment.md).
 | Mode | Status | Who | What you see |
 | --- | --- | --- | --- |
 | **Solo chrome** (default) | **Shipped** | Multi-user accounts; each private library | Library, tags, lists, enrichment, **search**, dish photos, **MCP**, optional Marketplace modules (e.g. Pick). No voting chrome. |
-| **Household** (opt-in) | **Partial (v0.2)** | Multiple full members; **admin invites** + **admin household toggle** | Shared *and* **private** places; library ownership filters; claim-first share conflicts. Dinner **votes** still later. No guest/kid seats. |
+| **Household** (opt-in) | **Partial (shipped on `main` after v0.1.0)** | Multiple full members; **admin invites** + **admin household toggle** | Shared *and* **private** places; library ownership filters; claim-first share conflicts. Dinner **votes** still later. No guest/kid seats. |
 
 Household unlocks via the admin toggle; it does not force every place to be shared.
 
-Privacy: never public on the internet. Visibility = private to a user, or (later) shared within the household.
+Privacy: never public on the internet. Visibility = private to a user, or household-shared when the admin toggle is on.
 
 ---
 
@@ -157,11 +157,13 @@ CRUD works without a Google key.
 
 **Shipped for v0.1 (code)** — accounts; library CRUD; cards/map; tags/lists; Takeout triage; search filters; enrichment + force refresh; custom fields; dish photos + Google covers; MCP; Compose; trusted Marketplace plugins (zip + GitHub).
 
+**Shipped after the v0.1 freeze (on `main`)** — admin household toggle (Settings → People); place share/unshare; claim-first conflicts; library Everyone / Mine / Shared (+ Shared by); profile name/avatar.
+
 **Phase 10 code shipped** — export JSON/GeoJSON zip; PWA basics; install guide; GHCR release workflow. Founder Coolify / phone DoD still open.
 
 **Soon after (v0.2+)**
 
-- Household (shared/private, admin invites, in-app vote)  
+- Dinner vote module (household-only); shared lists
 - PWA share-target  
 - One-click backup  
 - Per-member Google key override  

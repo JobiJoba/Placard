@@ -21,9 +21,7 @@ export const PlacesApiLive = HttpApiBuilder.group(
     const google = yield* GooglePlaces
     const enrichment = yield* Enrichment
     return handlers
-      .handle("list", ({ query }) =>
-        withMe((me) => places.list(me.id, me.householdEnabled, query)),
-      )
+      .handle("list", ({ query }) => withMe((me) => places.list(me.id, me.householdEnabled, query)))
       .handle("deleted", () => withMe((me) => places.listDeleted(me.id)))
       .handle("get", ({ params }) =>
         withMe((me) => places.get(me.id, params.id, me.householdEnabled)),

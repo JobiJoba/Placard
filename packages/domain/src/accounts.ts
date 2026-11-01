@@ -30,6 +30,8 @@ export const UserSummary = Schema.Struct({
   email: Schema.String,
   role: UserRole,
   image: Schema.NullOr(Schema.String),
+  /** Set while the admin has blocked this account. Blocked users cannot sign in. */
+  blockedAt: Schema.NullOr(Schema.DateTimeUtcFromString),
   createdAt: Schema.DateTimeUtcFromString,
 })
 export type UserSummary = typeof UserSummary.Type
@@ -128,6 +130,12 @@ export class Forbidden extends Schema.TaggedError<Forbidden>()(
 
 export class InviteNotFound extends Schema.TaggedError<InviteNotFound>()(
   "InviteNotFound",
+  {},
+  { httpApiStatus: 404 },
+) {}
+
+export class UserNotFound extends Schema.TaggedError<UserNotFound>()(
+  "UserNotFound",
   {},
   { httpApiStatus: 404 },
 ) {}

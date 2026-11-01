@@ -114,17 +114,17 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("household", (it) 
         householdScope: "shared",
       })
       expect(search.status).toBe(200)
-      expect(search.body.some((hit: { place: { id: string } }) => hit.place.id === adminPlaceId)).toBe(
-        true,
-      )
+      expect(
+        search.body.some((hit: { place: { id: string } }) => hit.place.id === adminPlaceId),
+      ).toBe(true)
 
       const mine = await member.browser.send("POST", "/api/search", { householdScope: "mine" })
-      expect(mine.body.some((hit: { place: { id: string } }) => hit.place.id === adminPlaceId)).toBe(
-        false,
-      )
-      expect(mine.body.some((hit: { place: { id: string } }) => hit.place.id === memberPlaceId)).toBe(
-        true,
-      )
+      expect(
+        mine.body.some((hit: { place: { id: string } }) => hit.place.id === adminPlaceId),
+      ).toBe(false)
+      expect(
+        mine.body.some((hit: { place: { id: string } }) => hit.place.id === memberPlaceId),
+      ).toBe(true)
 
       const byAlice = await member.browser.send("POST", "/api/search", {
         sharedBy: (await admin.browser.get("/api/me")).body.id,
@@ -138,9 +138,11 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("household", (it) 
   it.effect("second share of the same google place id conflicts; copy fills empty fields", () =>
     run(async () => {
       expect(
-        (await admin.browser.send("PUT", "/api/admin/settings/google-api-key", {
-          apiKey: "fixture-key",
-        })).status,
+        (
+          await admin.browser.send("PUT", "/api/admin/settings/google-api-key", {
+            apiKey: "fixture-key",
+          })
+        ).status,
       ).toBe(200)
 
       const aliceCopy = await addFromGoogle(admin.browser, MICHELE)
@@ -174,20 +176,28 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("household", (it) 
       expect(conflict.body.existingPlaceId).toBe(aliceId)
 
       // Target already has notes/status — copy should not overwrite.
-      const copied = await member.browser.send("POST", `/api/places/${bobId}/copy-into/${aliceId}`, {
-        notes: true,
-        status: true,
-        customFields: true,
-      })
+      const copied = await member.browser.send(
+        "POST",
+        `/api/places/${bobId}/copy-into/${aliceId}`,
+        {
+          notes: true,
+          status: true,
+          customFields: true,
+        },
+      )
       expect(copied.status).toBe(200)
       expect(copied.body.notes).toBe("Alice notes")
       expect(copied.body.status).toBe("want_to_go")
 
       // Clear target notes then copy fills them.
       await admin.browser.send("PATCH", `/api/places/${aliceId}`, { notes: "" })
-      const filled = await member.browser.send("POST", `/api/places/${bobId}/copy-into/${aliceId}`, {
-        notes: true,
-      })
+      const filled = await member.browser.send(
+        "POST",
+        `/api/places/${bobId}/copy-into/${aliceId}`,
+        {
+          notes: true,
+        },
+      )
       expect(filled.body.notes).toBe("Bob notes")
     }),
   )

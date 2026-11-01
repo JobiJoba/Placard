@@ -37,6 +37,7 @@ layer(IntegrationLayer, { concurrent: false })("migrations on an empty database"
         "distance_unit",
         "created_at",
         "updated_at",
+        "blocked_at",
       ])
 
       const invalidRole = yield* sql`

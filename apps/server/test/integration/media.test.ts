@@ -65,6 +65,7 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("media http", (it)
         caption: "Margherita",
         mimeType: "image/png",
       })
+      expect(typeof uploaded.body.ownerId).toBe("string")
       expect(uploaded.body.url).toMatch(/^\/api\/media\/.+\/file$/)
       expect(uploaded.body.thumbUrl).toMatch(/^\/api\/media\/.+\/thumb$/)
       mediaId = uploaded.body.id

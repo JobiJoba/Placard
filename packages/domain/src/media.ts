@@ -10,6 +10,7 @@ export type MediaOrigin = typeof MediaOrigin.Type
 
 export const MediaItem = Schema.Struct({
   id: Schema.String,
+  ownerId: Schema.String,
   placeId: Schema.String,
   kind: MediaKind,
   origin: MediaOrigin,

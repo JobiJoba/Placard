@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test"
-import { admin, expectEmptyLibrary, openNav, signIn } from "./support.ts"
+import { admin, expectEmptyLibrary, openNav, signIn, signOut } from "./support.ts"
 
 test.skip(Boolean(process.env.PLAYWRIGHT_BASE_URL), "needs a fresh install")
 test.describe.configure({ mode: "serial" })
@@ -17,7 +17,7 @@ test("the first visitor creates the admin account, signs out and back in", async
   await page.getByRole("button", { name: "Create admin account" }).click()
   await expectEmptyLibrary(page)
 
-  await page.getByRole("button", { name: "Sign out" }).click()
+  await signOut(page)
   await expect(page).toHaveURL(/\/login$/)
 
   await signIn(page, { ...admin, password: "wrong password" })

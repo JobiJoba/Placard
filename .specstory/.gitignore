@@ -3,3 +3,4 @@
 # (https://github.com/specstoryai/getspecstory/issues/317)
 /debug/
 /statistics.json
+/history/

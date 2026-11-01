@@ -8,6 +8,7 @@ import {
   DistanceUnit,
   Email,
   EmailAlreadyRegistered,
+  Forbidden,
   GoogleKeyRejected,
   HouseholdEnabledUpdate,
   HouseholdMember,
@@ -19,6 +20,7 @@ import {
   ModuleUpdateCheckHoursUpdate,
   ProfileUpdate,
   SetupStatus,
+  UserNotFound,
   UserSummary,
 } from "./accounts.ts"
 import {
@@ -168,6 +170,20 @@ export class AdminApi extends HttpApiGroup.make("admin")
       success: InstanceSettingsView,
     }),
     HttpApiEndpoint.get("users", "/users", { success: Schema.Array(UserSummary) }),
+    HttpApiEndpoint.post("blockUser", "/users/:id/block", {
+      params: { id: Schema.String },
+      success: UserSummary,
+      error: [UserNotFound, Forbidden],
+    }),
+    HttpApiEndpoint.post("unblockUser", "/users/:id/unblock", {
+      params: { id: Schema.String },
+      success: UserSummary,
+      error: [UserNotFound, Forbidden],
+    }),
+    HttpApiEndpoint.delete("deleteUser", "/users/:id", {
+      params: { id: Schema.String },
+      error: [UserNotFound, Forbidden],
+    }),
     HttpApiEndpoint.get("invites", "/invites", { success: Schema.Array(Invite) }),
     HttpApiEndpoint.post("createInvite", "/invites", {
       payload: Schema.Struct({ email: Email }),

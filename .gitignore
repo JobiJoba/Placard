@@ -1,5 +1,8 @@
 # Local / personal
 .DS_Store
+# Local agent tool state (may contain MCP tokens or design-review artifacts)
+.cursor/
+.impeccable/
 # Personal Google Takeout dumps at the repo root only (not test/fixtures/takeout).
 /Takeout/
 *.env

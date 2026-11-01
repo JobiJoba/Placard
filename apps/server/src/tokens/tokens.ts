@@ -133,7 +133,9 @@ export class Tokens extends Context.Service<
                    u.role, u.email, u.distance_unit, u.image, u.name as user_name
             from api_tokens t
             join users u on u.id = t.owner_id
-            where t.token_hash = ${tokenHash} and t.revoked_at is null`.pipe(Effect.orDie)
+            where t.token_hash = ${tokenHash} and t.revoked_at is null and u.blocked_at is null`.pipe(
+            Effect.orDie,
+          )
           const row = rows[0]
           if (!row) {
             return yield* new Unauthorized({ message: "Invalid or revoked access token." })

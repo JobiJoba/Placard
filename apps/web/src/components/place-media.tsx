@@ -25,7 +25,15 @@ const fileToBase64 = (file: File) =>
     reader.readAsDataURL(file)
   })
 
-export function PlaceMediaSection({ placeId }: { readonly placeId: string }) {
+export function PlaceMediaSection({
+  placeId,
+  viewerId,
+  isPlaceOwner,
+}: {
+  readonly placeId: string
+  readonly viewerId: string
+  readonly isPlaceOwner: boolean
+}) {
   const {
     data: items,
     setData,
@@ -156,6 +164,8 @@ export function PlaceMediaSection({ placeId }: { readonly placeId: string }) {
             <MediaTile
               key={item.id}
               item={item}
+              canSetCover={isPlaceOwner && !item.isCover}
+              canManage={item.ownerId === viewerId}
               onRemove={() => remove(item.id)}
               onCaption={(value) => saveCaption(item.id, value)}
               onSetCover={() => setCover(item.id)}
@@ -175,11 +185,15 @@ export function PlaceMediaSection({ placeId }: { readonly placeId: string }) {
 
 function MediaTile({
   item,
+  canSetCover,
+  canManage,
   onRemove,
   onCaption,
   onSetCover,
 }: {
   readonly item: MediaItem
+  readonly canSetCover: boolean
+  readonly canManage: boolean
   readonly onRemove: () => void
   readonly onCaption: (caption: string | null) => void
   readonly onSetCover: () => void
@@ -188,6 +202,7 @@ function MediaTile({
   const [confirmRemove, setConfirmRemove] = useState(false)
   const [draft, setDraft] = useState(item.caption ?? "")
   const src = item.thumbUrl ?? item.url
+  const showActions = canSetCover || canManage
 
   return (
     <li className="flex flex-col gap-2">
@@ -202,7 +217,7 @@ function MediaTile({
           {item.origin === "google" && <Badge variant="outline">Google</Badge>}
           {item.isCover && <Badge>Cover</Badge>}
         </div>
-        {confirmRemove ? (
+        {showActions && confirmRemove ? (
           <div className="absolute inset-x-0 bottom-0 flex gap-1 bg-[color-mix(in_srgb,var(--crate)_70%,transparent)] p-2">
             <Button
               type="button"
@@ -223,9 +238,9 @@ function MediaTile({
               Cancel
             </Button>
           </div>
-        ) : (
+        ) : showActions ? (
           <div className="absolute inset-x-0 bottom-0 flex gap-1 bg-[color-mix(in_srgb,var(--crate)_55%,transparent)] p-2">
-            {!item.isCover && (
+            {canSetCover ? (
               <Button
                 type="button"
                 size="sm"
@@ -235,21 +250,23 @@ function MediaTile({
               >
                 Set cover
               </Button>
-            )}
-            <Button
-              type="button"
-              size="icon"
-              variant="secondary"
-              className="size-11 shrink-0 sm:size-8"
-              aria-label="Remove photo"
-              onClick={() => setConfirmRemove(true)}
-            >
-              <Trash2 aria-hidden />
-            </Button>
+            ) : null}
+            {canManage ? (
+              <Button
+                type="button"
+                size="icon"
+                variant="secondary"
+                className="size-11 shrink-0 sm:size-8"
+                aria-label="Remove photo"
+                onClick={() => setConfirmRemove(true)}
+              >
+                <Trash2 aria-hidden />
+              </Button>
+            ) : null}
           </div>
-        )}
+        ) : null}
       </div>
-      {editing ? (
+      {canManage && editing ? (
         <form
           className="flex gap-1"
           onSubmit={(e) => {
@@ -270,7 +287,7 @@ function MediaTile({
             Save
           </Button>
         </form>
-      ) : (
+      ) : canManage ? (
         <button
           type="button"
           className="text-left text-sm text-muted-foreground hover:text-foreground"
@@ -281,7 +298,9 @@ function MediaTile({
         >
           {item.caption ?? "Add caption"}
         </button>
-      )}
+      ) : item.caption ? (
+        <p className="text-sm text-muted-foreground">{item.caption}</p>
+      ) : null}
     </li>
   )
 }

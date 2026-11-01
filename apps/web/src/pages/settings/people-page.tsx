@@ -1,17 +1,25 @@
 import type { Invite, InviteStatus, UserSummary } from "@placard/domain"
 import { DateTime } from "effect"
+import { Ellipsis, ShieldCheck, ShieldOff, Trash2 } from "lucide-react"
 import { type FormEvent, useState } from "react"
 import { ErrorAlert } from "@/components/error-alert"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { UserAvatar } from "@/components/user-avatar"
 import { api, errorMessage } from "@/lib/api"
 import { useLoad } from "@/lib/use-load"
-import { useSession } from "@/session"
+import { useMe, useSession } from "@/session"
 import { SettingsCard } from "./settings-card"
 
 const formatDate = (value: DateTime.Utc) =>
@@ -65,21 +73,25 @@ function HouseholdCard() {
     >
       <div className="flex flex-col gap-3">
         <ErrorAlert message={error ?? loadError} />
-        <label className="flex items-start gap-3 text-sm">
+        <div className="flex items-start gap-3 text-sm">
           <Checkbox
+            id="household-mode"
             checked={settings?.householdEnabled ?? false}
             disabled={pending || !settings}
             onCheckedChange={(value) => void toggle(value === true)}
-            aria-label="Enable household mode"
+            aria-labelledby="household-mode-label"
+            aria-describedby="household-mode-help"
             className="mt-0.5"
           />
-          <span className="flex flex-col gap-1">
-            <span className="font-medium">Enable household mode</span>
-            <span className="text-muted-foreground">
-              Unlocks sharing, library ownership filters, and household modules later.
+          <div className="flex flex-col gap-1">
+            <label id="household-mode-label" htmlFor="household-mode" className="font-medium">
+              Enable household mode
+            </label>
+            <span id="household-mode-help" className="text-muted-foreground">
+              Unlocks sharing and library filters (Everyone, Mine, Shared). Dinner vote stays later.
             </span>
-          </span>
-        </label>
+          </div>
+        </div>
       </div>
     </SettingsCard>
   )
@@ -187,26 +199,108 @@ function InvitesCard() {
 }
 
 function UsersCard() {
-  const { data: users, error } = useLoad(loadUsers)
+  const me = useMe()
+  const { data: users, reload, error: loadError } = useLoad(loadUsers)
+  const [error, setError] = useState<string | null>(null)
+  const [busyId, setBusyId] = useState<string | null>(null)
+
+  const run = async (id: string, action: () => Promise<unknown>) => {
+    setBusyId(id)
+    setError(null)
+    try {
+      await action()
+      reload()
+    } catch (cause) {
+      setError(errorMessage(cause))
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  const block = (user: UserSummary) => {
+    if (
+      !window.confirm(
+        `Block ${user.name}? They will be signed out and cannot sign in again until you unblock them. Their places and data stay.`,
+      )
+    ) {
+      return
+    }
+    void run(user.id, () => api((client) => client.admin.blockUser({ params: { id: user.id } })))
+  }
+
+  const unblock = (user: UserSummary) =>
+    void run(user.id, () => api((client) => client.admin.unblockUser({ params: { id: user.id } })))
+
+  const remove = (user: UserSummary) => {
+    if (
+      !window.confirm(
+        `Delete ${user.name} (${user.email})?\n\nThis permanently removes their account and everything they own, including places, lists, and photos. This cannot be undone.`,
+      )
+    ) {
+      return
+    }
+    void run(user.id, () => api((client) => client.admin.deleteUser({ params: { id: user.id } })))
+  }
+
   return (
     <SettingsCard
       title="People"
-      description="Everyone with an account. With household mode off, each person keeps a private library."
+      description="Everyone with an account. Blocking signs someone out and keeps their data; deleting removes the account and everything they own."
     >
-      <ErrorAlert message={error} />
+      <ErrorAlert message={error ?? loadError} />
       <ul className="flex flex-col divide-y">
-        {(users ?? []).map((user: UserSummary) => (
-          <li key={user.id} className="flex items-center justify-between gap-3 py-2">
-            <div className="flex min-w-0 items-center gap-3">
-              <UserAvatar name={user.name} image={user.image} />
-              <div className="flex min-w-0 flex-col">
-                <span className="truncate text-sm">{user.name}</span>
-                <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+        {(users ?? []).map((user: UserSummary) => {
+          const isSelf = user.id === me.id
+          const busy = busyId === user.id
+          return (
+            <li key={user.id} className="flex items-center justify-between gap-3 py-2">
+              <div className="flex min-w-0 items-center gap-3">
+                <UserAvatar name={user.name} image={user.image} />
+                <div className="flex min-w-0 flex-col">
+                  <span className="truncate text-sm">{user.name}</span>
+                  <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+                </div>
               </div>
-            </div>
-            <Badge variant={user.role === "admin" ? "default" : "secondary"}>{user.role}</Badge>
-          </li>
-        ))}
+              <div className="flex shrink-0 items-center gap-1.5">
+                {isSelf && <Badge variant="outline">you</Badge>}
+                {user.blockedAt && <Badge variant="destructive">blocked</Badge>}
+                <Badge variant={user.role === "admin" ? "default" : "secondary"}>{user.role}</Badge>
+                {!isSelf && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={`Actions for ${user.name}`}
+                        disabled={busy}
+                      >
+                        <Ellipsis aria-hidden />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        disabled={busy}
+                        onSelect={() => (user.blockedAt ? unblock(user) : block(user))}
+                      >
+                        {user.blockedAt ? <ShieldCheck aria-hidden /> : <ShieldOff aria-hidden />}
+                        {user.blockedAt ? "Unblock access" : "Block access"}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        variant="destructive"
+                        disabled={busy}
+                        onSelect={() => remove(user)}
+                      >
+                        <Trash2 aria-hidden />
+                        Delete user…
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+            </li>
+          )
+        })}
       </ul>
     </SettingsCard>
   )

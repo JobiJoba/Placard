@@ -646,77 +646,70 @@ export class Places extends Context.Service<
           },
         ),
 
-        setVisibility: Effect.fn("Places.setVisibility")(function* (
-          ownerId,
-          id,
-          visibility,
-          householdEnabled,
-        ) {
-          if (visibility === "household" && !householdEnabled) {
-            return yield* new HouseholdDisabled({
-              message: "Turn on household mode in Settings → People first.",
-            })
-          }
-          const current = yield* ownedOne(ownerId, id)
-          if (visibility === "household" && current.googlePlaceId) {
-            const conflict = yield* findHouseholdByGooglePlaceId(current.googlePlaceId, id)
-            if (Option.isSome(conflict)) {
-              const existing = conflict.value
-              return yield* new HouseholdPlaceConflict({
-                existingPlaceId: existing.id,
-                existingName: existing.name,
-                owner: existing.owner,
+        setVisibility: Effect.fn("Places.setVisibility")(
+          function* (ownerId, id, visibility, householdEnabled) {
+            if (visibility === "household" && !householdEnabled) {
+              return yield* new HouseholdDisabled({
+                message: "Turn on household mode in Settings → People first.",
               })
             }
-          }
-          yield* sql`
+            const current = yield* ownedOne(ownerId, id)
+            if (visibility === "household" && current.googlePlaceId) {
+              const conflict = yield* findHouseholdByGooglePlaceId(current.googlePlaceId, id)
+              if (Option.isSome(conflict)) {
+                const existing = conflict.value
+                return yield* new HouseholdPlaceConflict({
+                  existingPlaceId: existing.id,
+                  existingName: existing.name,
+                  owner: existing.owner,
+                })
+              }
+            }
+            yield* sql`
             update places set visibility = ${visibility}, updated_at = now()
             where id = ${id} and owner_id = ${ownerId} and deleted_at is null`.pipe(Effect.orDie)
-          return yield* ownedOne(ownerId, id)
-        }),
+            return yield* ownedOne(ownerId, id)
+          },
+        ),
 
-        copyInto: Effect.fn("Places.copyInto")(function* (
-          ownerId,
-          sourceId,
-          targetId,
-          input,
-          householdEnabled,
-        ) {
-          if (!householdEnabled) {
-            return yield* new HouseholdDisabled({
-              message: "Turn on household mode in Settings → People first.",
-            })
-          }
-          const source = yield* ownedOne(ownerId, sourceId)
-          const target = yield* visibleOne(ownerId, targetId, true)
-          if (target.visibility !== "household") {
-            return yield* new PlaceNotFound()
-          }
-          if (input.notes && (!target.notes || target.notes.trim() === "") && source.notes) {
-            yield* sql`
-              update places set notes = ${source.notes}, updated_at = now()
-              where id = ${targetId}`.pipe(Effect.orDie)
-          }
-          if (input.status && target.status == null && source.status != null) {
-            yield* sql`
-              update places set status = ${source.status}, updated_at = now()
-              where id = ${targetId}`.pipe(Effect.orDie)
-          }
-          if (input.customFields && source.customFields.length > 0) {
-            const existingLabels = new Set(
-              target.customFields.map((field) => field.label.trim().toLowerCase()),
-            )
-            for (const field of source.customFields) {
-              if (existingLabels.has(field.label.trim().toLowerCase())) continue
-              yield* createCustomField(sql, targetId, {
-                label: field.label,
-                type: field.type,
-                value: field.value,
+        copyInto: Effect.fn("Places.copyInto")(
+          function* (ownerId, sourceId, targetId, input, householdEnabled) {
+            if (!householdEnabled) {
+              return yield* new HouseholdDisabled({
+                message: "Turn on household mode in Settings → People first.",
               })
             }
-          }
-          return yield* visibleOne(ownerId, targetId, true)
-        }),
+            const source = yield* ownedOne(ownerId, sourceId)
+            const target = yield* visibleOne(ownerId, targetId, true)
+            if (target.visibility !== "household") {
+              return yield* new PlaceNotFound()
+            }
+            if (input.notes && (!target.notes || target.notes.trim() === "") && source.notes) {
+              yield* sql`
+              update places set notes = ${source.notes}, updated_at = now()
+              where id = ${targetId}`.pipe(Effect.orDie)
+            }
+            if (input.status && target.status == null && source.status != null) {
+              yield* sql`
+              update places set status = ${source.status}, updated_at = now()
+              where id = ${targetId}`.pipe(Effect.orDie)
+            }
+            if (input.customFields && source.customFields.length > 0) {
+              const existingLabels = new Set(
+                target.customFields.map((field) => field.label.trim().toLowerCase()),
+              )
+              for (const field of source.customFields) {
+                if (existingLabels.has(field.label.trim().toLowerCase())) continue
+                yield* createCustomField(sql, targetId, {
+                  label: field.label,
+                  type: field.type,
+                  value: field.value,
+                })
+              }
+            }
+            return yield* visibleOne(ownerId, targetId, true)
+          },
+        ),
 
         listExpiredDeleted: Effect.gen(function* () {
           const cutoff = new Date((yield* Clock.currentTimeMillis) - Duration.toMillis(PURGE_AFTER))

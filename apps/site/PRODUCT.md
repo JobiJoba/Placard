@@ -16,7 +16,7 @@ Primary visitor is a self-hoster evaluating whether to try Placard: already comf
 
 ## Positioning
 
-Immich-adjacent for starred places: Compose-up from GHCR, data on your disk, private to you (or later a household). Beats Google Maps Saved for structured use of *your* library. Tagline: *Your places. On your cards. On your server.* The site sells ownership + install simplicity; MCP and Marketplace modules support that story rather than replacing the install CTA.
+Immich-adjacent for starred places: Compose-up from GHCR, data on your disk, private to you (or an invited household). Beats Google Maps Saved for structured use of *your* library. Tagline: *Your places. On your cards. On your server.* The site sells ownership + install simplicity; MCP and Marketplace modules support that story rather than replacing the install CTA.
 
 ## Operating Context
 

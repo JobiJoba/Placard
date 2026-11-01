@@ -23,9 +23,9 @@ Ground truth for prioritization. Not every user will match this; it defines what
 
 ## Household (when used)
 
-- Shared *and* private places
-- Admin invites only
-- Votes in-app only
+- Shared *and* private places (admin toggle; place sharing shipped)
+- Admin invites / revoke only (no member removal yet)
+- Votes in-app only (still later)
 - No guest/kid accounts
 
 ## Tech preferences that affect UX

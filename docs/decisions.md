@@ -18,7 +18,7 @@ Resolved choices from product discussion. Update this file when something change
 | **Single user vs household** | Solo is the default chrome. Household unlocks via an **admin toggle** (Settings → People), not automatically when a second member joins. |
 | **Household library** | **Both** shared and private: members keep private places; owners can set place `visibility` to `household`. One household card per `google_place_id` (claim-first; no silent merge). |
 | **Shared place edits** | Owner edits core fields / unshares / deletes. Other members can view and add dish photos. |
-| **Invites** | **Admin only** can invite/remove members. |
+| **Invites** | **Admin only** can create and revoke invites. There is no remove-user API yet. |
 | **Votes** | **In-app only** for now (no guest couch links). |
 | **Kids / guests** | **No** lightweight guest or kid accounts. Full members only. |
 
@@ -79,7 +79,7 @@ Resolved choices from product discussion. Update this file when something change
 
 1. Search + near-me + open/cuisine filters are core product, not a module afterthought.
 2. Import UX must be excellent (~500 places on day one).
-3. Household privacy model needs place/list visibility (private vs household-shared).
+3. Household privacy model needs place visibility (private vs household-shared). List visibility is still private-only.
 4. Local LLM search is a later enhancer on top of real filters — design filters so an LLM can drive them.
 5. MCP ships in the same release train as a usable library, not as a forever backlog item.
 6. AGPL-3.0 LICENSE file belongs in the repo when code starts (or immediately as intent).

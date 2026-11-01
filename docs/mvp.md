@@ -4,6 +4,8 @@ The scope contract for the first build. Anything not listed under **In** is out 
 
 Source docs: [decisions.md](decisions.md), [first-user.md](first-user.md), [product-overview.md](product-overview.md).
 
+The lists below are the **v0.1 freeze**. Work on `main` since then (household place sharing, profile avatars) is tracked in [current-state.md](current-state.md) and [CHANGELOG.md](../CHANGELOG.md) — not a silent expansion of this contract.
+
 ## Goal of v0.1
 
 The founder can replace Google Maps Saved for everyday use:
@@ -103,9 +105,9 @@ Distances show in km or miles according to a user setting. Results need to feel 
 
 ### 7. Accounts
 
-- Multi-user accounts, each with a private library.
+- Multi-user accounts, each with a private library by default.
 - The first user to sign up becomes admin. Admin creates or invites other users.
-- No household sharing yet, but the data model already carries an owner and a visibility field, so household can be added without migrating every table.
+- Places already carry `owner_id` and `visibility`. Household sharing itself shipped after this freeze (admin toggle on `main`).
 
 ### 8. Self-hosting
 
@@ -119,7 +121,7 @@ Distances show in km or miles according to a user setting. Results need to feel 
 
 | Feature | Planned for |
 | --- | --- |
-| Household: shared and private places, invites, member attribution | v0.2 |
+| Household: shared lists | v0.2 — lists stay private-only; place sharing shipped on `main` after the freeze |
 | Dinner vote module | v0.2 (needs household) |
 | Per-member Google key override | v0.2 |
 | One-click backup and restore UI | v0.2 (export plus documented `pg_dump` in v0.1) |

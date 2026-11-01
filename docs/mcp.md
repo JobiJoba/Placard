@@ -13,6 +13,8 @@ Placard exposes a [Model Context Protocol](https://modelcontextprotocol.io/) end
 
 Anyone with a token can read and change your places. Treat it like a password.
 
+Search and get follow the same household rules as the UI when household mode is on. There are no MCP tools yet to share a place or change visibility.
+
 ## Connect a client
 
 1. Open Placard → **Settings → MCP**.

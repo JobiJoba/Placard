@@ -45,9 +45,10 @@ Better Auth's user table, mapped to the name `users`, plus Placard fields.
 | `name` | text | |
 | `email` | text unique | |
 | `email_verified` | boolean | default false |
-| `image` | text null | |
+| `image` | text null | Avatar URL when set (`/api/avatars/:id`); file at `avatars/{id}.webp` under the media volume |
 | `role` | text | `admin` \| `member`; first signup is `admin` |
 | `distance_unit` | text | `km` \| `mi`, default `km` |
+| `blocked_at` | timestamptz null | Set by the admin to revoke access; sign-in and existing sessions are rejected until unblocked |
 | `created_at`, `updated_at` | timestamptz | |
 
 ### Better Auth tables (Phase 1)
@@ -102,6 +103,8 @@ A single row (`id = 1`).
 | `created_at`, `updated_at` | timestamptz | |
 
 Indexes: GiST on `location`; unique `(owner_id, google_place_id)` where not null and not deleted; unique `google_place_id` where `visibility = household` and not deleted (one household card per Google place); trigram on `name`; `(owner_id, deleted_at)`.
+
+Sharing a Google place that another member already shared as household is **claim-first**: the second share fails with a conflict; the owner may copy empty fields into that card (`POST /api/places/:id/copy-into/:targetId`). Places without a Google Place ID have no unique household claim.
 
 ### `place_facts` (Phase 4)
 

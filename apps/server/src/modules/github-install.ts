@@ -46,8 +46,9 @@ export const parseGithubRepoUrl = (raw: string): GithubRepoRef | null => {
 
   const shorthand = trimmed.match(/^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/)
   if (shorthand) {
-    const owner = shorthand[1]!
+    const owner = shorthand[1]
     const repo = shorthand[2]?.replace(/\.git$/i, "")
+    if (!owner || !repo) return null
     return { owner, repo, repoUrl: `https://github.com/${owner}/${repo}` }
   }
 
@@ -62,7 +63,7 @@ export const parseGithubRepoUrl = (raw: string): GithubRepoRef | null => {
 
   const parts = url.pathname.split("/").filter(Boolean)
   if (parts.length < 2) return null
-  const owner = parts[0]!
+  const owner = parts[0]
   const repo = parts[1]?.replace(/\.git$/i, "")
   if (!owner || !repo) return null
   return { owner, repo, repoUrl: `https://github.com/${owner}/${repo}` }

@@ -75,7 +75,7 @@ Self-hosters who already run Docker / a NAS / a VPS, star many places on Google 
 
 ### Also
 
-Households on one instance (family dinner votes, shared lists) — without forcing household UX on solo users.
+Households on one instance (family dinner votes, household-shared places) — without forcing household UX on solo users.
 
 ### Explicit non-goals
 
@@ -111,7 +111,7 @@ Households on one instance (family dinner votes, shared lists) — without forci
 4. Run a **pick / spin** Marketplace module on a filtered pool (optional avoid-recent)
 5. MCP: search + get place (+ installed module tools) from an agent client
 6. Dish photos and want/been-there status work on cards
-7. (Household later) private + shared places; admin invites; in-app vote only
+7. Household: private + shared places and admin invites (in-app vote still later)
 
 ## One-line pitch variants
 

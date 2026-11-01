@@ -37,6 +37,7 @@ Work that landed between phases (or ahead of mvp “Later”) and should be trea
 - **Custom fields** — per-place typed fields; merge vs force Google refresh on enrichment.
 - **Preferred maps app** — device-local setting for “Open in maps”.
 - **MCP `list_lists`** — extra tool beyond the original Phase 9 set.
+- **Household place sharing** — admin toggle, place `visibility`, claim-first Google-place conflicts, library Everyone / Mine / Shared. Lists remain private-only; dinner vote is still later.
 
 ---
 

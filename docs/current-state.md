@@ -25,9 +25,9 @@ Phases **0–10** are implemented in code. On a local Aspire or Compose stack yo
 
 | Job | Where |
 | --- | --- |
-| Sign up (first user = admin), invite others, set Google key + units | `/setup`, `/settings/*` |
+| Sign up (first user = admin), invite others, block/unblock or delete members, household toggle, profile, Google key + units | `/setup`, `/settings/*` |
 | Add places (autocomplete, Google map POI, OSM pin) | `/add` |
-| Browse Near me / City / All; filter; map or grid | `/` |
+| Browse Near me / City / All; household Everyone / Mine / Shared; filter; map or grid | `/` |
 | Tags, lists, status, bulk actions, soft delete | `/lists`, `/deleted`, place card |
 | Per-place custom fields; merge vs force Google refresh | place detail |
 | Enrichment + force refresh all | place detail, admin settings |
@@ -57,6 +57,7 @@ These are real product surface, not side experiments:
 | **City autocomplete** | Library “City” center uses Places `(cities)` instead of hard-coded presets |
 | **Cmd+K + library density** | Global palette; modules can contribute navigate-only actions |
 | **Custom fields** | Per-place typed fields beyond Google facts |
+| **Household place sharing** | Admin toggle; `visibility=household`; claim-first conflict; library ownership filters |
 | **MCP `list_lists`** | Extra tool beyond the Phase 9 list |
 
 mvp.md originally parked “third-party modules / SDK / manifest” under Later — that work is **in tree now** as *trusted admin plugins* (no sandbox, no public store). Scope freeze was updated to match. Dinner-spin itself is a **module you install**, not a bundled first-party package.
@@ -71,14 +72,13 @@ mvp.md originally parked “third-party modules / SDK / manifest” under Later 
 - Phone home-screen PWA install
 - Backup → wipe → restore with photos
 - Real Takeout of ~500 places on Compose if not already done
-- Cut a `v0.1.0` tag for a stable GHCR release (`:latest`); CI already publishes `:nightly` from `main`
 
 ## Explicitly later (still true)
 
 | Item | Notes |
 | --- | --- |
-| Dinner **vote** module | Needs household (admin toggle + place sharing **shipped**) |
-| Household shared/private places | **Shipped** — admin toggle, `visibility=household`, claim-first conflict, library ownership filters |
+| Dinner **vote** module | Household mode required (toggle + place sharing shipped); vote UI not built |
+| Shared lists | Lists stay `private` only |
 | Per-member Google key | Instance key only |
 | One-click backup UI | Documented `pg_dump` + volumes for now |
 | OSM enrichment / NL search / native apps / OIDC | Unchanged from mvp Out |

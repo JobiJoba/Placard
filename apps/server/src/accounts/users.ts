@@ -1,7 +1,7 @@
-import { mkdir, unlink, writeFile } from "node:fs/promises"
+import { mkdir, rm, unlink, writeFile } from "node:fs/promises"
 import { dirname, join } from "node:path"
 import type { AvatarUpload, DistanceUnit, HouseholdMember, Me, UserSummary } from "@placard/domain"
-import { MediaNotFound, MediaRejected } from "@placard/domain"
+import { MediaNotFound, MediaRejected, UserNotFound } from "@placard/domain"
 import { Context, DateTime, Effect, Layer, Option } from "effect"
 import { SqlClient } from "effect/sql"
 import sharp from "sharp"
@@ -19,6 +19,7 @@ interface UserRow {
   readonly role: UserRole
   readonly distance_unit: DistanceUnit
   readonly image: string | null
+  readonly blocked_at: Date | null
   readonly created_at: Date
 }
 
@@ -44,6 +45,7 @@ const toSummary = (row: UserRow): UserSummary => ({
   email: row.email,
   role: row.role,
   image: row.image,
+  blockedAt: row.blocked_at ? DateTime.fromDateUnsafe(row.blocked_at) : null,
   createdAt: DateTime.fromDateUnsafe(row.created_at),
 })
 
@@ -83,6 +85,11 @@ export class Users extends Context.Service<
     readonly list: Effect.Effect<ReadonlyArray<UserSummary>>
     readonly householdMembers: Effect.Effect<ReadonlyArray<HouseholdMember>>
     readonly emailExists: (email: string) => Effect.Effect<boolean>
+    /** Revoke access without deleting the account; active sessions are ended. */
+    readonly block: (id: string) => Effect.Effect<UserSummary, UserNotFound>
+    readonly unblock: (id: string) => Effect.Effect<UserSummary, UserNotFound>
+    /** Permanently remove the account and everything it owns. */
+    readonly remove: (id: string) => Effect.Effect<void, UserNotFound>
     readonly setDistanceUnit: (id: string, unit: DistanceUnit) => Effect.Effect<MeBase>
     readonly updateProfile: (id: string, name: string) => Effect.Effect<MeBase>
     readonly setAvatar: (id: string, upload: AvatarUpload) => Effect.Effect<MeBase, MediaRejected>
@@ -98,7 +105,7 @@ export class Users extends Context.Service<
       const sql = yield* SqlClient.SqlClient
       const config = yield* AppConfig
       const root = config.mediaDir
-      const columns = sql`id, name, email, role, distance_unit, image, created_at`
+      const columns = sql`id, name, email, role, distance_unit, image, blocked_at, created_at`
 
       const requireRow = (id: string, rows: ReadonlyArray<UserRow>) =>
         rows[0] ? Effect.succeed(toMeBase(rows[0])) : Effect.die(`user ${id} not found`)
@@ -130,6 +137,40 @@ export class Users extends Context.Service<
             Effect.map((rows) => rows.length > 0),
             Effect.orDie,
           ),
+        block: Effect.fn("Users.block")(function* (id) {
+          return yield* sql
+            .withTransaction(
+              Effect.gen(function* () {
+                const rows = yield* sql<UserRow>`
+                  update users set blocked_at = coalesce(blocked_at, now()), updated_at = now()
+                  where id = ${id} returning ${columns}`
+                if (!rows[0]) return yield* new UserNotFound()
+                // Existing sessions must stop working immediately.
+                yield* sql`delete from sessions where user_id = ${id}`
+                return toSummary(rows[0])
+              }),
+            )
+            .pipe(Effect.orDie)
+        }),
+        unblock: Effect.fn("Users.unblock")(function* (id) {
+          const rows = yield* sql<UserRow>`
+            update users set blocked_at = null, updated_at = now()
+            where id = ${id} returning ${columns}`.pipe(Effect.orDie)
+          if (!rows[0]) return yield* new UserNotFound()
+          return toSummary(rows[0])
+        }),
+        remove: Effect.fn("Users.remove")(function* (id) {
+          const rows = yield* sql<{ id: string }>`
+            delete from users where id = ${id} returning id`.pipe(Effect.orDie)
+          if (!rows[0]) return yield* new UserNotFound()
+          // Cascades remove the rows; these files are not database-backed.
+          yield* Effect.promise(async () => {
+            await Promise.all([
+              rm(join(root, id), { recursive: true, force: true }).catch(() => undefined),
+              unlink(join(root, avatarRelativePath(id))).catch(() => undefined),
+            ])
+          })
+        }),
         setDistanceUnit: (id, unit) =>
           sql<UserRow>`
             update users set distance_unit = ${unit}, updated_at = now()

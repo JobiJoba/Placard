@@ -2,6 +2,7 @@ import { DistanceUnit, type Me, UserRole } from "@placard/domain"
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { APIError } from "better-auth/api"
+import { eq } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/node-postgres"
 import { Context, Effect, Layer, Option, Redacted, Schema } from "effect"
 import { Pool } from "pg"
@@ -64,6 +65,8 @@ export class Auth extends Context.Service<
         (pool) => Effect.promise(() => pool.end()),
       )
 
+      const db = drizzle({ client: pool })
+
       const auth = betterAuth({
         appName: "Placard",
         baseURL: config.publicUrl.origin,
@@ -71,7 +74,7 @@ export class Auth extends Context.Service<
         secret: Redacted.value(config.authSecret),
         trustedOrigins: [config.publicUrl.origin],
         telemetry: { enabled: false },
-        database: drizzleAdapter(drizzle({ client: pool }), {
+        database: drizzleAdapter(db, {
           provider: "pg",
           schema: {
             user: users,
@@ -102,13 +105,40 @@ export class Auth extends Context.Service<
                 ),
             },
           },
+          session: {
+            create: {
+              before: async (session) => {
+                const rows = await db
+                  .select({ blockedAt: users.blockedAt })
+                  .from(users)
+                  .where(eq(users.id, session.userId))
+                  .limit(1)
+                if (rows[0]?.blockedAt) {
+                  throw new APIError("FORBIDDEN", {
+                    message: "This account has been blocked by the admin.",
+                  })
+                }
+              },
+            },
+          },
         },
       })
 
       return {
         handler: auth.handler,
         currentUser: (headers) =>
-          Effect.tryPromise(() => auth.api.getSession({ headers })).pipe(
+          Effect.tryPromise(async () => {
+            const session = await auth.api.getSession({ headers })
+            if (!session) return null
+            // Sessions are deleted when a user is blocked; this also covers
+            // in-flight requests and keeps every route (avatars, media) honest.
+            const rows = await db
+              .select({ blockedAt: users.blockedAt })
+              .from(users)
+              .where(eq(users.id, session.user.id))
+              .limit(1)
+            return rows[0]?.blockedAt ? null : session
+          }).pipe(
             Effect.flatMap((session) =>
               session
                 ? decodeSessionUser(session.user).pipe(Effect.map(Option.some))

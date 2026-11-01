@@ -9,13 +9,31 @@ and this project aims to follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- CI publishes `ghcr.io/<owner>/placard:nightly` (and `nightly-<sha>`) when `main` goes green — opt-in for testers; does not move `:latest`
+- Admin-gated household mode: share/unshare places, claim-first Google-place conflicts with copy-into, library Everyone / Mine / Shared filters
+- Profile name and avatar from Settings → General
+- Block a member (signs them out and prevents sign-in while keeping their data) or permanently delete them from Settings → People
 - Install modules from a public GitHub Release; update check + Marketplace Update
 - Per-place custom fields; preferred maps app; Cmd+K palette
 
 ### Removed
 
 - Bundled Decide module (`restaurants.decide`) — use Marketplace Pick (sibling `placard-places-pick`) or another wheel instead
+
+## [0.1.1] — 2026-10-29
+
+Release-assets and marketing-site release.
+
+### Added
+
+- GitHub Pages marketing site with install guide and library screenshots (`apps/site`)
+- Release install assets: `docker-compose.yml` and `example.env` published on `v*` tags
+- CI publishes `ghcr.io/<owner>/placard:nightly` (and `nightly-<sha>`) when `main` goes green — opt-in for testers; does not move `:latest`
+
+### Changed
+
+- Install guide leads with download → `.env` → `docker compose up` instead of a local build
+
+[0.1.1]: https://github.com/JobiJoba/Placard/releases/tag/v0.1.1
 
 ## [0.1.0] — 2026-10-29
 
@@ -35,7 +53,7 @@ First v0.1 release candidate after phases 0–10.
 
 ### Notes
 
-- Household sharing and dinner vote remain v0.2
+- Household sharing shipped after this tag on `main`; dinner vote remains later
 - Instance disaster recovery is still `pg_dump` + volumes (documented); one-click backup UI is later
 
 [0.1.0]: https://github.com/JobiJoba/Placard/releases/tag/v0.1.0

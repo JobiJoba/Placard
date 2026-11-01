@@ -1,12 +1,5 @@
 import { expect, test } from "@playwright/test"
-import {
-  admin,
-  browseAllPlaces,
-  expectEmptyLibrary,
-  openAdd,
-  openNav,
-  signInAsAdmin,
-} from "./support.ts"
+import { admin, browseAllPlaces, openAdd, openNav, signInAsAdmin } from "./support.ts"
 
 test.skip(Boolean(process.env.PLAYWRIGHT_BASE_URL), "needs a fresh install")
 test.describe.configure({ mode: "serial" })
@@ -43,7 +36,7 @@ test("admin enables household, shares a place, member sees Shared filter", async
   await expect(page.getByText(/^Pinned at /)).toBeVisible()
   await page.getByLabel("Name").fill("Household Cafe")
   await page.getByRole("combobox", { name: "Type" }).click()
-  await page.getByRole("option", { name: "Cafe" }).click()
+  await page.getByRole("option", { name: "Café" }).click()
   await page.getByRole("button", { name: "Save place" }).click()
   await expect(page.getByRole("heading", { name: "Household Cafe" })).toBeVisible()
   await page.getByRole("button", { name: "Share with household" }).click()
@@ -56,7 +49,6 @@ test("admin enables household, shares a place, member sees Shared filter", async
   await memberPage.getByLabel("Name").fill(member.name)
   await memberPage.getByLabel("Password").fill(member.password)
   await memberPage.getByRole("button", { name: "Create account" }).click()
-  await expectEmptyLibrary(memberPage)
 
   await browseAllPlaces(memberPage)
   await expect(memberPage.getByRole("radio", { name: "Everyone" })).toBeVisible()

@@ -8,7 +8,7 @@ web
 
 ## Users
 
-Primary user is the founder / first user: self-hosts one long-lived instance, keeps on the order of hundreds of saved places, uses the library daily with a near-home bias, and keeps travel cities in the library without making them the everyday default. Solo chrome is the default; household is optional later. Design for this person first, not a broad marketplace audience.
+Primary user is the founder / first user: self-hosts one long-lived instance, keeps on the order of hundreds of saved places, uses the library daily with a near-home bias, and keeps travel cities in the library without making them the everyday default. Solo chrome is the default; household is an admin-gated opt-in. Design for this person first, not a broad marketplace audience.
 
 ## Product Purpose
 
@@ -16,17 +16,17 @@ Placard is a self-hosted place library: build a private collection (import or ma
 
 ## Positioning
 
-Immich-adjacent for starred places: Compose-up, data on your disk, private to you (or later a household). Beats Google Maps Saved for structured search over *your* library (“pizza, open, within 5 km”). Tagline: *Your places. On your cards. On your server.*
+Immich-adjacent for starred places: Compose-up, data on your disk, private to you (or an invited household). Beats Google Maps Saved for structured search over *your* library (“pizza, open, within 5 km”). Tagline: *Your places. On your cards. On your server.*
 
 ## Operating Context
 
-Web client (PWA in Phase 10) against a self-hosted API (Effect HttpApi, PostGIS, Better Auth). Lifecycle: (1) seed — Takeout or manual add; (2) curate — lists, enrichment, photos, status; (3) return — near-me/city library, optional Marketplace modules, MCP. Google Places BYOK is optional; CRUD works without a key. No offline mode. MCP ships; pick wheels install from Marketplace; household vote is later.
+Web client (PWA in Phase 10) against a self-hosted API (Effect HttpApi, PostGIS, Better Auth). Lifecycle: (1) seed — Takeout or manual add; (2) curate — lists, enrichment, photos, status; (3) return — near-me/city library, optional Marketplace modules, MCP. Google Places BYOK is optional; CRUD works without a key. No offline mode. MCP ships; pick wheels install from Marketplace; household place sharing is admin-gated; household vote is later.
 
 ## Capabilities and Constraints
 
 - Confirmed: places with want/been status, tags/lists, soft-delete, media + Google covers, Takeout triage/Needs review, city autocomplete library, custom fields, Cmd+K, Marketplace (zip + GitHub), MCP PATs, auth/settings.
-- Privacy: instance is for the operator (and later invited household members only). No public sharing.
-- Later: household chrome, natural-language search, native apps, PWA share-target.
+- Privacy: instance is for the operator and invited household members only. No public sharing.
+- Later: dinner vote, shared lists, natural-language search, native apps, PWA share-target.
 
 ## Brand Commitments
 
@@ -48,4 +48,4 @@ Web client (PWA in Phase 10) against a self-hosted API (Effect HttpApi, PostGIS,
 2. **Collect, then use** — First-run success is a seeded collection; return-visit success is useful inspiration from those cards. Modules wait until the collection exists.
 3. **Founder-true scope** — Optimize for one serious personal install and near-me daily use, not onboarding tourists.
 4. **Enrichment is optional** — Core browse and edit must work without Google; BYOK is a power-up, not a gate.
-5. **Private by default** — Visibility is personal (and later household-internal); never “share to the internet.”
+5. **Private by default** — Visibility is personal, or household-internal when sharing is on; never “share to the internet.”

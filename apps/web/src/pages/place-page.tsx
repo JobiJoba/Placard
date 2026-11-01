@@ -258,7 +258,9 @@ export function PlacePage() {
 
       {me.householdEnabled && !isOwner && place.visibility === "household" ? (
         <Alert>
-          <AlertDescription>Shared by {place.owner.name}. You can view and add photos.</AlertDescription>
+          <AlertDescription>
+            Shared by {place.owner.name}. You can view and add photos.
+          </AlertDescription>
         </Alert>
       ) : null}
       {me.householdEnabled && isOwner && place.visibility === "household" ? (
@@ -275,11 +277,7 @@ export function PlacePage() {
               household. There is no automatic merge.
             </span>
             <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                disabled={shareBusy}
-                onClick={() => void resolveConflict(false)}
-              >
+              <Button size="sm" disabled={shareBusy} onClick={() => void resolveConflict(false)}>
                 Use household place
               </Button>
               <Button
@@ -449,7 +447,7 @@ export function PlacePage() {
 
       <PlaceFactsSection place={place} />
 
-      <PlaceMediaSection placeId={place.id} />
+      <PlaceMediaSection placeId={place.id} viewerId={me.id} isPlaceOwner={isOwner} />
 
       <details className="border-t pt-4 text-sm">
         <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
@@ -475,41 +473,41 @@ export function PlacePage() {
       </details>
 
       {isOwner ? (
-      <div className="flex flex-col items-start gap-3 border-t pt-6 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        <ErrorAlert message={removeError} />
-        {confirming ? (
-          <div className="flex flex-col gap-3">
-            <p className="text-sm">
-              Remove {place.name}? It moves to Recently deleted for 30 days, then is purged with its
-              photos.
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="destructive"
-                className="min-h-11 sm:min-h-8"
-                onClick={() => void remove()}
-              >
-                Remove
-              </Button>
-              <Button
-                variant="ghost"
-                className="min-h-11 sm:min-h-8"
-                onClick={() => setConfirming(false)}
-              >
-                Keep it
-              </Button>
+        <div className="flex flex-col items-start gap-3 border-t pt-6 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+          <ErrorAlert message={removeError} />
+          {confirming ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm">
+                Remove {place.name}? It moves to Recently deleted for 30 days, then is purged with
+                its photos.
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="destructive"
+                  className="min-h-11 sm:min-h-8"
+                  onClick={() => void remove()}
+                >
+                  Remove
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="min-h-11 sm:min-h-8"
+                  onClick={() => setConfirming(false)}
+                >
+                  Keep it
+                </Button>
+              </div>
             </div>
-          </div>
-        ) : (
-          <Button
-            variant="ghost"
-            className="min-h-11 text-muted-foreground sm:min-h-8"
-            onClick={() => setConfirming(true)}
-          >
-            Remove from library
-          </Button>
-        )}
-      </div>
+          ) : (
+            <Button
+              variant="ghost"
+              className="min-h-11 text-muted-foreground sm:min-h-8"
+              onClick={() => setConfirming(true)}
+            >
+              Remove from library
+            </Button>
+          )}
+        </div>
       ) : null}
     </article>
   )

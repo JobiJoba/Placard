@@ -46,6 +46,8 @@ export const users = pgTable(
     image: text("image"),
     role: text("role").$type<UserRole>().notNull().default("member"),
     distanceUnit: text("distance_unit").$type<DistanceUnit>().notNull().default("km"),
+    /** Set by the admin to revoke access without deleting the account or its data. */
+    blockedAt: timestamp("blocked_at", { withTimezone: true }),
     ...timestamps,
   },
   (table) => [

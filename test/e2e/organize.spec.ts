@@ -34,6 +34,7 @@ test("create a list, tag a place, edit it, bulk-delete and restore", async ({ pa
   await expect(page.getByRole("link", { name: "Italian restaurants" })).toBeVisible()
 
   await browseAllPlaces(page)
+  await page.getByRole("button", { name: "Select", exact: true }).click()
   for (const name of ["Da Michele", "Sorbillo", "Starita"]) {
     await page.getByRole("checkbox", { name: `Select ${name}` }).check()
   }
@@ -53,6 +54,7 @@ test("create a list, tag a place, edit it, bulk-delete and restore", async ({ pa
   await expect(page.getByText("date-night", { exact: true })).toBeVisible()
 
   await browseAllPlaces(page)
+  await page.getByRole("button", { name: "Select", exact: true }).click()
   await page.getByRole("checkbox", { name: "Select L'Antica da Michele" }).check()
   await page.getByRole("checkbox", { name: "Select Sorbillo" }).check()
   await page.getByRole("button", { name: "Delete" }).click()

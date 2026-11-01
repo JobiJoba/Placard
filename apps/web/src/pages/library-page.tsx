@@ -273,13 +273,23 @@ export function LibraryPage() {
     setSelected(new Set())
   }
 
-  const toggle = (id: string) =>
+  const ownedVisibleIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const hit of hits ?? []) {
+      if (hit.place.owner.id === me.id) ids.add(hit.place.id)
+    }
+    return ids
+  }, [hits, me.id])
+
+  const toggle = (id: string) => {
+    if (!ownedVisibleIds.has(id)) return
     setSelected((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
       return next
     })
+  }
 
   const clearSelection = () => setSelected(new Set())
 
@@ -290,7 +300,7 @@ export function LibraryPage() {
   }
 
   const runBulk = (action: BulkAction) => {
-    const placeIds = [...selected]
+    const placeIds = [...selected].filter((id) => ownedVisibleIds.has(id))
     if (placeIds.length === 0) return
     setBulkError(null)
     setBulkBusy(true)
@@ -325,9 +335,9 @@ export function LibraryPage() {
   }
 
   const selectAllVisible = () => {
-    if (!hits) return
+    if (ownedVisibleIds.size === 0) return
     setSelecting(true)
-    setSelected(new Set(hits.map(({ place }) => place.id)))
+    setSelected(new Set(ownedVisibleIds))
   }
 
   const createListAndAdd = () => {
@@ -347,6 +357,7 @@ export function LibraryPage() {
   const secondaryFilterCount = [tag, list, status, category, open].filter(Boolean).length
   const filteredEmpty = hits !== null && hits.length === 0 && hasFilters && !searchBlocked
   const mapCenter = filter.near ?? (hits?.[0] ? hits[0].place.location : null)
+  const canBulkSelect = ownedVisibleIds.size > 0
   const showSelectChrome = selecting || selected.size > 0
 
   if (error) return <ErrorAlert message={error} />
@@ -394,18 +405,20 @@ export function LibraryPage() {
         <div className="flex flex-wrap gap-2">
           {showSelectChrome ? (
             <>
-              <Button type="button" size="sm" variant="outline" onClick={selectAllVisible}>
-                Select all
-              </Button>
+              {canBulkSelect ? (
+                <Button type="button" size="sm" variant="outline" onClick={selectAllVisible}>
+                  Select all
+                </Button>
+              ) : null}
               <Button type="button" size="sm" variant="ghost" onClick={exitSelecting}>
                 Done
               </Button>
             </>
-          ) : (
+          ) : canBulkSelect ? (
             <Button type="button" size="sm" variant="outline" onClick={() => setSelecting(true)}>
               Select
             </Button>
-          )}
+          ) : null}
           <Button asChild size="sm" variant="outline">
             <Link to="/import">Import</Link>
           </Button>
@@ -867,7 +880,7 @@ export function LibraryPage() {
                 place={place}
                 distanceMeters={distanceMeters}
                 distanceUnit={me.distanceUnit}
-                selecting={showSelectChrome}
+                selecting={showSelectChrome && place.owner.id === me.id}
                 selected={selected.has(place.id)}
                 onToggle={() => toggle(place.id)}
                 viewerId={me.id}

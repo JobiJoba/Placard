@@ -97,9 +97,7 @@ export class InstanceSettings extends Context.Service<
           Effect.map((row) => row.module_update_check_hours),
         ),
         householdEnabled: settingsRow.pipe(Effect.map((row) => row.household_enabled)),
-        setHouseholdEnabled: Effect.fn("InstanceSettings.setHouseholdEnabled")(function* (
-          enabled,
-        ) {
+        setHouseholdEnabled: Effect.fn("InstanceSettings.setHouseholdEnabled")(function* (enabled) {
           yield* sql`
             update instance_settings
             set household_enabled = ${enabled}, updated_at = now()

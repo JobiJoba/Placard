@@ -179,7 +179,7 @@ for (const slug of PUBLISHED) {
 
 if (errors.length) {
   console.error(
-    `Doc link check failed (${errors.length}):\n` + errors.map((e) => `  - ${e}`).join("\n"),
+    `Doc link check failed (${errors.length}):\n${errors.map((e) => `  - ${e}`).join("\n")}`,
   )
   process.exit(1)
 }

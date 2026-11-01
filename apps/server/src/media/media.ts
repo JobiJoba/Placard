@@ -24,6 +24,7 @@ const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"])
 
 interface MediaRow {
   readonly id: string
+  readonly owner_id: string
   readonly place_id: string
   readonly kind: MediaKind
   readonly origin: MediaOrigin
@@ -75,6 +76,7 @@ const sniffMime = (bytes: Uint8Array): string | null => {
 
 const toItem = (row: MediaRow, coverMediaId: string | null): MediaItem => ({
   id: row.id,
+  ownerId: row.owner_id,
   placeId: row.place_id,
   kind: row.kind,
   origin: row.origin,
@@ -142,7 +144,7 @@ export class Media extends Context.Service<
       const root = config.mediaDir
 
       const columns = sql`
-        id, place_id, kind, origin, path, thumb_path, mime_type, bytes, width, height,
+        id, owner_id, place_id, kind, origin, path, thumb_path, mime_type, bytes, width, height,
         caption, taken_at, created_at`
 
       const abs = (relative: string) => join(root, relative)

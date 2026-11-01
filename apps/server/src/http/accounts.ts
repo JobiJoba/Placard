@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises"
-import { Api, CurrentUser, MediaNotFound, Unauthorized } from "@placard/domain"
+import { Api, CurrentUser, Forbidden, MediaNotFound, Unauthorized } from "@placard/domain"
 import { Effect, Option } from "effect"
 import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/http"
 import { HttpApiBuilder } from "effect/http-api"
@@ -95,6 +95,33 @@ export const AdminApiLive = HttpApiBuilder.group(
       )
       .handle("setHouseholdEnabled", ({ payload }) => settings.setHouseholdEnabled(payload.enabled))
       .handle("users", () => users.list)
+      .handle("blockUser", ({ params }) =>
+        Effect.gen(function* () {
+          const me = yield* CurrentUser
+          if (me.id === params.id) {
+            return yield* new Forbidden({ message: "You cannot block your own account." })
+          }
+          return yield* users.block(params.id)
+        }),
+      )
+      .handle("unblockUser", ({ params }) =>
+        Effect.gen(function* () {
+          const me = yield* CurrentUser
+          if (me.id === params.id) {
+            return yield* new Forbidden({ message: "You cannot change your own access." })
+          }
+          return yield* users.unblock(params.id)
+        }),
+      )
+      .handle("deleteUser", ({ params }) =>
+        Effect.gen(function* () {
+          const me = yield* CurrentUser
+          if (me.id === params.id) {
+            return yield* new Forbidden({ message: "You cannot delete your own account." })
+          }
+          yield* users.remove(params.id)
+        }),
+      )
       .handle("invites", () => invites.list)
       .handle("revokeInvite", ({ params }) => invites.revoke(params.id))
       .handle("createInvite", ({ payload }) =>

@@ -108,7 +108,7 @@ Placard: **import → enrich → search/browse cards → run modules** — and t
 
 - **Import + browse + library search** are the top jobs; dinner spin is a Marketplace module (not bundled)
 - ~500 places, near-me daily, multi-city library OK
-- **PWA** installable (manifest + icons); multi-user accounts ship now; **household sharing is v0.2**
+- **PWA** installable (manifest + icons); multi-user accounts ship now; **household place sharing is admin-gated** (dinner vote and shared lists still later)
 - Google Takeout must; instance Google key; force refresh, no auto mass cron
 - Want / been-there first-class; visit history optional & separate from dishes
 - **MCP ships**; trusted Marketplace plugins (zip upload + GitHub Release); AGPL-3.0

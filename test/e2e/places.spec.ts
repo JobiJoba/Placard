@@ -34,9 +34,10 @@ test("without a Google key, a place is added by dropping a pin", async ({ page }
   await page.getByRole("option", { name: "Trail" }).click()
   await page.getByRole("button", { name: "Save place" }).click()
 
-  await expect(page.getByRole("heading", { name: "Secret viewpoint" })).toBeVisible()
-  await expect(page.getByText("Dropped pin", { exact: false })).toBeVisible()
   const google = page.getByRole("link", { name: "Open in Google Maps" })
+  await expect(page.getByRole("heading", { name: "Secret viewpoint" })).toBeVisible()
+  await page.getByText("Record details").click()
+  await expect(page.getByText("Dropped pin", { exact: false })).toBeVisible()
   await expect(google).toHaveAttribute("href", /query=-?\d+\.\d+%2C-?\d+\.\d+/)
 })
 

@@ -250,4 +250,79 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("accounts", (it) =
       expect((await admin.browser.get("/api/me")).body.role).toBe("admin")
     }),
   )
+
+  it.effect("the admin can block, unblock, and delete a user", () =>
+    run(async (app) => {
+      const created = await admin.browser.send("POST", "/api/admin/invites", {
+        email: "dave@example.com",
+      })
+      const dave = app.browser()
+      expect(
+        (await signUp(dave, "Dave", "dave@example.com", inviteTokenFrom(created.body.url))).status,
+      ).toBe(200)
+
+      const users = await admin.browser.get("/api/admin/users")
+      const daveSummary = users.body.find(
+        (user: { email: string }) => user.email === "dave@example.com",
+      )
+      const adminSummary = users.body.find(
+        (user: { email: string }) => user.email === "alice@example.com",
+      )
+      expect(daveSummary.blockedAt).toBeNull()
+      expect((await dave.get("/api/me")).status).toBe(200)
+
+      // The admin cannot revoke their own access.
+      expect(
+        (await admin.browser.send("POST", `/api/admin/users/${adminSummary.id}/block`)).status,
+      ).toBe(403)
+      expect(
+        (await admin.browser.send("DELETE", `/api/admin/users/${adminSummary.id}`)).status,
+      ).toBe(403)
+
+      const blocked = await admin.browser.send("POST", `/api/admin/users/${daveSummary.id}/block`)
+      expect(blocked.status).toBe(200)
+      expect(blocked.body.blockedAt).not.toBeNull()
+      expect((await dave.get("/api/me")).status).toBe(401)
+
+      const denied = await dave.send("POST", "/api/auth/sign-in/email", {
+        email: "dave@example.com",
+        password,
+      })
+      expect(denied.status).toBe(403)
+
+      const unblocked = await admin.browser.send(
+        "POST",
+        `/api/admin/users/${daveSummary.id}/unblock`,
+      )
+      expect(unblocked.status).toBe(200)
+      expect(unblocked.body.blockedAt).toBeNull()
+      expect(
+        (
+          await dave.send("POST", "/api/auth/sign-in/email", {
+            email: "dave@example.com",
+            password,
+          })
+        ).status,
+      ).toBe(200)
+      expect((await dave.get("/api/me")).body.email).toBe("dave@example.com")
+
+      expect(
+        (await admin.browser.send("DELETE", `/api/admin/users/${daveSummary.id}`)).status,
+      ).toBe(204)
+      expect((await dave.get("/api/me")).status).toBe(401)
+      expect(
+        (await admin.browser.get("/api/admin/users")).body.map(
+          (user: { email: string }) => user.email,
+        ),
+      ).not.toContain("dave@example.com")
+      expect(
+        (
+          await dave.send("POST", "/api/auth/sign-in/email", {
+            email: "dave@example.com",
+            password,
+          })
+        ).status,
+      ).not.toBe(200)
+    }),
+  )
 })

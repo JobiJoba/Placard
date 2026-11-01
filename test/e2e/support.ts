@@ -21,23 +21,32 @@ export const signInAsAdmin = async (page: Page, baseURL: string) => {
       data: admin,
       headers: { origin: new URL(baseURL).origin },
     })
+    await page.goto("/")
+  } else {
+    await signIn(page, admin)
   }
-  await signIn(page, admin)
   await page.getByRole("navigation", { name: "Main" }).waitFor()
 }
 
-/** Open the desktop More menu (Add / Lists / Settings live here, not in primary nav). */
+/** Primary destinations sit directly in the header; the rest are under More. */
+const primaryNav = new Set(["Library", "Lists"])
+
+/** Open the desktop More menu (Import / Recently deleted / Settings / plugin pages). */
 export const openMore = async (page: Page) => {
   await page.getByRole("navigation", { name: "Main" }).getByRole("button", { name: "More" }).click()
 }
 
-/** Navigate via Main (Library) or More menuitems (Add, Lists, Settings, …). */
+/** Navigate via the header: primary links, the Add button, or More menu items. */
 export const openNav = async (page: Page, name: string) => {
-  if (name === "Library") {
+  if (primaryNav.has(name)) {
     await page
       .getByRole("navigation", { name: "Main" })
-      .getByRole("link", { name: "Library", exact: true })
+      .getByRole("link", { name, exact: true })
       .click()
+    return
+  }
+  if (name === "Add") {
+    await page.getByRole("banner").getByRole("link", { name: "Add", exact: true }).click()
     return
   }
   await openMore(page)
@@ -46,23 +55,38 @@ export const openNav = async (page: Page, name: string) => {
 
 export const openAdd = (page: Page) => openNav(page, "Add")
 
+/** Sign out through the desktop account menu. */
+export const signOut = async (page: Page) => {
+  await page.getByRole("button", { name: /^Account menu for / }).click()
+  await page.getByRole("menuitem", { name: "Sign out" }).click()
+}
+
 /**
  * Library defaults to Near me. Without geolocation the empty crate / place grid is hidden.
  * Switch to All so empty-state and browse assertions work in CI.
  */
 export const browseAllPlaces = async (page: Page) => {
-  if (new URL(page.url()).pathname !== "/") {
-    await openNav(page, "Library")
+  let url = new URL(page.url())
+  const onAuthRoute =
+    url.pathname === "/setup" || url.pathname === "/login" || url.pathname.startsWith("/invite/")
+  if (onAuthRoute) {
+    // Don't reload mid signup/sign-in: the auth request would be aborted.
+    await page.getByRole("navigation", { name: "Main" }).waitFor()
+    url = new URL(page.url())
   }
-  const showAll = page.getByRole("button", { name: "Show all places" })
-  if (await showAll.isVisible().catch(() => false)) {
-    await showAll.click()
+  if (url.pathname !== "/") {
+    await page.goto("/?scope=all")
+  } else if (url.searchParams.get("scope") !== "all") {
+    url.searchParams.set("scope", "all")
+    url.searchParams.delete("radius")
+    await page.goto(url.toString())
   }
-  const all = page.getByRole("radio", { name: "All" })
-  if (await all.count()) {
-    await all.click()
-  }
-  await expect(all).toBeChecked()
+  // The empty crate replaces the filter bar on an empty "All" library.
+  await expect(
+    page
+      .getByRole("heading", { name: "Start your crate" })
+      .or(page.getByRole("radio", { name: "All", checked: true })),
+  ).toBeVisible()
 }
 
 /** Assert the empty-library welcome (after switching off Near me if needed). */

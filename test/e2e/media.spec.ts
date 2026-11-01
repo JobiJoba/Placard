@@ -26,18 +26,21 @@ test("upload a dish photo and see it on the place card", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Photo test trattoria" })).toBeVisible()
 
   await expect(page.getByRole("heading", { name: "Photos" })).toBeVisible()
-  await page.getByLabel("Caption (optional)").fill("Cacio e pepe")
-  await page.getByRole("button", { name: "Dish" }).click()
 
   const [fileChooser] = await Promise.all([
     page.waitForEvent("filechooser"),
-    page.getByRole("button", { name: "Add photo" }).click(),
+    page.getByRole("button", { name: "Add photos" }).click(),
   ])
   await fileChooser.setFiles({
     name: "cacio.png",
     mimeType: "image/png",
     buffer: PNG,
   })
+
+  await expect(page.getByRole("img", { name: "Photo" })).toBeVisible()
+  await page.getByRole("button", { name: "Add caption" }).click()
+  await page.getByLabel("Caption").fill("Cacio e pepe")
+  await page.getByLabel("Caption").press("Enter")
 
   await expect(page.getByText("Cacio e pepe")).toBeVisible()
   await expect(page.getByRole("img", { name: "Cacio e pepe" })).toBeVisible()
