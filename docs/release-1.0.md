@@ -59,3 +59,24 @@ is an optional external module, not a bundled prerequisite.
 Shared lists, dinner voting, one-click backup UI, and the other future features
 are not blockers for this release. Automated fixtures do not establish compatibility
 with every export or deployment.
+
+## Installer release checks
+
+Before advertising the one-command installer:
+
+- Run `node scripts/check-installers.mjs bash` and `node scripts/check-installers.mjs pwsh`.
+  CI also checks Windows PowerShell 5.1, PowerShell 7, Linux, and macOS.
+- With the current app image built as `placard:dr-check`, run
+  `node scripts/check-installer-smoke.mjs`. It creates and removes only its own
+  randomly named Compose project, checks all three services and `/api/health`.
+- Manually exercise initial signup with Docker Desktop on macOS and Windows,
+  including a directory with spaces, local access, and a custom port. These manual
+  checks remain required before claiming those Docker Desktop combinations verified.
+- Publish the release with `docker-compose.yml`, `example.env`, `install.sh`, and
+  `install.ps1`. Each generated installer embeds its own release tag and repository.
+- Deploy Pages only once both latest-release installer URLs resolve. The Pages
+  workflow checks this before building; rerun it manually after publication if needed
+  (GitHub-token-created releases may not trigger another workflow).
+
+V1 installs fresh instances only. Existing configuration, credentials, and volumes
+must be managed with the backup and manual upgrade instructions.

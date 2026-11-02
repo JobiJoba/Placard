@@ -5,10 +5,13 @@ on:
     branches: [main]
     paths:
       - "apps/site/**"
+      - "docs/**"
       - ".github/workflows/pages.yml"
       - "pnpm-lock.yaml"
       - "package.json"
       - "pnpm-workspace.yaml"
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -37,6 +40,11 @@ jobs:
 
       - name: Install
         run: pnpm install --frozen-lockfile
+
+      - name: Verify published installers before deploying their links
+        run: |
+          curl --fail --silent --show-error --location -o /dev/null https://github.com/JobiJoba/Placard/releases/latest/download/install.sh
+          curl --fail --silent --show-error --location -o /dev/null https://github.com/JobiJoba/Placard/releases/latest/download/install.ps1
 
       - name: Build site
         env:

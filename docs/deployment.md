@@ -6,6 +6,14 @@ Step-by-step commands: [install.md](install.md). Google Places BYOK: [google-api
 
 ## Recommended path
 
+The interactive [installer](install.md#quick-install-recommended) is the quickest
+way to create a fresh Compose instance on Linux, macOS, or Windows. Docker must
+already be installed and running Linux containers. Both scripts use the same
+release assets and generate secrets automatically; local-only access is the default.
+Existing installs, upgrades, NAS panels, HTTPS, and reverse proxies remain managed
+through Compose and the instructions below.
+
+
 | Target | Status |
 | --- | --- |
 | Docker Compose + GHCR image | Primary |

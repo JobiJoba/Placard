@@ -6,14 +6,8 @@ import { SiteChrome } from "../components/SiteChrome"
 
 const GITHUB = "https://github.com/JobiJoba/Placard"
 
-const QUICK_INSTALL = `mkdir ./placard-app && cd ./placard-app
-
-curl -fsSL -o docker-compose.yml https://github.com/JobiJoba/Placard/releases/latest/download/docker-compose.yml
-curl -fsSL -o example.env https://github.com/JobiJoba/Placard/releases/latest/download/example.env
-
-cp example.env .env   # edit secrets + PUBLIC_URL
-
-docker compose up -d`
+const QUICK_INSTALL = `bash <(curl -fsSL https://github.com/JobiJoba/Placard/releases/latest/download/install.sh)`
+const WINDOWS_INSTALL = `& ([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing https://github.com/JobiJoba/Placard/releases/latest/download/install.ps1).Content))`
 
 const features = [
   [
@@ -150,10 +144,12 @@ export function HomePage() {
               persistent volumes, with documented backup and restore.
             </p>
           </div>
-          <CopySnippet code={QUICK_INSTALL} label="Install from the latest published release" />
+          <CopySnippet code={QUICK_INSTALL} label="Linux / macOS — Bash" />
+          <CopySnippet code={WINDOWS_INSTALL} label="Windows — PowerShell" />
           <p>
-            Set your secrets and public URL before starting. Complete administrator setup before
-            exposing your instance.
+            Install Docker first. The installer asks a few questions, generates secrets, and starts
+            Placard with local-only access by default. Complete administrator setup before exposing
+            your instance.
           </p>
           <Link className="btn btn-primary" to="/docs/install">
             Read the installation guide

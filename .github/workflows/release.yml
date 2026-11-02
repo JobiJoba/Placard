@@ -72,3 +72,5 @@ jobs:
           files: |
             dist-release/docker-compose.yml
             dist-release/example.env
+            dist-release/install.sh
+            dist-release/install.ps1

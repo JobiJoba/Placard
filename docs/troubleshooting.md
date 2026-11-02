@@ -3,6 +3,28 @@
 Start with the failing step and preserve your data while investigating. Run Compose
 commands from the install directory containing your configuration.
 
+## Installer problems
+
+- **Docker missing or daemon unavailable:** install/start Docker Desktop, or Docker
+  Engine with Compose on Linux. Check `docker info` in the same terminal. The installer
+  does not install prerequisites, elevate privileges, or change Docker permissions.
+- **Windows containers selected:** switch Docker Desktop to Linux containers.
+- **Compose too old:** update Compose to a version supporting `up --wait --wait-timeout`.
+- **Download failed / 404:** check connectivity and that the selected release contains
+  installer assets. Use manual installation for older releases. Failed downloads do
+  not create an installation directory.
+- **Destination or project exists:** the installer only creates fresh installations.
+  Use the existing directory and documented upgrade steps; never delete volumes to
+  bypass this check. A separate installation requires a separate Docker host/context.
+- **Port occupied:** choose another port before installing. After a failed start,
+  edit `PLACARD_PORT` and, for local access, `PUBLIC_URL` in the retained `.env`.
+- **Readiness timeout or image pull failure:** configuration and data are retained.
+  Inspect `docker compose ps` and logs, fix the cause, then retry
+  `docker compose up -d --wait` from the install directory.
+- **Remote browser cannot connect:** local access binds only to loopback. Use the SSH
+  tunnel in the install guide, or explicitly configure network binding and the exact
+  browser origin. A healthy stack does not confirm external DNS or HTTPS setup.
+
 ## The app does not start
 
 Run `docker compose ps` and `docker compose logs --tail=100 app worker db`.

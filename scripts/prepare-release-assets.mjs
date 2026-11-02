@@ -16,7 +16,7 @@ const outDir = join(root, "dist-release")
 
 const raw = process.argv[2] || process.env.PLACARD_RELEASE_TAG || process.env.GITHUB_REF_NAME || ""
 const version = raw.replace(/^v/, "")
-if (!version) {
+if (!/^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$/.test(version)) {
   console.error("Usage: prepare-release-assets.mjs <v0.1.0|0.1.0>")
   process.exit(1)
 }
@@ -40,3 +40,12 @@ copyFileSync(join(root, ".env.example"), join(outDir, "example.env"))
 
 console.log(`Wrote ${outDir}/docker-compose.yml (default ${image})`)
 console.log(`Wrote ${outDir}/example.env`)
+
+const repository = process.env.GITHUB_REPOSITORY || "JobiJoba/Placard"
+if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository)) throw new Error("Invalid repository")
+for (const script of ["install.sh", "install.ps1"]) {
+  const source = readFileSync(join(root, "scripts", script), "utf8")
+    .replaceAll("@PLACARD_RELEASE@", raw.startsWith("v") ? raw : `v${version}`)
+    .replaceAll("@PLACARD_REPOSITORY@", repository)
+  writeFileSync(join(outDir, script), source)
+}

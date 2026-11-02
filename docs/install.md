@@ -6,18 +6,101 @@ Architecture notes: [deployment.md](deployment.md).
 
 **On this page**
 
-1. [Requirements](#requirements)
-2. [Step 1 — Download](#step-1--download-the-required-files)
-3. [Step 2 — `.env`](#step-2--populate-the-env-file)
-4. [Step 3 — Start](#step-3--start-the-containers)
-5. [Image tags](#image-tags)
-6. [Coolify](#coolify)
-7. [Dokploy](#dokploy)
-8. [Backup](#backup)
-9. [Build from source](#build-from-source-contributors)
-10. [Library export & MCP](#library-export--mcp)
+1. [Quick install](#quick-install-recommended)
+2. [Requirements](#requirements)
+3. [Step 1 — Download](#step-1--download-the-required-files)
+4. [Step 2 — `.env`](#step-2--populate-the-env-file)
+5. [Step 3 — Start](#step-3--start-the-containers)
+6. [Image tags](#image-tags)
+7. [Coolify](#coolify)
+8. [Dokploy](#dokploy)
+9. [Backup](#backup)
+10. [Build from source](#build-from-source-contributors)
+11. [Library export & MCP](#library-export--mcp)
 
 Google Maps Platform setup (API key, restrictions, smoke-check) lives in **[google-apis.md](google-apis.md)**.
+
+## Quick install (recommended)
+
+Install and start [Docker with Compose](https://docs.docker.com/compose/install/) first.
+Use Docker Desktop on macOS or Windows (Linux-container mode), or Docker Engine with
+Compose on Linux. The installer targets AMD64 and ARM64 Linux containers. Docker
+must be accessible from your terminal without elevation. No Git, Node, pnpm, or
+Aspire is needed.
+
+**Linux / macOS — Bash:**
+
+```sh
+bash <(curl -fsSL https://github.com/JobiJoba/Placard/releases/latest/download/install.sh)
+```
+
+**Windows — PowerShell 5.1 or 7:**
+
+```powershell
+& ([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing https://github.com/JobiJoba/Placard/releases/latest/download/install.ps1).Content))
+```
+
+These commands download and execute the published installer. To inspect it first,
+download `install.sh` or `install.ps1` from the [latest release](https://github.com/JobiJoba/Placard/releases/latest),
+read the file, then run `bash ./install.sh` or `& ./install.ps1`. PowerShell file
+execution follows your existing execution policy; the installer does not change it.
+Installer assets are available starting with the release that introduces this feature;
+older releases retain the manual Compose instructions below.
+
+The installer asks for:
+
+| Setting | Default |
+| --- | --- |
+| Installation directory | `./placard-app` (must not already exist) |
+| Host port | `3000` |
+| Public URL | `http://localhost:<port>` |
+| Access | `local` — binds to `127.0.0.1`; `network` binds to `0.0.0.0` |
+
+It downloads configuration from the **same release as the installer**, generates
+random database and authentication secrets, protects `.env`, and waits for the
+app, worker, and database to become healthy. Secrets are never printed. Configure
+Google later in Settings → Integrations. The success URL does not verify external
+DNS, HTTPS, firewall rules, or reverse-proxy routing.
+
+Create the first administrator account before exposing the instance. On a remote
+server, keep local access and tunnel from your computer for initial setup:
+
+```sh
+ssh -L 3000:127.0.0.1:3000 user@your-server
+```
+
+Then open `http://localhost:3000`. For later network access, edit
+`PLACARD_BIND_ADDRESS=0.0.0.0` and `PUBLIC_URL` in `.env`, then run
+`docker compose up -d` from the install directory. For a reverse proxy running on
+the host, the loopback binding can remain. Configure HTTPS separately; a remote
+public URL must match the actual browser origin, without a trailing slash or path.
+
+### Automated setup
+
+After downloading the installer, pass the same settings as flags:
+
+```sh
+bash ./install.sh --non-interactive --directory ./placard-app --port 3001 --public-url http://localhost:3001 --access local
+```
+
+```powershell
+& ./install.ps1 -NonInteractive -Directory ./placard-app -Port 3001 -PublicUrl http://localhost:3001 -Access local
+```
+
+Noninteractive mode accepts the defaults for omitted settings. Installers refuse
+existing directories, Placard containers, or persistent volumes, and reject inherited
+Compose/app variables that could override the installation. They do **not** upgrade
+an existing instance or remove data. Use [Upgrade](#upgrade) for existing installs.
+If startup fails, fix the reported issue and run `docker compose up -d --wait` from
+the retained installation directory; do not rerun the installer over it.
+
+From that directory, use `docker compose ps`, `docker compose logs --tail=100`, and
+`docker compose stop` to inspect or stop the instance. See [troubleshooting](troubleshooting.md).
+
+## Manual installation
+
+The following steps remain available for users who want to manage Compose directly,
+and for releases without installer assets.
 
 ## Requirements
 
@@ -88,6 +171,7 @@ or restoring a dump; editing `.env` alone is not enough once the volume exists.
 Optional:
 
 - `PLACARD_PORT` — host port (default `3000`)
+- `PLACARD_BIND_ADDRESS` — published Compose host binding (manual default `0.0.0.0`; installer default `127.0.0.1`)
 - `GOOGLE_MAPS_API_KEY` — or set later in Settings → Integrations (see [google-apis.md](google-apis.md))
 - `PLACARD_IMAGE` — override the image (release compose already pins a version; set `ghcr.io/jobijoba/placard:nightly` only if you opt into nightlies)
 - `MCP_ENABLED` — default `true`

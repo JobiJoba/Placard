@@ -44,7 +44,7 @@ services:
     restart: unless-stopped
     environment: *placard-env
     ports:
-      - "${PLACARD_PORT:-3000}:3000"
+      - "${PLACARD_BIND_ADDRESS:-0.0.0.0}:${PLACARD_PORT:-3000}:3000"
     volumes:
       - media:/data/media
       - modules:/data/modules

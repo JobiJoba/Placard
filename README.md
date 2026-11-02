@@ -14,21 +14,26 @@ what is implemented and tested. AGPL-3.0 licensed.
 
 ## Install (Docker Compose — recommended)
 
-No local build. Download release install files, set env, start Compose:
+Install Docker first, then run the interactive installer. It generates secrets and
+starts the published app, worker, and database. No local build is needed.
+
+**Linux / macOS:**
 
 ```sh
-mkdir ./placard-app && cd ./placard-app
-curl -fsSL -o docker-compose.yml \
-  https://github.com/JobiJoba/Placard/releases/latest/download/docker-compose.yml
-curl -fsSL -o example.env \
-  https://github.com/JobiJoba/Placard/releases/latest/download/example.env
-cp example.env .env
-# Edit .env: POSTGRES_PASSWORD (openssl rand -hex 24),
-# BETTER_AUTH_SECRET (openssl rand -base64 32), PUBLIC_URL
-docker compose up -d
+bash <(curl -fsSL https://github.com/JobiJoba/Placard/releases/latest/download/install.sh)
 ```
 
-Open http://localhost:3000 (or your `PUBLIC_URL`). Health: `/api/health`.
+**Windows PowerShell:**
+
+```powershell
+& ([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing https://github.com/JobiJoba/Placard/releases/latest/download/install.ps1).Content))
+```
+
+The default is local-only access at `http://localhost:3000`. Complete administrator
+signup before exposing your instance. See **[the installation guide](docs/install.md)**
+for Docker prerequisites, download-and-inspect instructions, automated options,
+manual Compose setup, upgrades, and backup. Installer links require a release that
+includes the new installer assets.
 
 Nightly / tip-of-`main` install lives in a collapsed section of **[docs/install.md](docs/install.md)**. Google Maps Platform BYOK: **[docs/google-apis.md](docs/google-apis.md)**. The marketing site serves the same pages under `/docs`.
 
