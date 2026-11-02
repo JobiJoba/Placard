@@ -13,6 +13,11 @@ import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
 
 const shell = process.argv[2] || "bash"
+// A pwsh parent exports its module paths. Let each child discover modules for its
+// own runtime, especially Windows PowerShell 5.1 launched from PowerShell 7.
+const childEnv = Object.fromEntries(
+  Object.entries(process.env).filter(([key]) => key.toLowerCase() !== "psmodulepath"),
+)
 const root = resolve(import.meta.dirname, "..")
 const temp = mkdtempSync(join(tmpdir(), "placard-install-test-"))
 const bin = join(temp, "bin")
@@ -69,7 +74,7 @@ function run(mode, destination, extra = []) {
   const result = spawnSync(shell, args, {
     encoding: "utf8",
     env: {
-      ...process.env,
+      ...childEnv,
       PATH: `${bin}${process.platform === "win32" ? ";" : ":"}${process.env.PATH}`,
       INSTALL_TEST_MODE: mode,
       INSTALL_TEST_LOG: log,
@@ -123,7 +128,7 @@ try {
           "-Command",
           "$acl = Get-Acl -LiteralPath $env:INSTALL_TEST_ENV; $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User; foreach ($rule in $acl.Access) { if ($rule.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value -ne $sid.Value) { exit 1 } }; if ($acl.Access.Count -eq 0) { exit 1 }",
         ],
-        { env: { ...process.env, INSTALL_TEST_ENV: join(dest, ".env") }, encoding: "utf8" },
+        { env: { ...childEnv, INSTALL_TEST_ENV: join(dest, ".env") }, encoding: "utf8" },
       )
       assert.equal(acl.status, 0, acl.stdout + acl.stderr)
     }

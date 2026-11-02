@@ -24,7 +24,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  installers-ready:
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - name: Check latest release installer assets
+        id: check
+        shell: bash
+        run: |
+          ready=true
+          for asset in install.sh install.ps1; do
+            status=$(curl --silent --show-error --location --output /dev/null --write-out '%{http_code}' "https://github.com/JobiJoba/Placard/releases/latest/download/$asset")
+            case "$status" in
+              200) ;;
+              404) ready=false ;;
+              *) echo "Unexpected HTTP $status checking $asset" >&2; exit 1 ;;
+            esac
+          done
+          echo "ready=$ready" >> "$GITHUB_OUTPUT"
+          if [ "$ready" = false ]; then
+            echo 'Installer assets are not published yet; keeping the existing website.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   build:
+    needs: installers-ready
+    if: needs.installers-ready.outputs.ready == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -40,11 +65,6 @@ jobs:
 
       - name: Install
         run: pnpm install --frozen-lockfile
-
-      - name: Verify published installers before deploying their links
-        run: |
-          curl --fail --silent --show-error --location -o /dev/null https://github.com/JobiJoba/Placard/releases/latest/download/install.sh
-          curl --fail --silent --show-error --location -o /dev/null https://github.com/JobiJoba/Placard/releases/latest/download/install.ps1
 
       - name: Build site
         env:
