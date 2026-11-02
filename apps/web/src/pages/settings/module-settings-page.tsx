@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Link, Navigate, useParams } from "react-router"
 import { ErrorAlert } from "@/components/error-alert"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
 import { api, errorMessage } from "@/lib/api"
 import { useModules } from "@/modules"
 import { useMe } from "@/session"
@@ -122,15 +123,16 @@ export function SettingsModulePage() {
               ))}
             </ul>
             <div className="flex flex-wrap items-center gap-3">
-              <Button
-                type="button"
-                size="sm"
-                variant={mod.mcpEnabled ? "secondary" : "outline"}
-                disabled={saving}
-                onClick={() => setMcpEnabled(!mod.mcpEnabled)}
-              >
-                {mod.mcpEnabled ? "MCP allowed" : "MCP disabled"}
-              </Button>
+              <label htmlFor={`mcp-access-${mod.id}`} className="flex items-center gap-2 text-sm">
+                <Switch
+                  id={`mcp-access-${mod.id}`}
+                  checked={mod.mcpEnabled}
+                  disabled={saving}
+                  onCheckedChange={setMcpEnabled}
+                  aria-label={`Allow MCP access for ${mod.name}`}
+                />
+                <span>MCP access: {mod.mcpEnabled ? "On" : "Off"}</span>
+              </label>
               <Link
                 to="/settings/mcp"
                 className="text-sm underline underline-offset-2 text-muted-foreground"

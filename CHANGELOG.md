@@ -19,6 +19,14 @@ and this project aims to follow [Semantic Versioning](https://semver.org/).
 
 - Bundled Decide module (`restaurants.decide`) — use Marketplace Pick (sibling `placard-places-pick`) or another wheel instead
 
+## [0.2.8] — 2026-11-02
+
+### Fixed
+
+- Use accessible switches with explicit On/Off labels for module MCP access in module settings and the MCP page; disable the switches while saving
+
+[0.2.8]: https://github.com/JobiJoba/Placard/releases/tag/v0.2.8
+
 ## [0.2.7] — 2026-11-02
 
 ### Fixed

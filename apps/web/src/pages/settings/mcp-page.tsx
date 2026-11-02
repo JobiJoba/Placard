@@ -6,6 +6,7 @@ import { ErrorAlert } from "@/components/error-alert"
 import { Button } from "@/components/ui/button"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
 import { api, errorMessage } from "@/lib/api"
 import { useLoad } from "@/lib/use-load"
 import { useModules } from "@/modules"
@@ -26,17 +27,28 @@ export function SettingsMcpPage() {
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [created, setCreated] = useState<CreatedToken | null>(null)
+  const [savingModules, setSavingModules] = useState<Set<string>>(new Set())
 
   const moduleTools = (modules ?? []).filter((m) => m.mcpTools.length > 0)
 
   const setModuleMcp = (mod: MyModule, enabled: boolean) => {
+    if (savingModules.has(mod.id)) return
+    setSavingModules((prev) => new Set(prev).add(mod.id))
     setActionError(null)
-    void api((c) => c.modules.setMcpEnabled({ params: { id: mod.id }, payload: { enabled } })).then(
-      (updated) => {
-        setModules((prev) => (prev ?? []).map((m) => (m.id === updated.id ? updated : m)))
-      },
-      (cause: unknown) => setActionError(errorMessage(cause)),
-    )
+    void api((c) => c.modules.setMcpEnabled({ params: { id: mod.id }, payload: { enabled } }))
+      .then(
+        (updated) => {
+          setModules((prev) => (prev ?? []).map((m) => (m.id === updated.id ? updated : m)))
+        },
+        (cause: unknown) => setActionError(errorMessage(cause)),
+      )
+      .finally(() => {
+        setSavingModules((prev) => {
+          const next = new Set(prev)
+          next.delete(mod.id)
+          return next
+        })
+      })
   }
 
   const create = () => {
@@ -161,14 +173,19 @@ export function SettingsMcpPage() {
                   </ul>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={mod.mcpEnabled ? "secondary" : "outline"}
-                    onClick={() => setModuleMcp(mod, !mod.mcpEnabled)}
+                  <label
+                    htmlFor={`mcp-access-${mod.id}`}
+                    className="flex items-center gap-2 text-sm"
                   >
-                    {mod.mcpEnabled ? "Allowed" : "Disabled"}
-                  </Button>
+                    <Switch
+                      id={`mcp-access-${mod.id}`}
+                      checked={mod.mcpEnabled}
+                      disabled={savingModules.has(mod.id)}
+                      onCheckedChange={(enabled) => setModuleMcp(mod, enabled)}
+                      aria-label={`Allow MCP access for ${mod.name}`}
+                    />
+                    <span>MCP access: {mod.mcpEnabled ? "On" : "Off"}</span>
+                  </label>
                   <Button type="button" size="sm" variant="ghost" asChild>
                     <Link to={`/settings/modules/${encodeURIComponent(mod.id)}`}>Settings</Link>
                   </Button>
