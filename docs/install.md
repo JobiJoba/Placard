@@ -177,24 +177,64 @@ Paste repo [`compose.ghcr.yaml`](../compose.ghcr.yaml) instead of the release fi
 ## Backup
 
 Instance backup (database + files) — not Settings → Export library (per-user zip).
+Run these commands from your install directory with its Compose file and `.env`.
+
+Stop app and worker first so the database and files describe the same point in time.
+Leave Postgres running for `pg_dump`; do not tar a running database's data volume.
 
 ```sh
-docker compose exec -T db pg_dump -U placard placard | gzip > placard-$(date +%Y%m%d).sql.gz
-
-docker run --rm -v placard_pgdata:/data -v "$PWD":/backup alpine \
-  tar czf /backup/pgdata.tgz -C /data .
-docker run --rm -v placard_media:/data -v "$PWD":/backup alpine \
-  tar czf /backup/media.tgz -C /data .
-docker run --rm -v placard_modules:/data -v "$PWD":/backup alpine \
-  tar czf /backup/modules.tgz -C /data .
+mkdir -p backup
+chmod 700 backup
+docker compose stop app worker
+docker compose exec -T db pg_dump -U placard -Fc placard > backup/database.dump
+docker compose run --rm --no-deps -T app tar czf - -C /data/media . > backup/media.tgz
+docker compose run --rm --no-deps -T app tar czf - -C /data/modules . > backup/modules.tgz
+# Run only after all three backup commands succeed:
+docker compose start app worker
 ```
+
+Keep all three files together. Store a copy of your Compose file, `.env`, and image
+version securely alongside the backup: the environment contains credentials and
+must not be committed. Copy completed backups off the instance. If a backup step
+fails, resolve it before treating the backup as complete; start the app and worker
+again when you are ready to resume writes.
 
 ### Restore
 
-1. `docker compose stop app worker`
-2. Restore Postgres dump or `pgdata` archive
-3. Restore `media` / `modules` archives
-4. `docker compose start app worker`
+Restore to a **fresh instance with empty volumes**, using the same image version
+and saved environment. Start from a new install directory with its Compose file
+and `.env`; put the three backup files in `backup/`. If another stack is running
+on the same Docker host, give the recovery stack a distinct `COMPOSE_PROJECT_NAME`
+and host port. The restore replaces database objects; use empty recovery volumes
+to avoid overwriting an existing instance.
+
+```sh
+docker compose up -d --wait db
+docker compose exec -T db pg_restore -U placard -d placard --clean --if-exists --no-owner --exit-on-error < backup/database.dump
+docker compose run --rm --no-deps -T app tar xzf - -C /data/media < backup/media.tgz
+docker compose run --rm --no-deps -T app tar xzf - -C /data/modules < backup/modules.tgz
+docker compose up -d --wait
+```
+
+Check `/api/health`, sign in, open a saved place, and verify its photos and installed
+modules before routing users to the restored instance. Restore the original version
+first; upgrade only after verifying recovery.
+
+### Contributor recovery check
+
+From a source checkout with Docker running:
+
+```sh
+pnpm check:recovery
+```
+
+This builds the image, creates a randomly named Compose project bound only to
+loopback, creates a test account/place/photo, stops writers, backs up, removes
+**only that generated project's volumes**, restores, and verifies login, the place,
+photo and thumbnail hashes, and a module-volume marker. It cleans up the temporary
+stack afterward. It does not use the checkout's `.env` or existing instance volumes.
+It checks the Compose recovery path; Coolify deployment and phone home-screen
+installation still require manual checks.
 
 ## Build from source (contributors)
 

@@ -25,6 +25,7 @@
     "test:e2e": "playwright test",
     "placard:pack": "node scripts/placard-pack.mjs",
     "compose:generate": "node scripts/compose-generate.mjs",
+    "check:recovery": "node scripts/check-backup-restore.mjs",
     "aspire:start": "pnpm --dir aspire-apphost run aspire:start",
     "aspire:build": "pnpm --dir aspire-apphost run aspire:build"
   },

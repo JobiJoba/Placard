@@ -10,8 +10,15 @@ permissions:
   packages: write
 
 jobs:
+  validate:
+    name: Validate release commit
+    uses: ./.github/workflows/checks.yml
+    permissions:
+      contents: read
+
   publish:
     name: Publish image + install assets
+    needs: validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

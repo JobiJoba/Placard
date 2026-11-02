@@ -73,6 +73,15 @@ mvp.md originally parked “third-party modules / SDK / manifest” under Later 
 - Backup → wipe → restore with photos
 - Real Takeout of ~500 places on Compose if not already done
 
+**Automated verification (2026-11-02):** typecheck, 112 unit tests, 76 integration
+tests, 13 browser tests, published-doc links, and web/site production builds passed
+locally. The household browser test also covers search responses arriving out of
+order. `pnpm check:recovery` passed against a disposable Compose stack: fresh install,
+backup, volume removal, restore, and verification of account login, a place, photo
+and thumbnail hashes, and module-volume files. CI and release tags now run a
+shared validation workflow, including this recovery test, before publishing images. These checks
+do not replace Coolify, physical-phone, or real-library validation above.
+
 ## Explicitly later (still true)
 
 | Item | Notes |

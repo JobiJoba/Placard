@@ -18,7 +18,7 @@ Resolved choices from product discussion. Update this file when something change
 | **Single user vs household** | Solo is the default chrome. Household unlocks via an **admin toggle** (Settings → People), not automatically when a second member joins. |
 | **Household library** | **Both** shared and private: members keep private places; owners can set place `visibility` to `household`. One household card per `google_place_id` (claim-first; no silent merge). |
 | **Shared place edits** | Owner edits core fields / unshares / deletes. Other members can view and add dish photos. |
-| **Invites** | **Admin only** can create and revoke invites. There is no remove-user API yet. |
+| **Invites** | **Admin only** can create and revoke invites. Admins can block, unblock, or permanently delete members through Settings → People. |
 | **Votes** | **In-app only** for now (no guest couch links). |
 | **Kids / guests** | **No** lightweight guest or kid accounts. Full members only. |
 
@@ -73,7 +73,7 @@ Resolved choices from product discussion. Update this file when something change
 | **Production topology** | One app image: server serves `/api` + built SPA (same origin). Worker = same image, different command. |
 | **Local orchestration** | **Aspire** TypeScript AppHost (`aspire run`) for PostGIS + server + worker + Vite + dashboard/OTEL. |
 | **Self-host deploy** | Committed hand-maintained `compose.yaml` for Coolify/NAS. Aspire publish is optional (`PLACARD_COMPOSE_FROM_ASPIRE=1`); self-hosters never need the Aspire CLI. |
-| **Monorepo** | pnpm workspaces: `apps/server`, `apps/web`, `packages/domain`, `aspire-apphost`. |
+| **Monorepo** | pnpm workspaces: `apps/server`, `apps/web`, `apps/site`, `packages/domain`, `packages/module-sdk`, `packages/modules/*`, `aspire-apphost`. |
 
 ## Implications
 

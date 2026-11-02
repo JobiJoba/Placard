@@ -8,7 +8,7 @@ The stack choices for v0.1 ([mvp.md](mvp.md)). Change them here first, then in c
 | --- | --- |
 | Language | TypeScript |
 | Backend foundation | **Effect 4** for all server-side code: services, errors, config, HTTP, retries, schemas |
-| Frontend | **Vite + React** SPA (PWA later via `vite-plugin-pwa`) |
+| Frontend | **Vite + React** SPA (PWA manifest + icons; online-only) |
 | HTTP API | **Effect `HttpApi`** on `@effect/platform-node` (typed contract, OpenAPI, typed client) |
 | Database | **Postgres + PostGIS** |
 | Data access | **Drizzle ORM** through its native Effect integration (`drizzle-orm/effect-postgres`) + migrations |
@@ -122,7 +122,7 @@ The UI polls job progress (Server-Sent Events can come later).
 
 ### PWA
 
-A web manifest, icons, and a responsive layout. Only a minimal service worker for installability; no offline caching. Added with `vite-plugin-pwa` in a later phase.
+A web manifest, icons, and a responsive layout are shipped. There is no service worker or offline caching. Phone home-screen installation remains a manual release check; see [current-state.md](current-state.md).
 
 ## Pinned versions (Phase 0)
 
@@ -145,6 +145,8 @@ placard/
   aspire-apphost/      # TypeScript AppHost (aspire run / publish)
   packages/
     domain/            # Effect Schemas + HttpApi contract (shared by server + web)
+    module-sdk/        # Trusted plugin manifest, host API, and MCP contracts
+    modules/skeleton/  # Minimal external-module starter
   apps/
     server/            # Effect HttpApi server, worker, drizzle, unit/integration tests
       src/
@@ -159,6 +161,9 @@ placard/
       drizzle/
       test/
     web/               # Vite React SPA (Tailwind + shadcn)
+      src/components/  # Library, import, place detail, and shared UI sections
+      src/pages/       # Routes and page orchestration
+    site/              # Marketing site + operator docs sourced from docs/
   test/
     fixtures/          # Takeout corpus
     e2e/               # Playwright
@@ -191,19 +196,19 @@ Tests are a first-class deliverable, not cleanup work. A feature isn't done unti
 | Level | What it covers | How |
 | --- | --- | --- |
 | **Unit** | Pure logic: opening-hours evaluation, distance and unit conversion, Takeout parsing, dedupe, search filter building | `@effect/vitest` (`it.effect`). Services swapped for test Layers. |
-| **Property** | Invariants that examples miss: filters round-trip through their schema, open-now is consistent across time zones and midnight, dedupe is idempotent | `it.prop` with Arbitraries derived from Effect Schemas |
+| **Property** | Invariants that examples miss: filters round-trip through their schema, open-now is consistent across time zones and midnight, dedupe is idempotent | Planned: `it.prop` with Arbitraries derived from Effect Schemas; not currently configured |
 | **Time-dependent** | "Open now / tonight", soft-delete 30-day purge, avoid-recent windows | `TestClock`, so tests control time instead of depending on it |
 | **Integration** | Real SQL: PostGIS radius queries, full-text search, migrations, transactions, import staging → commit, job handlers | Postgres + PostGIS in Testcontainers, shared per suite with `it.layer` |
 | **Contract** | Google Places client against recorded responses; MCP tools list and call schemas; HTTP API matches its OpenAPI | Recorded fixtures; `HttpApiTest`; MCP calls through the SDK client |
-| **End-to-end** | The definition-of-done flows from [mvp.md](mvp.md): sign up, triage + import, add place, search, bulk delete, export | Playwright against `docker compose`, with a fake Google layer enabled by a test-only flag |
+| **End-to-end** | The definition-of-done flows from [mvp.md](mvp.md): sign up, triage + import, add place, search, bulk delete, export | Playwright against a real server + throwaway PostGIS container, with a fake Google layer enabled by a test-only flag. `PLAYWRIGHT_BASE_URL` can target an existing stack. |
 
 ### Rules
 
 1. **Google is never called in CI.** A `GooglePlaces` service has a live Layer and a fake Layer backed by recorded fixtures. A manual, opt-in script can re-record fixtures with a real key.
 2. **Takeout fixture corpus.** Start from [`test/fixtures/takeout/`](../test/fixtures/takeout/) (anonymized sample from a real export). Format notes: [takeout-format.md](takeout-format.md). Every parser bug found becomes a new fixture. Raw personal exports stay gitignored under `Takeout/`.
 3. **Every bug fix ships with a failing test first.**
-4. **Coverage target**: high coverage on core, modules and MCP (aim for 90%+ lines), measured in CI. UI coverage comes from end-to-end tests rather than a number.
-5. **CI gates on every PR**: Biome, typecheck, unit + property, integration, then end-to-end on the main branch and release tags.
+4. **Coverage ambition**: aim for 90%+ lines on core, modules and MCP. Coverage collection and thresholds are not currently configured in Vitest or CI. UI behavior is checked with end-to-end tests.
+5. **CI gates on every PR and main push**: production dependency audit, Biome, typecheck, published-doc links, unit tests, integration tests, Playwright, Compose validation, Docker build, and a disposable Compose backup → wipe → restore check. Release tags call the same validation workflow before publishing. Property tests and coverage thresholds remain planned.
 6. **Test Layers are part of the codebase**, next to the live Layers, so every service is easy to fake.
 
 ## Product-level settings

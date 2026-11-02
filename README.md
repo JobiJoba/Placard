@@ -65,6 +65,7 @@ pnpm worker
 | `pnpm test:e2e` | Playwright; set `PLAYWRIGHT_BASE_URL` to test a running stack |
 | `pnpm db:generate` | Generate a migration from `apps/server/src/db/schema.ts` |
 | `pnpm compose:generate` | Validate committed `compose.yaml` markers |
+| `pnpm check:recovery` | Build a disposable Compose stack and verify backup → wipe → restore |
 
 ## Why this exists
 
@@ -96,8 +97,6 @@ Placard: **import → enrich → search/browse cards → run modules** — and t
 | [docs/mcp.md](docs/mcp.md) | Agent access (must-ship, implemented) |
 | [docs/install.md](docs/install.md) | **Install / Coolify / Dokploy / backup / upgrade** |
 | [docs/google-apis.md](docs/google-apis.md) | **Google Maps Platform BYOK** |
-| [docs/mcp.md](docs/mcp.md) | **Connect MCP clients** |
-| [docs/creating-modules.md](docs/creating-modules.md) | **Marketplace modules (zip upload)** |
 | [docs/module-brief-for-ai.md](docs/module-brief-for-ai.md) | **Copy-paste brief for AI module authors** |
 | [packages/modules/skeleton](packages/modules/skeleton) | **Minimal module skeleton (`example.skeleton`)** |
 | [docs/deployment.md](docs/deployment.md) | Docker targets, Coolify notes, Nextcloud adjacency |

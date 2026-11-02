@@ -52,11 +52,47 @@ test("admin enables household, shares a place, member sees Shared filter", async
 
   await browseAllPlaces(memberPage)
   await expect(memberPage.getByRole("radio", { name: "Everyone" })).toBeVisible()
+  // Hold the Shared response until Mine has finished to exercise out-of-order loads.
+  const sharedStarted = Promise.withResolvers<void>()
+  const releaseShared = Promise.withResolvers<void>()
+  await memberPage.route("**/api/search", async (route) => {
+    if (route.request().postDataJSON()?.householdScope === "shared") {
+      const response = await route.fetch()
+      sharedStarted.resolve()
+      await releaseShared.promise
+      await route.fulfill({ response })
+    } else {
+      await route.continue()
+    }
+  })
   await memberPage.getByRole("radio", { name: "Shared" }).click()
+  await sharedStarted.promise
   await expect(memberPage.getByRole("heading", { name: "Household Cafe" })).toBeVisible()
   await expect(memberPage.getByText(`Shared by ${admin.name}`)).toBeVisible()
 
+  const mineResponse = memberPage.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/search") &&
+      response.request().postDataJSON()?.householdScope === "mine",
+  )
   await memberPage.getByRole("radio", { name: "Mine" }).click()
+  await mineResponse
+  await expect(memberPage.getByRole("heading", { name: "Household Cafe" })).toHaveCount(0)
+
+  const staleResponse = memberPage.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/search") &&
+      response.request().postDataJSON()?.householdScope === "shared",
+  )
+  releaseShared.resolve()
+  await (await staleResponse).finished()
+  // Allow the response handlers and React's next render to finish before asserting.
+  await memberPage.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  )
   await expect(memberPage.getByRole("heading", { name: "Household Cafe" })).toHaveCount(0)
 
   await memberContext.close()
