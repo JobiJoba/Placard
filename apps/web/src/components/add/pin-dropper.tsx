@@ -119,6 +119,8 @@ export default function PinDropper() {
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+            // OSM requires a Referer; override the app's same-origin policy for tiles only.
+            referrerPolicy="origin"
             maxZoom={19}
           />
           <Recenter start={start} />
