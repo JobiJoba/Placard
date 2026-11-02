@@ -14,6 +14,7 @@ export function SiteChrome({ children }: { children: ReactNode }) {
       </a>
       <header className="topbar">
         <Link to="/" className="topbar-brand">
+          <img src={`${import.meta.env.BASE_URL}favicon.svg`} width={32} height={32} alt="" />
           Placard
         </Link>
         <nav className="topbar-nav" aria-label="Primary">

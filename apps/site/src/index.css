@@ -131,6 +131,9 @@ code {
 }
 
 .topbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
   font-family: var(--font-catalog);
   font-weight: 700;
   font-size: 1.35rem;

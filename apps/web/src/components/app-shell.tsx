@@ -97,8 +97,9 @@ export function AppShell({ modules }: { readonly modules: ReadonlyArray<MyModule
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-4 sm:gap-4 sm:px-8">
           <Link
             to="/"
-            className="font-catalog shrink-0 truncate text-xl font-semibold uppercase tracking-[0.04em] text-[var(--parchment)] sm:text-2xl"
+            className="inline-flex items-center gap-2.5 font-catalog shrink-0 truncate text-xl font-semibold uppercase tracking-[0.04em] text-[var(--parchment)] sm:text-2xl"
           >
+            <img src="/favicon.svg" width={32} height={32} alt="" />
             Placard
           </Link>
 

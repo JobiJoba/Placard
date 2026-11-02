@@ -10,6 +10,7 @@
     "node": ">=24"
   },
   "scripts": {
+    "icons:generate": "node scripts/generate-icons.mjs",
     "dev": "aspire run",
     "build": "pnpm --filter @placard/web build && pnpm --filter @placard/server typecheck",
     "start": "pnpm --filter @placard/server start",
