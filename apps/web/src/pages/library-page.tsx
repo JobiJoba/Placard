@@ -393,11 +393,12 @@ export function LibraryPage() {
   }
 
   return (
-    <section className="flex flex-col gap-6">
+    <section className="library-page flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-1">
+        <div className="page-heading flex flex-col gap-1">
+          <p className="section-label">Your personal atlas</p>
           <h1 className="font-catalog text-4xl font-semibold tracking-wide uppercase">Library</h1>
-          <p className="text-sm text-muted-foreground">Your places — browse the crate, open one.</p>
+          <p className="text-sm text-muted-foreground">Places to remember. Somewhere to go next.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {showSelectChrome ? (
@@ -427,7 +428,7 @@ export function LibraryPage() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="library-toolbar flex flex-col gap-3">
         <Input
           value={textDraft}
           onChange={(e) => setTextDraft(e.target.value)}

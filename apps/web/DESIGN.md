@@ -102,3 +102,16 @@ Placard’s Operate UI is the **Vinyl Crate Library**: dark crate chrome over a 
 - Use soft large-radius white cards as the Library structure
 - Invent public sharing or social proof
 - Keep “what to eat tonight” chrome off Library — that belongs to Marketplace modules
+
+## v1 interface refresh
+
+The personal-atlas treatment retains dark navigation, warm paper, and square covers.
+Library search and filters sit on a single readable toolbar. Catalog typography
+provides page hierarchy; cover titles use natural case and clamp to three lines.
+Settings use a distinct navigation surface and bordered sections with clear title,
+description, and controls. Mobile library cards use two columns and controls offer
+larger touch targets. Desktop density preferences remain available.
+
+The shell includes a keyboard skip link and icon-plus-label mobile navigation.
+Do not hide essential actions behind hover or introduce motion for basic navigation.
+This refresh was implemented from source; live-session browser access was unavailable.

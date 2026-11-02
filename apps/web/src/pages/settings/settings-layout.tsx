@@ -56,11 +56,17 @@ export function SettingsLayout() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
+      <header className="page-heading">
+        <p className="section-label">Make it yours</p>
+        <h1>Settings</h1>
+        <p className="text-muted-foreground">
+          Your profile, your preferences, and the tools connected to your library.
+        </p>
+      </header>
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8">
         <nav
           aria-label="Settings sections"
-          className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 md:mx-0 md:w-52 md:shrink-0 md:flex-col md:overflow-visible md:px-0 md:pb-0"
+          className="settings-nav -mx-1 flex gap-1 overflow-x-auto px-1 pb-1 md:mx-0 md:w-52 md:shrink-0 md:flex-col md:overflow-visible md:px-0 md:pb-0"
         >
           {items.map((item) => (
             <NavLink

@@ -224,3 +224,185 @@ body {
     transition: none;
   }
 }
+
+/* Personal atlas: a quieter work surface with clear editorial hierarchy. */
+.app-shell {
+  background: #f5f0e7;
+}
+.app-content {
+  padding-top: 2.5rem;
+}
+.app-header {
+  box-shadow: 0 3px 14px rgb(26 22 18 / 10%);
+}
+.app-header nav[aria-label="Main"] {
+  background: transparent;
+  box-shadow: none;
+  gap: 0.5rem;
+}
+.settings-nav a {
+  padding: 0.8rem 1rem;
+}
+.app-header nav[aria-label="Main"] > a {
+  padding: 0.65rem 0.9rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.app-skip-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  background: var(--card);
+  padding: 0.75rem 1rem;
+  color: var(--foreground);
+}
+.app-skip-link:focus {
+  transform: translateY(0);
+}
+.page-heading h1,
+.app-content > div > h1 {
+  font-family: var(--font-catalog);
+  font-size: 2.75rem;
+  line-height: 1.08;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  text-transform: none;
+}
+.section-label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 650;
+  color: var(--action);
+  margin-bottom: 0.5rem;
+}
+.page-heading > p:last-child {
+  margin-top: 0.5rem;
+  font-size: 0.9375rem;
+}
+.library-toolbar {
+  padding: 1.25rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 5px rgb(26 22 18 / 3%);
+}
+.library-toolbar > input {
+  min-height: 2.75rem;
+  font-size: 1rem;
+  background: #fffdf9;
+}
+.app-content [data-slot="input"],
+.app-content [data-slot="textarea"] {
+  background-color: #fffdf9;
+  border-color: #c6bcaf;
+}
+.app-content [data-slot="input"] {
+  min-height: 2.5rem;
+  padding-inline: 0.75rem;
+}
+.app-content [data-slot="button"] {
+  min-height: 2.25rem;
+}
+.app-content [data-slot="select-trigger"] {
+  min-height: 2.5rem;
+  background: #fffdf9;
+}
+.app-content [data-slot="toggle-group-item"] {
+  min-height: 2.5rem;
+  padding-inline: 0.875rem;
+}
+.settings-card {
+  background: #fffdf9;
+  border-color: #ddd3c5;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 6px rgb(26 22 18 / 3%);
+  padding-block: 1.5rem;
+}
+.settings-card [data-slot="card-header"] {
+  padding-inline: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #e9e1d5;
+}
+.settings-card [data-slot="card-title"] {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+.settings-card [data-slot="card-description"] {
+  max-width: 60ch;
+  line-height: 1.6;
+}
+.settings-card [data-slot="card-content"] {
+  padding-inline: 1.5rem;
+}
+.settings-nav {
+  border: 1px solid #ddd3c5;
+  background: #ece5d9;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+}
+.place-cover {
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 5px rgb(26 22 18 / 10%);
+}
+.place-cover .cover-title {
+  text-transform: none;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+}
+.place-cover .cover-meta {
+  letter-spacing: 0.04em;
+}
+.crate-grid {
+  gap: 1.25rem;
+}
+.filter-sheet {
+  background: #ece5d9;
+  backdrop-filter: none;
+  border-radius: 0.5rem;
+}
+@media (min-width: 768px) {
+  .settings-nav {
+    position: sticky;
+    top: 6.5rem;
+  }
+}
+@media (max-width: 639px) {
+  .app-content {
+    padding-top: 1.5rem;
+  }
+  .page-heading h1 {
+    font-size: 2.25rem;
+  }
+  .library-toolbar {
+    padding: 0.875rem;
+  }
+  .crate-grid,
+  .crate-grid[data-density="4"],
+  .crate-grid[data-density="6"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+  .cover-face {
+    padding: 0.75rem;
+  }
+  .cover-title {
+    font-size: 1.25rem;
+  }
+  .place-cover .cover-meta {
+    font-size: 0.625rem;
+  }
+  .app-content [data-slot="button"],
+  .app-content [data-slot="toggle-group-item"],
+  .app-content [data-slot="select-trigger"] {
+    min-height: 2.75rem;
+  }
+  .settings-card [data-slot="card-header"],
+  .settings-card [data-slot="card-content"] {
+    padding-inline: 1rem;
+  }
+}

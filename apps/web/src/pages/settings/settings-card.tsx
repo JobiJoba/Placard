@@ -11,7 +11,7 @@ export function SettingsCard({
   readonly children: ReactNode
 }) {
   return (
-    <Card>
+    <Card className="settings-card">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>

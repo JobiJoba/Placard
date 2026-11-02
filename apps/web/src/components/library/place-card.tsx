@@ -115,7 +115,7 @@ export function PlaceCard({
       ) : null}
       <Link
         to={`/places/${place.id}`}
-        className={`cover-face relative z-[1] flex h-full flex-col justify-between gap-2 p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spine-gold)] ${
+        className={`cover-face relative z-[1] flex h-full flex-col justify-between gap-2 p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spine-gold)] ${
           selecting ? "pr-9" : ""
         }`}
       >
@@ -129,7 +129,7 @@ export function PlaceCard({
           )}
         </div>
         <div className="flex min-h-0 flex-1 flex-col justify-end gap-1">
-          <h2 className="cover-title font-catalog text-xl font-semibold leading-tight tracking-wide uppercase">
+          <h2 className="cover-title line-clamp-3 font-catalog text-2xl font-semibold leading-tight tracking-wide uppercase">
             {place.name}
           </h2>
           {sharedByOther ? (

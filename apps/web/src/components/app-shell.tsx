@@ -1,5 +1,5 @@
 import type { MyModule } from "@placard/domain"
-import { ChevronDown, Menu, Search } from "lucide-react"
+import { ChevronDown, Library, List, Menu, Plus, Search, Settings } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { Link, NavLink, Outlet, useLocation } from "react-router"
 import { CommandPalette } from "@/components/command-palette"
@@ -89,9 +89,12 @@ export function AppShell({ modules }: { readonly modules: ReadonlyArray<MyModule
   )
   const moreActive = moreItems.some((item) => pathMatches(location.pathname, item.to))
   return (
-    <div className="flex min-h-dvh min-w-0 flex-col overflow-x-hidden bg-[var(--parchment)]">
-      <header className="sticky top-0 z-40 border-b border-[var(--crate-edge)] bg-[var(--crate)] text-[var(--parchment)] shadow-[inset_0_-1px_0_color-mix(in_srgb,var(--spine-gold)_22%,transparent)]">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:gap-4 sm:px-6">
+    <div className="app-shell flex min-h-dvh min-w-0 flex-col overflow-x-hidden bg-[var(--parchment)]">
+      <a href="#main-content" className="app-skip-link">
+        Skip to content
+      </a>
+      <header className="app-header sticky top-0 z-40 border-b border-[var(--crate-edge)] bg-[var(--crate)] text-[var(--parchment)] shadow-[inset_0_-1px_0_color-mix(in_srgb,var(--spine-gold)_22%,transparent)]">
+        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-4 sm:gap-4 sm:px-8">
           <Link
             to="/"
             className="font-catalog shrink-0 truncate text-xl font-semibold uppercase tracking-[0.04em] text-[var(--parchment)] sm:text-2xl"
@@ -256,15 +259,19 @@ export function AppShell({ modules }: { readonly modules: ReadonlyArray<MyModule
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-8 md:pb-16">
+      <main
+        id="main-content"
+        className="app-content mx-auto w-full min-w-0 max-w-7xl flex-1 px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-8 md:pb-16"
+      >
         <Outlet />
       </main>
       <nav
         className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--crate-edge)] bg-[var(--crate)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
         aria-label="Primary"
       >
-        <div className="mx-auto flex max-w-6xl">
+        <div className="mx-auto flex max-w-7xl">
           <NavLink to="/" end className={bottomLink}>
+            <Library size={19} aria-hidden />
             Library
           </NavLink>
           {primaryPlugins[0] ? (
@@ -273,13 +280,16 @@ export function AppShell({ modules }: { readonly modules: ReadonlyArray<MyModule
             </NavLink>
           ) : null}
           <NavLink to="/lists" className={bottomLink}>
+            <List size={19} aria-hidden />
             Lists
           </NavLink>
           <NavLink to="/add" className={bottomLink}>
+            <Plus size={19} aria-hidden />
             Add
           </NavLink>
           {primaryPlugins[0] ? null : (
             <NavLink to="/settings" className={bottomLink}>
+              <Settings size={19} aria-hidden />
               Settings
             </NavLink>
           )}
