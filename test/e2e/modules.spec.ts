@@ -1,6 +1,48 @@
 import { expect, test } from "@playwright/test"
 import { signInAsAdmin } from "./support"
 
+test("module deep links survive reload while routes are loading", async ({ page, baseURL }) => {
+  await page.route("**/api/modules/me", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    await route.fulfill({
+      json: [
+        {
+          id: "demo.navigation",
+          name: "Navigation demo",
+          version: "0.1.0",
+          description: "Fixture",
+          visible: true,
+          mcpEnabled: false,
+          hasNavigation: true,
+          source: "upload",
+          iconUrl: null,
+          nav: [{ path: "/m/demo.navigation", label: "Demo", slot: "primary" }],
+          webRoutes: [{ path: "/m/demo.navigation", exportName: "DemoPage" }],
+          actions: [],
+          mcpTools: [],
+          webEntryUrl: "/fixture-module.js",
+        },
+      ],
+    })
+  })
+  await page.route("**/fixture-module.js", (route) =>
+    route.fulfill({
+      contentType: "application/javascript",
+      body: 'export function DemoPage() { return "Module deep link loaded" }',
+    }),
+  )
+  await signInAsAdmin(page, baseURL ?? "http://localhost:3100")
+  await page
+    .getByRole("navigation", { name: "Main", exact: true })
+    .getByRole("link", { name: "Demo", exact: true })
+    .click()
+  await expect(page.getByText("Module deep link loaded")).toBeVisible()
+  const response = await page.reload()
+  expect(response?.status()).toBe(200)
+  await expect(page.getByText("Module deep link loaded")).toBeVisible()
+  await expect(page).toHaveURL(/\/m\/demo.navigation$/)
+})
+
 for (const mobile of [false, true]) {
   test(`module visibility updates ${mobile ? "mobile" : "desktop"} navigation without reloading`, async ({
     page,

@@ -22,10 +22,27 @@ import {
   SettingsModulesIndexRedirect,
   SettingsPeoplePage,
 } from "@/pages/settings"
-import { RequireUser, SessionProvider } from "@/session"
+import { FullPageMessage, RequireUser, SessionProvider } from "@/session"
 
 function AuthenticatedRoutes() {
-  const { data: modules } = useModules()
+  const { data: modules, error, reload } = useModules()
+  // Keep the deep link until the asynchronously loaded module routes are known.
+  if (modules === null) {
+    return (
+      <FullPageMessage>
+        {error ? (
+          <div role="alert">
+            <p>{error}</p>
+            <button type="button" onClick={reload} className="underline">
+              Retry
+            </button>
+          </div>
+        ) : (
+          "Loading…"
+        )}
+      </FullPageMessage>
+    )
+  }
   const list: ReadonlyArray<MyModule> = modules ?? []
 
   return (

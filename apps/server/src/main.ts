@@ -2,12 +2,13 @@ import { access } from "node:fs/promises"
 import { createServer } from "node:http"
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { Effect, Layer } from "effect"
-import { FetchHttpClient, HttpRouter, HttpStaticServer } from "effect/http"
+import { FetchHttpClient, HttpRouter } from "effect/http"
 import { AppConfig, loadConfigOrExit } from "./config.ts"
 import { runMigrations } from "./db/migrate.ts"
 import { GoogleFixtureClient } from "./google/fixture-client.ts"
 import { RoutesLive } from "./http/api.ts"
 import { SecurityHeadersLive } from "./http/security.ts"
+import { webStaticLayer } from "./http/static.ts"
 import { ModuleRuntime } from "./modules/loader.ts"
 import { Modules } from "./modules/modules.ts"
 import { ObservabilityLive } from "./observability.ts"
@@ -26,11 +27,7 @@ const StaticLive = Layer.unwrap(
       yield* Effect.logWarning(`WEB_DIST_DIR ${webDistDir} not found; SPA static serving disabled`)
       return Layer.empty
     }
-    return HttpStaticServer.layer({
-      root: webDistDir,
-      spa: true,
-      index: "index.html",
-    })
+    return webStaticLayer(webDistDir)
   }),
 )
 
