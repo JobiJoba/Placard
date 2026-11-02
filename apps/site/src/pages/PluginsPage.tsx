@@ -64,7 +64,10 @@ export function PluginsPage() {
                   ))}
                 </ul>
                 <div className="plugin-install">
-                  <CopySnippet code={`${REPOSITORY}#${plugin.id}`} label={`${plugin.name} install URL`} />
+                  <CopySnippet
+                    code={`${REPOSITORY}#${plugin.id}`}
+                    label={`${plugin.name} install URL`}
+                  />
                   <a
                     href={`${REPOSITORY}/tree/main/plugins/${plugin.id}`}
                     target="_blank"
@@ -105,8 +108,8 @@ export function PluginsPage() {
               .
             </p>
             <p>
-              Plugins run with full access to your instance. Install code you trust and back up
-              your database, media and module data before installing or updating.
+              Plugins run with full access to your instance. Install code you trust and back up your
+              database, media and module data before installing or updating.
             </p>
           </div>
         </section>
