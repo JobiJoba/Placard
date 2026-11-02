@@ -94,8 +94,8 @@ jobs:
           push: false
           load: true
           tags: placard:dr-check
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=placard-check
+          cache-to: type=gha,scope=placard-check,mode=max
       - run: node scripts/check-backup-restore.mjs --skip-build
       - run: node scripts/check-installer-smoke.mjs
       - run: node scripts/check-https-compose.mjs

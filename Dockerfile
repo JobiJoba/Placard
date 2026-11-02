@@ -1,31 +1,28 @@
 # syntax=docker/dockerfile:1
 
-FROM node:26-slim AS base
+# Static frontend assets are platform-independent. Build them once, without QEMU.
+FROM --platform=$BUILDPLATFORM node:26-slim AS build-base
 RUN npm install -g pnpm@12.4.1
 WORKDIR /app
 
-FROM base AS deps
+FROM build-base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/domain/package.json ./packages/domain/
-COPY packages/module-sdk/package.json ./packages/module-sdk/
-COPY apps/server/package.json ./apps/server/
 COPY apps/web/package.json ./apps/web/
-COPY aspire-apphost/package.json ./aspire-apphost/
 RUN pnpm install --frozen-lockfile \
   --filter @placard/domain \
-  --filter @placard/module-sdk \
-  --filter @placard/server \
   --filter @placard/web
 
 FROM deps AS build
 COPY tsconfig.base.json ./
 COPY packages/domain ./packages/domain
-COPY packages/module-sdk ./packages/module-sdk
 COPY apps/web ./apps/web
-COPY apps/server ./apps/server
 RUN pnpm --filter @placard/web build
 
-FROM base AS prod
+# Runtime dependencies (including sharp) must match the target architecture.
+FROM node:26-slim AS prod
+RUN npm install -g pnpm@12.4.1
+WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/domain/package.json ./packages/domain/
 COPY packages/module-sdk/package.json ./packages/module-sdk/
@@ -50,8 +47,8 @@ ENV NODE_ENV=production \
     WEB_DIST_DIR=/app/web-dist
 WORKDIR /app
 
-COPY --from=prod /app /app
-RUN mkdir -p /data/media /data/modules && chown -R node:node /data /app
+COPY --from=prod --chown=node:node /app /app
+RUN mkdir -p /data/media /data/modules && chown -R node:node /data
 USER node
 
 EXPOSE 3000

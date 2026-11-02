@@ -57,8 +57,10 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: |
+            type=gha,scope=placard-image
+            type=gha,scope=placard-check
+          cache-to: type=gha,scope=placard-image,mode=max
 
       - name: Prepare install assets
         env:
