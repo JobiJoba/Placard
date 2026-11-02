@@ -303,9 +303,9 @@ body {
 }
 .app-content [data-slot="input"] {
   min-height: 2.5rem;
-  padding-inline: 0.75rem;
 }
-.app-content [data-slot="button"] {
+.app-content [data-slot="button"],
+.app-content [data-slot="dropdown-menu-trigger"] {
   min-height: 2.25rem;
 }
 .app-content [data-slot="select-trigger"] {
@@ -397,6 +397,7 @@ body {
     font-size: 0.625rem;
   }
   .app-content [data-slot="button"],
+  .app-content [data-slot="dropdown-menu-trigger"],
   .app-content [data-slot="toggle-group-item"],
   .app-content [data-slot="select-trigger"] {
     min-height: 2.75rem;
