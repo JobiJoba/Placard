@@ -71,6 +71,8 @@ jobs:
           generate_release_notes: true
           files: |
             dist-release/docker-compose.yml
+            dist-release/docker-compose.override.yml
+            dist-release/Caddyfile
             dist-release/example.env
             dist-release/install.sh
             dist-release/install.ps1

@@ -19,6 +19,16 @@ and this project aims to follow [Semantic Versioning](https://semver.org/).
 
 - Bundled Decide module (`restaurants.decide`) — use Marketplace Pick (sibling `placard-places-pick`) or another wheel instead
 
+## [0.2.6] — 2026-11-02
+
+### Added
+
+- Optional HTTPS with a public domain in the Bash and PowerShell installers, using Caddy for automatic certificates, renewal, and HTTP redirects
+- Persistent Caddy certificate storage and release assets for the bundled HTTPS proxy
+- Installer validation and Docker checks for HTTPS configuration, redirects, and proxy traffic
+
+[0.2.6]: https://github.com/JobiJoba/Placard/releases/tag/v0.2.6
+
 ## [0.1.1] — 2026-10-29
 
 Release-assets and marketing-site release.

@@ -53,8 +53,12 @@ The installer asks for:
 | --- | --- |
 | Installation directory | `./placard-app` (must not already exist) |
 | Host port | `3000` |
+| HTTPS domain | Empty — HTTP or an existing reverse proxy; enter a public domain for bundled HTTPS |
 | Public URL | `http://localhost:<port>` |
 | Access | `local` — binds to `127.0.0.1`; `network` binds to `0.0.0.0` |
+
+With an HTTPS domain, the installer sets the public URL to `https://<domain>` and
+keeps the app's direct host port on loopback. Public URL and access prompts are skipped.
 
 It downloads configuration from the **same release as the installer**, generates
 random database and authentication secrets, protects `.env`, and waits for the
@@ -72,8 +76,47 @@ ssh -L 3000:127.0.0.1:3000 user@your-server
 Then open `http://localhost:3000`. For later network access, edit
 `PLACARD_BIND_ADDRESS=0.0.0.0` and `PUBLIC_URL` in `.env`, then run
 `docker compose up -d` from the install directory. For a reverse proxy running on
-the host, the loopback binding can remain. Configure HTTPS separately; a remote
-public URL must match the actual browser origin, without a trailing slash or path.
+the host, the loopback binding can remain. Without bundled HTTPS (below), configure
+HTTPS in your reverse proxy; a remote public URL must match the actual browser
+origin, without a trailing slash or path.
+
+### HTTPS with a domain
+
+Enter a domain such as `placard.example.com` at the **HTTPS domain** prompt, or use:
+
+```sh
+bash ./install.sh --non-interactive --https-domain placard.example.com
+```
+
+```powershell
+& ./install.ps1 -NonInteractive -HttpsDomain placard.example.com
+```
+
+Point the domain's DNS A/AAAA records to the server (publish an AAAA record only
+if IPv6 reaches it). Allow inbound TCP ports **80 and 443**, forwarding them to the
+server if it is behind a router. These ports must be available; the app's separate
+host port cannot be 80 or 443 in this mode. This mode requires a public DNS domain;
+localhost and private network names need a separately configured certificate setup.
+
+The installer downloads `Caddyfile` and `docker-compose.override.yml` from the same
+release. Caddy obtains and renews certificates and redirects HTTP to HTTPS. Its
+certificate state persists in the `caddy_data` volume; keep that volume across
+restarts and upgrades. See [Caddy's HTTPS documentation](https://caddyserver.com/docs/automatic-https).
+
+Container startup does not confirm certificate issuance or public reachability.
+Open `https://<domain>/api/health` to verify HTTPS, and check
+`docker compose logs --tail=100 caddy` if certificates are pending. Complete the
+first administrator signup before sharing access to the instance.
+
+Standard `docker compose up -d`, `pull`, `logs`, and `stop` commands automatically
+load the installed override. If you pass `-f` explicitly, include both files:
+`docker compose -f docker-compose.yml -f docker-compose.override.yml up -d`.
+When upgrading, retain the override and `Caddyfile`, or download updated copies
+from the same release as the new base Compose file.
+
+If you already use Coolify, Dokploy, or another reverse proxy, leave **HTTPS domain**
+empty and set **Public URL** to your existing HTTPS origin. The domain option starts
+a bundled proxy and is unnecessary when another service already handles HTTPS.
 
 ### Automated setup
 

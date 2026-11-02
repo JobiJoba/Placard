@@ -37,6 +37,8 @@ compose = compose.replace(
 )
 writeFileSync(join(outDir, "docker-compose.yml"), compose)
 copyFileSync(join(root, ".env.example"), join(outDir, "example.env"))
+copyFileSync(join(root, "compose.https.yaml"), join(outDir, "docker-compose.override.yml"))
+copyFileSync(join(root, "Caddyfile"), join(outDir, "Caddyfile"))
 
 console.log(`Wrote ${outDir}/docker-compose.yml (default ${image})`)
 console.log(`Wrote ${outDir}/example.env`)

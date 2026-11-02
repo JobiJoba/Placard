@@ -46,11 +46,17 @@ else
   )
 writeFileSync(
   join(bin, "curl"),
-  `#!/bin/bash\n[ "$INSTALL_TEST_MODE" != download ] || exit 22\nprintf '%s\\n' "$*" >> "$INSTALL_TEST_LOG"\nurl=''; out=''; while [ "$#" -gt 0 ]; do case "$1" in https:*) url=$1;; -o) shift; out=$1;; esac; shift; done\ncase "$url" in */example.env) cp '${join(temp, "example.env")}' "$out";; *) cp '${join(temp, "compose.yml")}' "$out";; esac\n`,
+  `#!/bin/bash\n[ "$INSTALL_TEST_MODE" != download ] || exit 22\nprintf '%s\\n' "$*" >> "$INSTALL_TEST_LOG"\nurl=''; out=''; while [ "$#" -gt 0 ]; do case "$1" in https:*) url=$1;; -o) shift; out=$1;; esac; shift; done\ncase "$url" in */docker-compose.override.yml) cp '${join(temp, "docker-compose.override.yml")}' "$out";; */Caddyfile) cp '${join(temp, "Caddyfile")}' "$out";; */example.env) cp '${join(temp, "example.env")}' "$out";; *) cp '${join(temp, "compose.yml")}' "$out";; esac\n`,
   { mode: 0o755 },
 )
 writeFileSync(join(temp, "example.env"), example)
 writeFileSync(join(temp, "compose.yml"), fixture)
+for (const [source, target] of [
+  ["compose.https.yaml", "docker-compose.override.yml"],
+  ["Caddyfile", "Caddyfile"],
+]) {
+  writeFileSync(join(temp, target), readFileSync(join(root, source)))
+}
 let source = readFileSync(join(root, `scripts/install.${shell === "bash" ? "sh" : "ps1"}`), "utf8")
   .replaceAll("@PLACARD_RELEASE@", "v1.2.3")
   .replaceAll("@PLACARD_REPOSITORY@", "JobiJoba/Placard")
@@ -58,7 +64,7 @@ if (shell !== "bash")
   source = `function Invoke-WebRequest { param($Uri,$OutFile,[switch]$UseBasicParsing)
 if ($env:INSTALL_TEST_MODE -eq 'download') { throw 'download failed' }
 Add-Content -LiteralPath $env:INSTALL_TEST_LOG -Value $Uri
-$Name = if ($Uri.EndsWith('example.env')) { 'example.env' } else { 'compose.yml' }
+$Name = if ($Uri.EndsWith('example.env')) { 'example.env' } elseif ($Uri.EndsWith('docker-compose.override.yml')) { 'docker-compose.override.yml' } elseif ($Uri.EndsWith('Caddyfile')) { 'Caddyfile' } else { 'compose.yml' }
 Copy-Item -LiteralPath (Join-Path $env:INSTALL_TEST_FIXTURES $Name) -Destination $OutFile
 }
 & {\n${source}\n} @args\n`
@@ -119,6 +125,8 @@ try {
       env,
       mode === "success" ? /PLACARD_BIND_ADDRESS=0.0.0.0/ : /PLACARD_BIND_ADDRESS=127.0.0.1/,
     )
+    assert.equal(existsSync(join(dest, "docker-compose.override.yml")), false)
+    assert.equal(existsSync(join(dest, "Caddyfile")), false)
     if (process.platform !== "win32") assert.equal(statSync(join(dest, ".env")).mode & 0o777, 0o600)
     if (process.platform === "win32") {
       const acl = spawnSync(
@@ -136,6 +144,47 @@ try {
     assert.notEqual(repeated.status, 0)
     assert.equal(readFileSync(join(dest, ".env"), "utf8"), env)
   }
+  const httpsOption = shell === "bash" ? "--https-domain" : "-HttpsDomain"
+  const portOption = shell === "bash" ? "--port" : "-Port"
+  const urlOption = shell === "bash" ? "--public-url" : "-PublicUrl"
+  for (const [index, extra] of [
+    [httpsOption, "localhost"],
+    [httpsOption, "127.0.0.1"],
+    [httpsOption, "places.local"],
+    [httpsOption, "places.LOCALHOST"],
+    [httpsOption, "https://places.example.com"],
+    [httpsOption, "places.example.com/path"],
+    [httpsOption, "places.example.com:443"],
+    [httpsOption, "-bad.example.com"],
+    [httpsOption, `${"x".repeat(64)}.example.com`],
+    [httpsOption, "places.example.com", portOption, "443"],
+    [httpsOption, "places.example.com", portOption, "80"],
+    [httpsOption, "places.example.com", urlOption, "https://other.example.com"],
+  ].entries()) {
+    const dest = join(temp, `invalid-https-${index}`)
+    assert.notEqual(run("", dest, extra).status, 0)
+    assert.equal(existsSync(dest), false)
+  }
+  const httpsDest = join(temp, "https with spaces")
+  const https = run("success", httpsDest, [httpsOption, "places.example.com"])
+  assert.equal(https.status, 0, https.stdout + https.stderr)
+  const httpsEnv = readFileSync(join(httpsDest, ".env"), "utf8")
+  assert.match(httpsEnv, /^PUBLIC_URL=https:\/\/places\.example\.com$/m)
+  assert.match(httpsEnv, /^PLACARD_DOMAIN=places\.example\.com$/m)
+  assert.match(httpsEnv, /^PLACARD_BIND_ADDRESS=127\.0\.0\.1$/m)
+  assert.equal(
+    readFileSync(join(httpsDest, "docker-compose.override.yml"), "utf8"),
+    readFileSync(join(root, "compose.https.yaml"), "utf8"),
+  )
+  assert.equal(
+    readFileSync(join(httpsDest, "Caddyfile"), "utf8"),
+    readFileSync(join(root, "Caddyfile"), "utf8"),
+  )
+  assert.match(https.log, /"-f","docker-compose.yml","-f","docker-compose.override.yml","up"/)
+  assert.match(https.stdout, /Certificate issuance may still be pending/)
+  const downloadDest = join(temp, "https download failure")
+  assert.notEqual(run("download", downloadDest, [httpsOption, "places.example.com"]).status, 0)
+  assert.equal(existsSync(downloadDest), false)
   console.log(`${shell}: installer checks passed`)
 } finally {
   rmSync(temp, { recursive: true, force: true })

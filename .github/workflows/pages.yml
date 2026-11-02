@@ -34,7 +34,7 @@ jobs:
         shell: bash
         run: |
           ready=true
-          for asset in install.sh install.ps1; do
+          for asset in install.sh install.ps1 docker-compose.yml example.env docker-compose.override.yml Caddyfile; do
             status=$(curl --silent --show-error --location --output /dev/null --write-out '%{http_code}' "https://github.com/JobiJoba/Placard/releases/latest/download/$asset")
             case "$status" in
               200) ;;

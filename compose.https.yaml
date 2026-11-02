@@ -1,0 +1,22 @@
+# Optional installer overlay, published as docker-compose.override.yml.
+# Standard `docker compose` commands automatically load it after installation.
+services:
+  caddy:
+    image: caddy:2.11.7-alpine
+    restart: unless-stopped
+    environment:
+      PLACARD_DOMAIN: ${PLACARD_DOMAIN:?Set PLACARD_DOMAIN to your public domain}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+
+volumes:
+  caddy_data:
+  caddy_config:

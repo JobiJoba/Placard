@@ -98,3 +98,4 @@ jobs:
           cache-to: type=gha,mode=max
       - run: node scripts/check-backup-restore.mjs --skip-build
       - run: node scripts/check-installer-smoke.mjs
+      - run: node scripts/check-https-compose.mjs

@@ -29,8 +29,9 @@ bash <(curl -fsSL https://github.com/JobiJoba/Placard/releases/latest/download/i
 & ([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing https://github.com/JobiJoba/Placard/releases/latest/download/install.ps1).Content))
 ```
 
-The default is local-only access at `http://localhost:3000`. Complete administrator
-signup before exposing your instance. See **[the installation guide](docs/install.md)**
+The default is local-only access at `http://localhost:3000`. Enter a public domain
+at the HTTPS prompt to enable automatic certificates and HTTP redirects with Caddy.
+Complete administrator signup before exposing your instance. See **[the installation guide](docs/install.md)**
 for Docker prerequisites, download-and-inspect instructions, automated options,
 manual Compose setup, upgrades, and backup. Installer links require a release that
 includes the new installer assets.

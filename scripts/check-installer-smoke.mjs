@@ -20,8 +20,8 @@ const source = readFileSync(join(root, "scripts/install.sh"), "utf8")
   .replaceAll("@PLACARD_REPOSITORY@", "JobiJoba/Placard")
   .replaceAll("project=placard", `project=${project}`)
   .replaceAll(
-    "placard_pgdata placard_media placard_modules",
-    `${project}_pgdata ${project}_media ${project}_modules`,
+    "placard_pgdata placard_media placard_modules placard_caddy_data placard_caddy_config",
+    `${project}_pgdata ${project}_media ${project}_modules ${project}_caddy_data ${project}_caddy_config`,
   )
   .replaceAll("--project-name placard", `--project-name ${project}`)
 writeFileSync(join(work, "install.sh"), source)
