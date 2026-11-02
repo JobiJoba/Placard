@@ -2,11 +2,13 @@ import { Navigate, Route, Routes } from "react-router"
 import { DocsIndexPage } from "./pages/DocsIndexPage"
 import { DocsPage } from "./pages/DocsPage"
 import { HomePage } from "./pages/HomePage"
+import { PluginsPage } from "./pages/PluginsPage"
 
 export function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/plugins" element={<PluginsPage />} />
       <Route path="/docs" element={<DocsIndexPage />} />
       <Route path="/docs/:slug" element={<DocsPage />} />
       <Route path="/install" element={<Navigate to="/docs/install" replace />} />

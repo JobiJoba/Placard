@@ -119,7 +119,7 @@ export function HomePage() {
                 event. Administrators install trusted modules; each person chooses what appears in
                 their navigation.
               </p>
-              <Link to="/docs/creating-modules">Explore modules →</Link>
+              <Link to="/plugins">Explore plugins →</Link>
             </article>
             <article>
               <h3>Your places, in the conversation.</h3>

@@ -62,8 +62,8 @@ export const signOut = async (page: Page) => {
 }
 
 /**
- * Library defaults to Near me. Without geolocation the empty crate / place grid is hidden.
- * Switch to All so empty-state and browse assertions work in CI.
+ * Force All regardless of saved browse preferences so empty-state and browse
+ * assertions work in CI without geolocation.
  */
 export const browseAllPlaces = async (page: Page) => {
   let url = new URL(page.url())

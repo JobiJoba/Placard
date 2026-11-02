@@ -325,6 +325,14 @@ export function SettingsMarketplacePage() {
                 Public repo URL or owner/repo. Installs the latest Release asset (.placard-module or
                 .zip).
               </p>
+              <a
+                href="https://placard.fyi/plugins"
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-block text-xs underline underline-offset-2"
+              >
+                Browse Placard plugins
+              </a>
             </div>
             <Field>
               <FieldLabel htmlFor="githubRepoUrl">Repository</FieldLabel>

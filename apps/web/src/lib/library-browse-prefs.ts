@@ -9,7 +9,7 @@ export type LibraryBrowsePrefs = {
 }
 
 export const DEFAULT_LIBRARY_BROWSE_PREFS: LibraryBrowsePrefs = {
-  scope: "near",
+  scope: "all",
   view: "grid",
 }
 

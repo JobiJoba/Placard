@@ -24,7 +24,8 @@ Vite + React marketing + docs site. Home (`/`) persuades and points to Install. 
 
 ## Capabilities and Constraints
 
-- Confirmed routes: Home, Docs index, Docs pages; primary CTAs Install (→ docs) + GitHub.
+- Confirmed routes: Home, Plugins (`/plugins`), Docs index, Docs pages; primary CTAs Install (→ docs) + GitHub.
+- Plugins lists Menus and Pick with cover illustrations, descriptions, copyable module-specific GitHub install URLs, source links and installation steps.
 - Install path: published GHCR image via release assets (`docker-compose.yml`, `example.env`); tip-of-main / `:nightly` fallback until first `v*` release.
 - Do not invent a live public demo, SaaS signup, pricing, or hosted trial unless product truth changes.
 - Published docs set is curated in the site docs catalog (not every internal planning doc).

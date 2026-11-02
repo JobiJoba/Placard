@@ -36,6 +36,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { api, errorMessage } from "@/lib/api"
 import { requestLocation } from "@/lib/geolocation"
 import {
+  DEFAULT_LIBRARY_BROWSE_PREFS,
   isLibraryScope,
   type LibraryScope,
   type LibraryView,
@@ -74,7 +75,7 @@ export function LibraryPage() {
   const open = parseOpen(params.get("open"))
   const category = parseCategory(params.get("category"))
   const scopeParam = params.get("scope")
-  const scope: Scope = isLibraryScope(scopeParam) ? scopeParam : "near"
+  const scope: Scope = isLibraryScope(scopeParam) ? scopeParam : DEFAULT_LIBRARY_BROWSE_PREFS.scope
   const householdScope = parseHouseholdScope(params.get("household"))
   const sharedBy = params.get("sharedBy") ?? undefined
   const radiusKm = Number(params.get("radius") ?? "5") || 5
@@ -127,7 +128,10 @@ export function LibraryPage() {
     const prefs = readLibraryBrowsePrefs()
     const next = new URLSearchParams(params)
     let dirty = false
-    if (!isLibraryScope(params.get("scope")) && prefs.scope !== "near") {
+    if (
+      !isLibraryScope(params.get("scope")) &&
+      prefs.scope !== DEFAULT_LIBRARY_BROWSE_PREFS.scope
+    ) {
       next.set("scope", prefs.scope)
       dirty = true
     }
@@ -317,7 +321,7 @@ export function LibraryPage() {
 
   const clearFilters = () => {
     const next = new URLSearchParams()
-    if (scope !== "near") next.set("scope", scope)
+    next.set("scope", scope)
     if (view === "map") next.set("view", "map")
     if (scope === "city") {
       if (cityName) next.set("city", cityName)
@@ -446,9 +450,7 @@ export function LibraryPage() {
               setParams(
                 (prev) => {
                   const next = new URLSearchParams(prev)
-                  // Near me is the default (omit param); All must stay explicit.
-                  if (value === "near") next.delete("scope")
-                  else next.set("scope", value)
+                  next.set("scope", value)
                   // City needs a fresh center — clear any previous lat/lng/name.
                   next.delete("lat")
                   next.delete("lng")

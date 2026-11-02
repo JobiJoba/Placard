@@ -18,6 +18,9 @@ export function SiteChrome({ children }: { children: ReactNode }) {
           Placard
         </Link>
         <nav className="topbar-nav" aria-label="Primary">
+          <Link to="/plugins" aria-current={pathname === "/plugins" ? "page" : undefined}>
+            Plugins
+          </Link>
           <Link to="/docs" aria-current={onDocs ? "page" : undefined}>
             Docs
           </Link>
