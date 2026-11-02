@@ -12,6 +12,8 @@ export const ModuleNavItem = Schema.Struct({
   path: Schema.String,
   label: Schema.String,
   slot: NavSlot,
+  /** Optional Lucide kebab-case icon name for phone navigation only. */
+  mobileIcon: Schema.optional(Schema.String),
 })
 export type ModuleNavItem = typeof ModuleNavItem.Type
 
@@ -83,6 +85,8 @@ export const MyModule = Schema.Struct({
   /** When false, this module’s MCP tools are hidden for the user. */
   mcpEnabled: Schema.Boolean,
   source: ModuleSource,
+  /** Resolved manifest icon for module navigation; null when none is supplied. */
+  iconUrl: Schema.NullOr(Schema.String),
   nav: Schema.Array(ModuleNavItem),
   webRoutes: Schema.Array(ModuleWebRoute),
   /** CMD+K actions (empty when module is hidden from the user). */

@@ -17,6 +17,8 @@ export const ModuleNavItem = Schema.Struct({
   path: Schema.String,
   label: Schema.String,
   slot: NavSlot,
+  /** Optional Lucide kebab-case icon name for phone navigation only (e.g. "dices"). */
+  mobileIcon: Schema.optional(Schema.String),
 })
 export type ModuleNavItem = typeof ModuleNavItem.Type
 
@@ -71,7 +73,8 @@ export const ModuleManifest = Schema.Struct({
   /** Relative path to browser ESM entry inside a prebuilt zip. */
   webEntry: Schema.optional(Schema.String),
   /**
-   * Optional square icon: absolute URL (`https://…` or `/…`) or path relative to the
+   * Optional square icon for marketplace and phone navigation:
+   * absolute URL (`https://…` or `/…`) or path relative to the
    * package root (uploaded modules serve via `/api/modules/:id/assets/…`).
    */
   icon: Schema.optional(Schema.String),

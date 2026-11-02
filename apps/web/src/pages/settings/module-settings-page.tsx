@@ -1,9 +1,9 @@
-import { useCallback, useState } from "react"
+import { useState } from "react"
 import { Link, Navigate, useParams } from "react-router"
 import { ErrorAlert } from "@/components/error-alert"
 import { Button } from "@/components/ui/button"
 import { api, errorMessage } from "@/lib/api"
-import { useLoad } from "@/lib/use-load"
+import { useModules } from "@/modules"
 import { useMe } from "@/session"
 import { SettingsCard } from "./settings-card"
 
@@ -15,12 +15,9 @@ export function SettingsModulePage() {
   const { moduleId: rawId } = useParams()
   const moduleId = rawId ? decodeURIComponent(rawId) : ""
   const me = useMe()
-  const {
-    data: modules,
-    error,
-    setData,
-  } = useLoad(useCallback(() => api((c) => c.modules.me()), []))
+  const { data: modules, error, setData } = useModules()
   const [actionError, setActionError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
 
   if (!moduleId) return <Navigate to="/settings/general" replace />
   if (modules && !modules.some((m) => m.id === moduleId)) {
@@ -30,24 +27,34 @@ export function SettingsModulePage() {
   const mod = modules?.find((m) => m.id === moduleId)
 
   const setVisible = (visible: boolean) => {
-    if (!mod) return
+    if (!mod || saving) return
+    setSaving(true)
     setActionError(null)
     void api((c) => c.modules.setVisible({ params: { id: mod.id }, payload: { visible } })).then(
       (updated) => {
         setData((prev) => (prev ?? []).map((m) => (m.id === updated.id ? updated : m)))
+        setSaving(false)
       },
-      (cause: unknown) => setActionError(errorMessage(cause)),
+      (cause: unknown) => {
+        setSaving(false)
+        setActionError(errorMessage(cause))
+      },
     )
   }
 
   const setMcpEnabled = (enabled: boolean) => {
-    if (!mod) return
+    if (!mod || saving) return
+    setSaving(true)
     setActionError(null)
     void api((c) => c.modules.setMcpEnabled({ params: { id: mod.id }, payload: { enabled } })).then(
       (updated) => {
         setData((prev) => (prev ?? []).map((m) => (m.id === updated.id ? updated : m)))
+        setSaving(false)
       },
-      (cause: unknown) => setActionError(errorMessage(cause)),
+      (cause: unknown) => {
+        setSaving(false)
+        setActionError(errorMessage(cause))
+      },
     )
   }
 
@@ -80,6 +87,7 @@ export function SettingsModulePage() {
             type="button"
             size="sm"
             variant={mod.visible ? "secondary" : "outline"}
+            disabled={saving}
             onClick={() => setVisible(!mod.visible)}
           >
             {mod.visible ? "Shown in nav" : "Hidden from nav"}
@@ -116,6 +124,7 @@ export function SettingsModulePage() {
                 type="button"
                 size="sm"
                 variant={mod.mcpEnabled ? "secondary" : "outline"}
+                disabled={saving}
                 onClick={() => setMcpEnabled(!mod.mcpEnabled)}
               >
                 {mod.mcpEnabled ? "MCP allowed" : "MCP disabled"}

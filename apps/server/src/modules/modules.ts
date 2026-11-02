@@ -359,6 +359,7 @@ export class Modules extends Context.Service<
           visible,
           mcpEnabled,
           source: row.source,
+          iconUrl: resolveModuleMediaUrl(row.module_id, row.source, manifest.icon),
           nav: visible ? [...manifest.nav] : [],
           webRoutes: visible ? [...manifest.webRoutes] : [],
           actions: visible ? [...(manifest.actions ?? [])] : [],

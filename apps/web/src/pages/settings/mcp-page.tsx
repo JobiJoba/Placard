@@ -8,6 +8,7 @@ import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { api, errorMessage } from "@/lib/api"
 import { useLoad } from "@/lib/use-load"
+import { useModules } from "@/modules"
 import { SettingsCard } from "./settings-card"
 
 export function SettingsMcpPage() {
@@ -20,11 +21,7 @@ export function SettingsMcpPage() {
     setData: setTokens,
     reload: reloadTokens,
   } = useLoad(useCallback(() => api((c) => c.tokens.list()), []))
-  const {
-    data: modules,
-    error: modulesError,
-    setData: setModules,
-  } = useLoad(useCallback(() => api((c) => c.modules.me()), []))
+  const { data: modules, error: modulesError, setData: setModules } = useModules()
   const [name, setName] = useState("Cursor")
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)

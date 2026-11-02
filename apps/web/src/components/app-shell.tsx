@@ -1,5 +1,6 @@
 import type { MyModule } from "@placard/domain"
-import { ChevronDown, Library, List, Menu, Plus, Search, Settings } from "lucide-react"
+import { ChevronDown, Library, List, Menu, Plus, Puzzle, Search, Settings } from "lucide-react"
+import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic"
 import { useEffect, useMemo, useState } from "react"
 import { Link, NavLink, Outlet, useLocation } from "react-router"
 import { CommandPalette } from "@/components/command-palette"
@@ -54,6 +55,40 @@ function pathMatches(pathname: string, to: string) {
   return pathname === to || pathname.startsWith(`${to}/`)
 }
 
+function ModuleImageIcon({ iconUrl }: { readonly iconUrl: string | null }) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
+  if (!iconUrl || failedUrl === iconUrl) return <Puzzle size={19} aria-hidden />
+  return (
+    <img
+      src={iconUrl}
+      alt=""
+      className="size-[19px] shrink-0 object-contain"
+      onError={() => setFailedUrl(iconUrl)}
+    />
+  )
+}
+
+function ModuleNavIcon({
+  mobileIcon,
+  iconUrl,
+}: {
+  readonly mobileIcon: string | undefined
+  readonly iconUrl: string | null
+}) {
+  if (mobileIcon && Object.hasOwn(dynamicIconImports, mobileIcon)) {
+    return (
+      <DynamicIcon
+        key={mobileIcon}
+        name={mobileIcon as keyof typeof dynamicIconImports}
+        size={19}
+        aria-hidden
+        fallback={() => <ModuleImageIcon iconUrl={iconUrl} />}
+      />
+    )
+  }
+  return <ModuleImageIcon iconUrl={iconUrl} />
+}
+
 export function AppShell({ modules }: { readonly modules: ReadonlyArray<MyModule> }) {
   const me = useMe()
   const { signOut } = useSession()
@@ -77,6 +112,8 @@ export function AppShell({ modules }: { readonly modules: ReadonlyArray<MyModule
           to: item.path,
           label: item.label,
           slot: item.slot,
+          iconUrl: m.iconUrl,
+          mobileIcon: item.mobileIcon,
         }))
       : [],
   )
@@ -277,6 +314,10 @@ export function AppShell({ modules }: { readonly modules: ReadonlyArray<MyModule
           </NavLink>
           {primaryPlugins[0] ? (
             <NavLink to={primaryPlugins[0].to} className={bottomLink}>
+              <ModuleNavIcon
+                mobileIcon={primaryPlugins[0].mobileIcon}
+                iconUrl={primaryPlugins[0].iconUrl}
+              />
               <span className="max-w-16 truncate">{primaryPlugins[0].label}</span>
             </NavLink>
           ) : null}

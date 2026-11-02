@@ -21,10 +21,12 @@ web/assets/…       # optional icon/cover
 - name, version, description
 - permissions: subset of ["places.read", "search.query", "media.read"]
 - nav: [{ "path": "/m/<id>", "label": "…", "slot": "primary" | "more" }]
+  Each nav item may set mobileIcon: "dices" (Lucide kebab-case name) for phone bottom navigation only. Matches the built-in menu icon style and active color. Missing/unknown/unavailable names fall back to the module icon image, then a puzzle icon. Desktop navigation stays text-only.
 - source: "upload"   # required for Marketplace zips
 - sdkVersion: "0.1.0"  # major must match host
 - serverEntry: "./server/index.js"
 - webEntry: "./web/index.js"
+- icon (optional): "web/assets/icon.svg" — square SVG/PNG used in marketplace and phone navigation; include the file in the zip. Paths are relative to the package root; absolute HTTPS or root-relative URLs also work. Phone navigation falls back to a puzzle icon if absent or unavailable.
 - webRoutes: [{ "path": "/m/<id>", "exportName": "YourPage" }]
 - actions (optional): [{ "id": "open", "label": "…", "keywords": "…", "path": "/m/<id>" }]
   CMD+K Actions group; selecting navigates to `path`. Hidden when the user hides the module (same as nav).

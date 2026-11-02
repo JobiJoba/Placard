@@ -16,8 +16,9 @@ const fixtureManifest = {
   version: "0.1.0",
   description: "Integration fixture plugin",
   permissions: ["places.read"],
-  nav: [{ path: "/m/demo.upload", label: "Demo", slot: "more" }],
+  nav: [{ path: "/m/demo.upload", label: "Demo", slot: "more", mobileIcon: "dices" }],
   source: "upload",
+  icon: "web/assets/icon.svg",
   sdkVersion: "0.1.0",
   webRoutes: [{ path: "/m/demo.upload", exportName: "DemoPage" }],
 }
@@ -36,6 +37,7 @@ export function createModule() {
 `),
       "web/index.js": strToU8(`export const DemoPage = () => null\n`),
       "web/assets/note.txt": strToU8("hello-plugin\n"),
+      "web/assets/icon.svg": strToU8('<svg xmlns="http://www.w3.org/2000/svg"/>'),
     }),
   ).toString("base64")
 
@@ -91,9 +93,15 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("modules marketpla
       const demo = me.body.find((m: { id: string }) => m.id === "demo.upload")
       expect(demo).toMatchObject({
         visible: true,
+        iconUrl: "/api/modules/demo.upload/assets/web/assets/icon.svg",
         webEntryUrl: "/api/modules/demo.upload/assets/web/index.js",
       })
       expect(demo.nav[0].path).toBe("/m/demo.upload")
+      expect(demo.nav[0].mobileIcon).toBe("dices")
+
+      const icon = await admin.browser.getRaw(demo.iconUrl)
+      expect(icon.status).toBe(200)
+      expect(new TextDecoder().decode(icon.body)).toContain("<svg")
 
       const asset = await admin.browser.getRaw(
         "/api/modules/demo.upload/assets/web/assets/note.txt",

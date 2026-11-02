@@ -47,11 +47,12 @@ No wheel ships inside the Placard image. For a real product module, mirror the *
   "version": "0.1.1",
   "description": "Spin one place from your library.",
   "permissions": ["places.read", "search.query"],
-  "nav": [{ "path": "/m/places.pick", "label": "Pick", "slot": "primary" }],
+  "nav": [{ "path": "/m/places.pick", "label": "Pick", "slot": "primary", "mobileIcon": "dices" }],
   "source": "upload",
   "sdkVersion": "0.1.0",
   "serverEntry": "./server/index.js",
   "webEntry": "./web/index.js",
+  "icon": "web/assets/icon.svg",
   "webRoutes": [{ "path": "/m/places.pick", "exportName": "PickPage" }],
   "actions": [
     {
@@ -78,6 +79,8 @@ Rules:
 - `source` must be `upload` for Marketplace zips
 - `sdkVersion` major must match the host (`0.1.0` today)
 - Nav path and API prefix use the same id: `/m/<id>`, `/api/m/<id>/*`
+- Optional `icon` supplies the marketplace and phone navigation image. Use a square SVG or PNG, include it in the zip (e.g. `web/assets/icon.svg`), and set its path relative to the package root. Absolute HTTPS URLs or root-relative URLs also work. Phone navigation shows a puzzle icon when the image is missing or fails to load.
+- Optional `nav[].mobileIcon` selects a [Lucide icon](https://lucide.dev/icons/) by kebab-case name (e.g. `dices`, `shuffle`, `map-pin`) for the phone bottom navigation only. It uses the same size, stroke and active color as the built-in menu icons; the marketplace image stays unchanged. Missing, unknown or unavailable names fall back to the module `icon`, then the puzzle icon.
 - Optional `actions` appear in **CMD+K → Actions** and navigate to `path` when selected (same visibility gate as `nav`)
 
 ## Server entry

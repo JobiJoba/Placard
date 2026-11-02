@@ -1,10 +1,8 @@
 import type { MyModule } from "@placard/domain"
-import { useCallback } from "react"
 import { BrowserRouter, Navigate, Route, Routes } from "react-router"
 import { AppShell } from "@/components/app-shell"
 import { moduleRouteElements } from "@/components/module-routes"
-import { api } from "@/lib/api"
-import { useLoad } from "@/lib/use-load"
+import { ModulesProvider, useModules } from "@/modules"
 import { AddPlacePage } from "@/pages/add-place-page"
 import { InvitePage, LoginPage, SetupPage } from "@/pages/auth-pages"
 import { DeletedPage } from "@/pages/deleted-page"
@@ -26,7 +24,7 @@ import {
 import { RequireUser, SessionProvider } from "@/session"
 
 function AuthenticatedRoutes() {
-  const { data: modules } = useLoad(useCallback(() => api((c) => c.modules.me()), []))
+  const { data: modules } = useModules()
   const list: ReadonlyArray<MyModule> = modules ?? []
 
   return (
@@ -103,7 +101,9 @@ export function App() {
             path="/*"
             element={
               <RequireUser>
-                <AuthenticatedRoutes />
+                <ModulesProvider>
+                  <AuthenticatedRoutes />
+                </ModulesProvider>
               </RequireUser>
             }
           />

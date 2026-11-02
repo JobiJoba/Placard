@@ -9,6 +9,7 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input"
 import { api, errorMessage } from "@/lib/api"
 import { useLoad } from "@/lib/use-load"
+import { useModules } from "@/modules"
 import { SettingsCard } from "./settings-card"
 
 type MarketplaceCardModel = {
@@ -52,6 +53,7 @@ const initials = (name: string) =>
     .join("")
 
 export function SettingsMarketplacePage() {
+  const { reload: reloadModules } = useModules()
   const {
     data: catalog,
     error: catalogError,
@@ -79,6 +81,7 @@ export function SettingsMarketplacePage() {
   const refresh = () => {
     reloadCatalog()
     reloadInstalled()
+    reloadModules()
   }
 
   const cards = useMemo((): ReadonlyArray<MarketplaceCardModel> => {
@@ -254,6 +257,7 @@ export function SettingsMarketplacePage() {
       (updated) => {
         setBusyId(null)
         setInstalled((prev) => (prev ?? []).map((m) => (m.id === updated.id ? updated : m)))
+        reloadModules()
       },
       (cause: unknown) => {
         setBusyId(null)
