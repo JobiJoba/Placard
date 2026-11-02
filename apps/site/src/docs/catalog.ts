@@ -12,8 +12,19 @@ export type DocNavGroup = {
 /** Operator-facing docs published on the marketing site (sourced from repo `docs/`). */
 export const DOC_NAV: DocNavGroup[] = [
   {
-    label: "Start",
+    label: "Get started",
     items: [
+      {
+        slug: "product-overview",
+        title: "Meet Placard",
+        summary: "What belongs in your library, and how it works.",
+      },
+      {
+        slug: "user-guide",
+        title: "Your first library",
+        summary: "Capture, import, organize, and share places.",
+      },
+
       {
         slug: "install",
         title: "Install",
@@ -29,6 +40,17 @@ export const DOC_NAV: DocNavGroup[] = [
   {
     label: "Operate",
     items: [
+      {
+        slug: "troubleshooting",
+        title: "Troubleshooting",
+        summary: "Find help for setup, imports, photos, and connections.",
+      },
+      {
+        slug: "release-1.0",
+        title: "v1.0.0 readiness",
+        summary: "Release scope, validation, and remaining checks.",
+      },
+
       {
         slug: "deployment",
         title: "Deployment",

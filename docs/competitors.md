@@ -1,5 +1,7 @@
 # Competitors & adjacent landscape
 
+> Historical planning reference. For current behavior, see the [product overview](product-overview.md); for the next release, see [v1.0.0 readiness](release-1.0.md).
+
 Placard sits at the intersection of **saved places**, **self-hosting**, and **personal knowledge**. Nothing dominant owns that exact intersection today — but plenty of adjacent tools matter.
 
 ## The thing people actually use today

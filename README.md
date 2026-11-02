@@ -6,9 +6,11 @@ Placard is a self-hosted place library: collect, organize, and enrich places you
 
 Think Immich, but for starred places: private to your instance, Docker-friendly, extensible.
 
-> **Status:** Phases **0–10 code-complete** (export, PWA, install guide, GHCR workflow). Founder Coolify / phone install checks remain. See [docs/current-state.md](docs/current-state.md).  
-> **Site:** Marketing landing in [`apps/site`](apps/site) (GitHub Pages).  
-> **License:** AGPL-3.0 (like Immich).
+Preparing **v1.0.0**. [Release readiness](docs/release-1.0.md) tracks the remaining
+real-device and deployment checks. [Current state](docs/current-state.md) records
+what is implemented and tested. AGPL-3.0 licensed.
+
+**[Documentation](docs/README.md) · [User guide](docs/user-guide.md) · [Contributing](CONTRIBUTING.md)**
 
 ## Install (Docker Compose — recommended)
 
@@ -79,30 +81,20 @@ Placard: **import → enrich → search/browse cards → run modules** — and t
 
 ## Documentation
 
-| Doc | What it covers |
+Start with the [documentation index](docs/README.md). It separates using Placard,
+operating an instance, and extending the product.
+
+| You want to… | Read |
 | --- | --- |
-| [docs/current-state.md](docs/current-state.md) | **Idea vs shipped** — start here for progress |
-| [docs/vision.md](docs/vision.md) | Problem, thesis, modules ambition |
-| [docs/mvp.md](docs/mvp.md) | **v0.1 scope freeze** (what ships, what doesn't) |
-| [docs/implementation-phases.md](docs/implementation-phases.md) | Build plan + phase status |
-| [docs/tech-stack.md](docs/tech-stack.md) | Stack, architecture, repo layout |
-| [docs/takeout-format.md](docs/takeout-format.md) | Real Takeout shapes + matching notes |
-| [test/fixtures/takeout/](test/fixtures/takeout/) | Anonymized sample export for tests |
-| [docs/decisions.md](docs/decisions.md) | Resolved product choices |
-| [docs/first-user.md](docs/first-user.md) | Founder priorities & scale |
-| [docs/product-overview.md](docs/product-overview.md) | Objects, modes, flows |
-| [docs/modules-restaurants.md](docs/modules-restaurants.md) | Pick / vote / dish memories |
-| [docs/architecture-modules.md](docs/architecture-modules.md) | Core vs modules; trusted plugins |
-| [docs/creating-modules.md](docs/creating-modules.md) | **How to build a module** (step-by-step + Pick example) |
-| [docs/mcp.md](docs/mcp.md) | Agent access (must-ship, implemented) |
-| [docs/install.md](docs/install.md) | **Install / Coolify / Dokploy / backup / upgrade** |
-| [docs/google-apis.md](docs/google-apis.md) | **Google Maps Platform BYOK** |
-| [docs/module-brief-for-ai.md](docs/module-brief-for-ai.md) | **Copy-paste brief for AI module authors** |
-| [packages/modules/skeleton](packages/modules/skeleton) | **Minimal module skeleton (`example.skeleton`)** |
-| [docs/deployment.md](docs/deployment.md) | Docker targets, Coolify notes, Nextcloud adjacency |
-| [docs/feasibility.md](docs/feasibility.md) | Takeout, Google BYOK, what’s realistic |
-| [docs/competitors.md](docs/competitors.md) | Adjacent landscape |
-| [docs/naming.md](docs/naming.md) | Name decision |
+| Understand the product | [Overview](docs/product-overview.md) |
+| Run your own instance | [Install](docs/install.md) |
+| Import and organize places | [User guide](docs/user-guide.md) |
+| Configure enrichment | [Google APIs](docs/google-apis.md) |
+| Diagnose a problem | [Troubleshooting](docs/troubleshooting.md) |
+| Connect an agent | [MCP](docs/mcp.md) |
+| Build a module | [Module authoring](docs/creating-modules.md) |
+| Contribute code | [Contributing](CONTRIBUTING.md) |
+| Follow v1.0.0 readiness | [Release gates](docs/release-1.0.md) |
 
 ## Snapshot of decisions
 

@@ -10,9 +10,9 @@ export function DocsPage() {
   const source = getDocMarkdown(slug)
 
   useEffect(() => {
-    void slug
+    document.title = `${meta?.title ?? "Documentation"} · Placard`
     window.scrollTo(0, 0)
-  }, [slug])
+  }, [meta])
 
   if (!meta || !source) {
     return <Navigate to="/docs" replace />

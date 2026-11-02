@@ -14,6 +14,10 @@ const docsDir = join(repoRoot, "docs")
 
 /** Keep in sync with apps/site/src/docs/catalog.ts DOC_NAV slugs. */
 const PUBLISHED = [
+  "product-overview",
+  "user-guide",
+  "troubleshooting",
+  "release-1.0",
   "install",
   "google-apis",
   "deployment",

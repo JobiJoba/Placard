@@ -6,10 +6,10 @@ export function DocsIndexPage() {
   return (
     <DocsChrome>
       <main id="main" className="docs-article">
-        <h1>Documentation</h1>
+        <h1>Make yourself at home.</h1>
         <p className="lede">
-          Self-host Placard with Compose or a panel, wire Google Places when you want the full
-          experience, then extend with MCP and modules.
+          Everything you need to start a library, run your instance, and make Placard your own. New
+          here? Begin with Meet Placard, then follow the installation guide.
         </p>
         {DOC_NAV.map((group) => (
           <section className="docs-index-group" key={group.label}>

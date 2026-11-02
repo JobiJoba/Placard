@@ -286,34 +286,7 @@ code {
   max-width: 100%;
 }
 
-.band {
-  padding: clamp(2.5rem, 6vw, 4rem) clamp(1.25rem, 4vw, 3rem);
-  max-width: 42rem;
-}
-
-.band-alt {
-  max-width: none;
-  background: rgb(26 22 18 / 0.04);
-  border-block: 1px solid rgb(26 22 18 / 0.06);
-}
-
-.band-alt > * {
-  max-width: 42rem;
-}
-
-.band-proof {
-  background: color-mix(in srgb, var(--crate) 6%, var(--parchment));
-  border-block-color: color-mix(in srgb, var(--spine-gold) 35%, transparent);
-}
-
-.band-proof > h2,
-.band-proof > p,
-.band-proof > .band-more {
-  max-width: 42rem;
-}
-
-/* Wide enough for one curl+URL per line (~105ch at snippet font size). */
-.band-alt.band-proof > .snippet {
+.snippet {
   max-width: min(100%, 68rem);
 }
 
@@ -747,5 +720,177 @@ code {
   .btn {
     animation: none;
     transition: none;
+  }
+}
+
+/* v1 editorial system: warm paper, oversized catalog type, generous rhythm. */
+.hero {
+  max-width: 1440px;
+  margin: auto;
+  min-height: 720px;
+  padding-block: 5rem;
+}
+.hero .headline {
+  font-size: clamp(4rem, 7.8vw, 8rem);
+  line-height: 0.94;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+  margin-bottom: 1.75rem;
+}
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  margin: 0 0 1.25rem;
+  color: var(--action);
+}
+.hero-note,
+.image-caption {
+  font-size: 0.78rem;
+  margin-top: 1.25rem;
+  color: #66594b;
+}
+.image-caption {
+  text-align: right;
+}
+.principle-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--crate);
+  color: var(--parchment);
+  font-family: var(--font-catalog);
+  font-size: clamp(1.3rem, 3vw, 2rem);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.editorial-section,
+.ownership-section,
+.closing-section {
+  padding: clamp(3rem, 7vw, 7rem) max(1.25rem, calc((100vw - 1240px) / 2));
+}
+.section-heading {
+  max-width: 44rem;
+  margin-bottom: 3rem;
+}
+.section-heading h2,
+.ownership-section h2,
+.closing-section h2 {
+  font-family: var(--font-catalog);
+  font-size: clamp(2.7rem, 5vw, 4.7rem);
+  line-height: 1.04;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 0 0 1.5rem;
+}
+.feature-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3rem;
+}
+.feature-columns article {
+  border-top: 1px solid #b6a58d;
+  padding-top: 1.5rem;
+}
+.feature-columns h3 {
+  font-family: var(--font-catalog);
+  font-size: 2rem;
+  line-height: 1.1;
+  margin: 0 0 1rem;
+}
+.feature-columns p {
+  color: #5e5146;
+}
+.text-link {
+  display: inline-block;
+  margin-top: 2rem;
+  font-weight: 600;
+}
+.ownership-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  background: #e3d9c8;
+  border-block: 1px solid #cbbb9f;
+}
+.ownership-section > div {
+  min-width: 0;
+}
+.two-columns {
+  grid-template-columns: 1fr 1fr;
+}
+.install-section {
+  background: var(--crate);
+  color: var(--parchment);
+}
+.install-section .eyebrow {
+  color: var(--spine-gold);
+}
+.install-section > p {
+  max-width: 45rem;
+  color: #d1c5b5;
+  margin-block: 1.5rem;
+}
+.install-section .snippet {
+  margin-bottom: 2rem;
+}
+.faq-section {
+  max-width: none;
+}
+.faq-section details {
+  border-bottom: 1px solid #cbbb9f;
+  padding: 1.25rem 0;
+}
+.faq-section summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1.15rem;
+}
+.faq-section details p {
+  max-width: 48rem;
+  color: #5e5146;
+}
+.closing-section {
+  background: #e3d9c8;
+}
+.docs-index-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.docs-index-list a {
+  height: 100%;
+  padding: 1.25rem;
+}
+.md-doc blockquote {
+  margin-inline: 0;
+  padding: 1rem 1.25rem;
+  border-left: 3px solid var(--action);
+  background: #e9dfcf;
+}
+.md-doc blockquote p:last-child {
+  margin-bottom: 0;
+}
+@media (max-width: 700px) {
+  .hero {
+    min-height: auto;
+    padding-block: 3rem;
+  }
+  .feature-columns,
+  .ownership-section,
+  .docs-index-list {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+  .topbar-nav {
+    gap: 0.75rem;
+    font-size: 0.85rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
 }

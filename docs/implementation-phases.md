@@ -1,5 +1,7 @@
 # Implementation phases — v0.1
 
+> Historical planning reference. For current behavior, see the [product overview](product-overview.md); for the next release, see [v1.0.0 readiness](release-1.0.md).
+
 How Placard gets built, in phases. Each phase ends with something you can **run and check yourself**, plus the automated tests that must be green.
 
 Scope comes from [mvp.md](mvp.md). Stack and testing rules come from [tech-stack.md](tech-stack.md). Idea vs code snapshot: [current-state.md](current-state.md).

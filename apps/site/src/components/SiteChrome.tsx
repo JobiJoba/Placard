@@ -17,11 +17,11 @@ export function SiteChrome({ children }: { children: ReactNode }) {
           Placard
         </Link>
         <nav className="topbar-nav" aria-label="Primary">
-          <Link to="/docs/install" aria-current={onDocs ? "page" : undefined}>
+          <Link to="/docs" aria-current={onDocs ? "page" : undefined}>
             Docs
           </Link>
           <a href={GITHUB} rel="noreferrer" target="_blank">
-            GitHub
+            Source
           </a>
         </nav>
       </header>

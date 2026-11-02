@@ -1,176 +1,52 @@
-# Product overview
+# Meet Placard
 
-Shape of **Placard**: objects, modes, and flows. Binding v0.1 scope: [mvp.md](mvp.md). Progress vs idea: [current-state.md](current-state.md).
+Placard is a self-hosted library for the places you care about. Bring saved places
+from Google Takeout, add new discoveries, and keep your notes and photos beside
+each place. Browse a collection that belongs to you.
 
-Resolved choices: [decisions.md](decisions.md).  
-First-user priorities: [first-user.md](first-user.md).  
-Restaurant tools: [modules-restaurants.md](modules-restaurants.md).  
-Core vs modules: [architecture-modules.md](architecture-modules.md).  
-MCP: [mcp.md](mcp.md).  
-Deploy: [deployment.md](deployment.md).
+## From saved places to a useful library
 
-## Modes: single user vs household
+| Your task | In Placard |
+| --- | --- |
+| Bring an existing collection | Upload Takeout, choose what to keep, then review uncertain matches |
+| Save somewhere new | Drop a pin, or use Google search and map picking with an API key |
+| Find the right place | Browse Near me, City, or All; filter by type, tags, lists, status, and opening time |
+| Remember why it matters | Add notes, photos, custom fields, and want-to-go / been-there status |
+| Share at home | Invite members and selectively share places when household mode is enabled |
+| Make a decision | Install an optional Marketplace module such as a pick wheel |
+| Work with an agent | Connect an MCP client using a personal access token |
+| Take your data with you | Export your library as JSON, GeoJSON, and media |
 
-| Mode | Status | Who | What you see |
-| --- | --- | --- | --- |
-| **Solo chrome** (default) | **Shipped** | Multi-user accounts; each private library | Library, tags, lists, enrichment, **search**, dish photos, **MCP**, optional Marketplace modules (e.g. Pick). No voting chrome. |
-| **Household** (opt-in) | **Partial (shipped on `main` after v0.1.0)** | Multiple full members; **admin invites** + **admin household toggle** | Shared *and* **private** places; library ownership filters; claim-first share conflicts. Dinner **votes** still later. No guest/kid seats. |
+## Private libraries, optional household sharing
 
-Household unlocks via the admin toggle; it does not force every place to be shared.
+The first account is the administrator. Additional members join through invitations.
+Each member has a private library. An administrator can enable household mode;
+place owners then choose which places to share. Sharing does not make a place public.
 
-Privacy: never public on the internet. Visibility = private to a user, or household-shared when the admin toggle is on.
+Owners control core edits, sharing, and deletion. Household members can view shared
+places and contribute dish photos. Lists remain private. Guest voting and shared
+lists are not included.
 
----
+## Google is optional
 
-## Objects
+Manual pins, library organization, Takeout triage, and MCP work without a Google key.
+An instance key enables Google autocomplete, map picking, matching, and enrichment.
+Google services may charge for usage. Review [Google setup](google-apis.md) before
+committing a large import. Your server stores the library; enabled integrations
+still communicate with their providers.
 
-### Place
+## Built for your server
 
-Atomic unit: name, lat/lon, type, timestamps.
+Docker Compose runs the app, a background worker, and Postgres with PostGIS.
+Database, media, and module files persist in volumes. Use HTTPS for remote access.
+Placard is free software under AGPL-3.0.
 
-**First-class status:** at least **want to go** vs **been there** (visited).
+The browser app includes a home-screen manifest and icons. It needs a network
+connection; offline use and native mobile apps are not included. Modules are
+trusted code installed by an administrator, not sandboxed extensions.
 
-Also common: notes, phone, website, price, cuisine, hours, cover, Google Place ID.
+## Start with one place
 
-**Visibility** (household): `private` | `household` (or equivalent).
-
-### Tag / List
-
-Tags = attributes. Lists = playlists. Order optional.
-
-### Dish memory
-
-Photos + optional dish name/note/date on a restaurant. Independent of visit history.
-
-### Visit (optional)
-
-Separate record: “I went” / dates — **not** required to upload dishes.
-
-### Enrichment fact
-
-Provenance + `fetched_at`. User overrides win. Instance Google key by default; optional per-member key override. **Force refresh** action re-fetches; no silent mass cron.
-
-### Module session
-
-Pick / spin sessions, dinner votes, etc.
-
----
-
-## Views (routes today)
-
-| View | Route | Notes |
-| --- | --- | --- |
-| Library (cards / map) | `/` | Near me / City (autocomplete) / All |
-| Add place | `/add` | Autocomplete, Google map, OSM pin |
-| Place detail | `/places/:id` | Facts, media, cover, maps links |
-| Lists | `/lists` | |
-| Import | `/import`, `/import/:runId` | Triage + Needs review |
-| Recently deleted | `/deleted` | |
-| Module pages | `/m/<module.id>` | After Marketplace install |
-| Settings | `/settings/general\|mcp\|marketplace\|…` | Side-nav |
-| Cmd+K | palette | Search + module navigate actions |
-
-### Search / filter — **core product**
-
-Beat Google Maps Saved search. Structured filters first (text, category, open now/tonight, radius, tag, list, status). Later: optional **local LLM** → same filter AST ([first-user.md](first-user.md)). Agents already drive filters via MCP.
-
-### Modules
-
-Pick / spin wheels install from Marketplace (zip or GitHub) — e.g. sibling `placard-places-pick`. Dish photos live in core media. **Vote** waits on household (v0.2).
-
----
-
-## Primary user flows
-
-### A. Import (must)
-
-Takeout upload → **free triage** (keep/skip by list, date, area, text; no API calls) → import kept entries → match + enrich with instance key → confirm the few that didn't match. Anything can be removed afterwards (single, bulk, or undo a whole import). Details in [mvp.md](mvp.md).
-
-### A2. Manual add (must)
-
-"Add place" page:
-
-- **Autocomplete**: type a name, pick a Google Places suggestion, preview, save
-- **Map picker**: click a point of interest on the map, preview card, add
-- **No key**: drop a pin and fill in the fields by hand
-
-On save: status, tags, lists, note. If the place already exists, open the existing card.
-
-### B. Everyday search
-
-“Near me + open + pizza + restaurants” → cards → open detail or navigate out.
-
-### C. Pick / spin (module)
-
-Install a wheel module → pool (list/tag/category) → filters (open tonight, radius, optional **avoid recent**) → wheel → result.
-
-### D. Household vote (household only, in-app)
-
-Nominate → vote → winner. No guest links.
-
-### E. After a meal (flexible timing)
-
-Mark been-there / optional visit; upload dishes now or later.
-
-### F. Force refresh
-
-Admin/user triggers re-fetch of place details from Google (respect quotas).
-
----
-
-## Data sources (priority)
-
-1. User content  
-2. Google Takeout  
-3. Google Places BYOK (instance key; optional member override)  
-4. OSM optional  
-
-CRUD works without a Google key.
-
----
-
-## Clients
-
-- **PWA first** (installable, mobile-friendly)
-- Native apps later optional; not v1-critical
-- **No offline mode** for now
-- **One long-lived instance**
-
----
-
-## UX principles
-
-1. Card-first; near-me everyday default.  
-2. Search is a first-class job.  
-3. User beats source.  
-4. Solo-clean, household-capable; private + shared.  
-5. No public pages.  
-6. Export always.  
-7. Navigate elsewhere.  
-8. Modules + MCP share the core API.  
-
----
-
-## MVP sketch
-
-> Binding scope: [mvp.md](mvp.md). Progress: [current-state.md](current-state.md).
-
-**Shipped for v0.1 (code)** — accounts; library CRUD; cards/map; tags/lists; Takeout triage; search filters; enrichment + force refresh; custom fields; dish photos + Google covers; MCP; Compose; trusted Marketplace plugins (zip + GitHub).
-
-**Shipped after the v0.1 freeze (on `main`)** — admin household toggle (Settings → People); place share/unshare; claim-first conflicts; library Everyone / Mine / Shared (+ Shared by); profile name/avatar.
-
-**Phase 10 code shipped** — export JSON/GeoJSON zip; PWA basics; install guide; GHCR release workflow. Founder Coolify / phone DoD still open.
-
-**Soon after (v0.2+)**
-
-- Dinner vote module (household-only); shared lists
-- PWA share-target  
-- One-click backup  
-- Per-member Google key override  
-
-**Later**
-
-- Local LLM → filters  
-- Public/sandboxed module store  
-- Native apps if PWA isn’t enough  
-- Offline mode, public share pages — not planned  
+[Install Placard](install.md), create your administrator account, then follow the
+[user guide](user-guide.md). For the v1.0.0 release scope and remaining checks,
+see [release readiness](release-1.0.md).

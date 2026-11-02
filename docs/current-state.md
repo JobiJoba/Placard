@@ -1,6 +1,6 @@
 # Current state — idea vs shipped
 
-Where Placard stands relative to the original thesis. Binding scope remains [mvp.md](mvp.md); the build checklist is [implementation-phases.md](implementation-phases.md).
+Where Placard stands relative to the original thesis. The current release contract is [v1.0.0 readiness](release-1.0.md). The [original build checklist](implementation-phases.md) remains available as implementation history.
 
 ## The first idea (unchanged)
 

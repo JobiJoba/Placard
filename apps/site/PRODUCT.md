@@ -12,7 +12,7 @@ Primary visitor is a self-hoster evaluating whether to try Placard: already comf
 
 ## Product Purpose
 
-`apps/site` is Placard’s public marketing and install surface. It explains the product briefly, then gets the visitor to a running Compose instance. Success is a visitor who leaves with Placard up (`docker compose up`), not one who only browsed features or starred the repo.
+`apps/site` is Placard’s public marketing and install surface. It presents a product tour, household sharing, optional extensions, installation, and an FAQ, then gets the visitor to a running Compose instance. Success is a visitor who leaves with Placard up (`docker compose up`), not one who only browsed features or starred the repo.
 
 ## Positioning
 
@@ -20,7 +20,7 @@ Immich-adjacent for starred places: Compose-up from GHCR, data on your disk, pri
 
 ## Operating Context
 
-Vite + React marketing + docs site. Home (`/`) persuades and points to Install. Docs (`/docs`, `/docs/:slug`) render selected markdown from repo `docs/` with a left side nav and article content — Install, Google APIs, Deployment, MCP, modules, Takeout. `/install` redirects to `/docs/install`. Source of truth remains the markdown files in `docs/`; the site is the reading surface. Secondary outbound: GitHub repo and AGPL license.
+Vite + React marketing + docs site. Home (`/`) persuades and points to Install. Docs (`/docs`, `/docs/:slug`) render selected markdown from repo `docs/` with a left side nav and article content — Meet Placard, User guide, Install, Google APIs, Troubleshooting, Release readiness, Deployment, MCP, modules, Takeout. `/install` redirects to `/docs/install`. Source of truth remains the markdown files in `docs/`; the site is the reading surface. Secondary outbound: GitHub repo and AGPL license.
 
 ## Capabilities and Constraints
 
@@ -52,3 +52,7 @@ Vite + React marketing + docs site. Home (`/`) persuades and points to Install. 
 3. **Short path on-site, depth in docs** — Keep Install scannable; link out for Coolify, APIs, backup, and source builds.
 4. **Honest claims only** — No invented social proof; position with Immich-class self-hosting and real capabilities (library, modules, MCP).
 5. **Self-hoster-true** — Write for people who already run containers, not for onboarding tourists to Docker.
+
+## v1.0.0 editorial direction
+
+Warm paper, dark ink, rust accents, and large catalog typography retain the app’s collection identity. Lead with the value of remembering and rediscovering places; use the real library screenshot as product evidence. The site describes v1.0.0 preparation without claiming an unverified release. Keep the release-readiness page authoritative for remaining gates.

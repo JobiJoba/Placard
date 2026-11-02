@@ -1,6 +1,6 @@
 # Tech stack
 
-The stack choices for v0.1 ([mvp.md](mvp.md)). Change them here first, then in code.
+The implemented stack used for v1.0.0 preparation. Keep this reference aligned with code; see [release readiness](release-1.0.md) for the product contract.
 
 ## Summary
 
