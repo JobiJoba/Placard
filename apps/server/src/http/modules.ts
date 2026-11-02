@@ -6,6 +6,7 @@ import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/http"
 import { HttpApiBuilder } from "effect/http-api"
 import { Auth } from "../auth/auth.ts"
 import { AppConfig } from "../config.ts"
+import { createModuleHostFetch } from "../modules/host-fetch.ts"
 import { ModuleRuntime, moduleDataDir } from "../modules/loader.ts"
 import { Modules } from "../modules/modules.ts"
 
@@ -123,7 +124,7 @@ export const ModuleFileRoutesLive = HttpRouter.use(
     const auth = yield* Auth
     const modules = yield* Modules
     const runtime = yield* ModuleRuntime
-    const { modulesDir } = yield* AppConfig
+    const { modulesDir, publicUrl, port } = yield* AppConfig
 
     yield* router.add(
       "GET",
@@ -206,19 +207,7 @@ export const ModuleFileRoutesLive = HttpRouter.use(
                 rootDir,
                 dataDir: moduleDataDir(rootDir, id),
                 ownerId: user.value.id,
-                hostFetch: (path, init) => {
-                  const url = new URL(path, webRequest.url)
-                  const nextHeaders = new Headers(init?.headers)
-                  const cookie = webRequest.headers.get("cookie")
-                  if (cookie) nextHeaders.set("cookie", cookie)
-                  if (!nextHeaders.has("origin")) {
-                    nextHeaders.set("origin", new URL(webRequest.url).origin)
-                  }
-                  if (init?.body && !nextHeaders.has("content-type")) {
-                    nextHeaders.set("content-type", "application/json")
-                  }
-                  return hostFetch(url, { ...init, headers: nextHeaders })
-                },
+                hostFetch: createModuleHostFetch(webRequest, publicUrl, port, hostFetch),
               }),
             ),
           catch: () => null,

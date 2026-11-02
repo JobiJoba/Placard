@@ -19,6 +19,14 @@ and this project aims to follow [Semantic Versioning](https://semver.org/).
 
 - Bundled Decide module (`restaurants.decide`) — use Marketplace Pick (sibling `placard-places-pick`) or another wheel instead
 
+## [0.2.7] — 2026-11-02
+
+### Fixed
+
+- Plugin callbacks use the app's internal listener instead of the public host port or proxy, fixing menu detail requests when Docker publishes a different port (such as 4000)
+
+[0.2.7]: https://github.com/JobiJoba/Placard/releases/tag/v0.2.7
+
 ## [0.2.6] — 2026-11-02
 
 ### Added
