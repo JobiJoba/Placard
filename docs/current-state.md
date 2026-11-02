@@ -2,6 +2,12 @@
 
 Where Placard stands relative to the original thesis. The current release contract is [v1.0.0 readiness](release-1.0.md). The [original build checklist](implementation-phases.md) remains available as implementation history.
 
+**v1 at a glance (2026-11-02):** planned features are implemented and local
+automated checks have passed. Four manual checks have no recorded pass: fresh
+Coolify install, physical phone, real Takeout collection, and recovery with real
+media. Publishing v1.0.0 follows those checks. See the
+[remaining-work checklist](release-1.0.md#still-to-do-before-publishing).
+
 ## The first idea (unchanged)
 
 From [vision.md](vision.md):
@@ -62,16 +68,22 @@ These are real product surface, not side experiments:
 
 mvp.md originally parked “third-party modules / SDK / manifest” under Later — that work is **in tree now** as *trusted admin plugins* (no sandbox, no public store). Scope freeze was updated to match. Dinner-spin itself is a **module you install**, not a bundled first-party package.
 
-## Phase 10 (code) vs founder release gate
+## Manual release checks
 
 **In tree:** per-user export zip; PWA manifest/icons; [install.md](install.md); GHCR release workflow + changelog.
 
-**Still founder / ops:**
+**No pass recorded yet — required before v1:**
 
 - Coolify install following only the guide
-- Phone home-screen PWA install
-- Backup → wipe → restore with photos
-- Real Takeout of ~500 places on Compose if not already done
+- Physical-phone home-screen install and core workflows
+- Backup and restore of a representative instance with its actual media, into separate recovery volumes
+- Real Takeout of ~500 places on Compose
+
+Record each result here with its date, environment (version, deployment or
+device/browser), outcome, and unresolved problems. The automated recovery pass
+below does not complete the manual recovery check.
+
+## Validation evidence
 
 **Automated verification (2026-11-02):** typecheck, 112 unit tests, 76 integration
 tests, 13 browser tests, published-doc links, and web/site production builds passed
