@@ -14,6 +14,27 @@ Changing a database password in `.env` does not change an existing Postgres role
 Follow the password guidance in [installation](install.md). Do not delete volumes
 to solve a startup problem unless you intend to discard their contents.
 
+## Image pull fails with `no matching manifest for linux/arm64/v8`
+
+The server uses ARM64, but the selected image tag has no ARM64 variant. This happens
+before the app starts; changing environment variables will not resolve it.
+
+Release and nightly publishing target both `linux/amd64` and `linux/arm64`. Older
+images such as `ghcr.io/jobijoba/placard:0.1.1` may only contain AMD64. The workflow
+change does not update images already published: publish a new release containing
+the fix, then select that version in Coolify and redeploy. Alternatively, testers
+can set `PLACARD_IMAGE=ghcr.io/jobijoba/placard:nightly` after a successful nightly
+publish containing the fix, provided their Compose configuration uses that variable.
+
+Inspect a tag before deploying it:
+
+```sh
+docker buildx imagetools inspect ghcr.io/jobijoba/placard:0.1.1
+```
+
+Look for `linux/arm64` in its platform list. Setting `platform: linux/amd64` requires
+emulation on an ARM64 server; it does not add ARM64 support to the image.
+
 ## Sign-in fails behind a proxy
 
 Set `PUBLIC_URL` to the exact origin you open, including the scheme and any nonstandard
