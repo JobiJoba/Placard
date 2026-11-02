@@ -8,6 +8,7 @@ import { NodeRuntime } from "@effect/platform-node"
 import { Effect, Layer, Schedule } from "effect"
 import { FetchHttpClient } from "effect/http"
 import { AccountsLayer } from "./accounts/layer.ts"
+import { Budget } from "./budget/budget.ts"
 import { loadConfigOrExit } from "./config.ts"
 import { GoogleFixtureClient } from "./google/fixture-client.ts"
 import { GooglePlaces } from "./google/places.ts"
@@ -46,6 +47,7 @@ const WorkerServices = Import.layer.pipe(
   Layer.provideMerge(Media.layer),
   Layer.provideMerge(Lists.layer),
   Layer.provideMerge(GooglePlaces.layer),
+  Layer.provideMerge(Budget.layer),
   Layer.provideMerge(Places.layer),
   Layer.provideMerge(Tags.layer),
   Layer.provideMerge(AccountsLayer),

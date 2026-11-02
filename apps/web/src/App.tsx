@@ -12,6 +12,7 @@ import { ListsPage } from "@/pages/lists-page"
 import { PlacePage } from "@/pages/place-page"
 import {
   RequireSettingsAdmin,
+  SettingsBudgetPage,
   SettingsGeneralPage,
   SettingsIntegrationsPage,
   SettingsLayout,
@@ -62,6 +63,14 @@ function AuthenticatedRoutes() {
             element={
               <RequireSettingsAdmin>
                 <SettingsMarketplacePage />
+              </RequireSettingsAdmin>
+            }
+          />
+          <Route
+            path="budget"
+            element={
+              <RequireSettingsAdmin>
+                <SettingsBudgetPage />
               </RequireSettingsAdmin>
             }
           />

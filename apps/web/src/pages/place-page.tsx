@@ -4,6 +4,7 @@ import { ArrowLeft, ChevronDown, ExternalLink, MapPinned, RefreshCw } from "luci
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router"
 import { ErrorAlert } from "@/components/error-alert"
+import { GoogleCostEstimate } from "@/components/google-cost-estimate"
 import { EditPlace } from "@/components/place/edit-place"
 import { PlaceFactsSection } from "@/components/place/place-facts"
 import { PlaceHero } from "@/components/place/place-hero"
@@ -307,6 +308,9 @@ export function PlacePage() {
               {isOwner && place.googlePlaceId ? (
                 <>
                   <DropdownMenuSeparator />
+                  <div className="max-w-72 px-2 py-2">
+                    <GoogleCostEstimate action="refresh" count={1} compact />
+                  </div>
                   <DropdownMenuItem
                     disabled={refreshing}
                     onSelect={() => {

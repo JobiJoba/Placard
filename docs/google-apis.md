@@ -37,7 +37,7 @@ You do **not** need the legacy Places API, Geocoding API, or Directions API for 
 
 1. Open [Google Cloud Console](https://console.cloud.google.com/) and sign in with the Google account that will own billing.
 2. Create a project (or pick an existing one) — e.g. `placard-home`.
-3. Link a **billing account**. Maps Platform requires billing even when you stay inside the monthly free credit. Set a budget alert.
+3. Link a **billing account**. Maps Platform requires billing even when you stay inside the monthly free allowances. Set a budget alert.
 4. Enable **Places API (New)** and **Maps JavaScript API** (links above).
 5. **APIs & Services → Credentials → Create credentials → API key**.
 6. Restrict the key (recommended before any public deploy).
@@ -77,6 +77,16 @@ If Autocomplete works but the map is blank, Maps JavaScript is missing or blocke
 
 ## Cost expectations
 
-Personal / household use usually stays inside Google’s monthly Maps Platform credit. Large Takeout commits and mass “refresh all” enrichment are what burn quota — triage Takeout before import, and prefer per-place refresh.
+Google provides monthly free usage **per SKU**, shared across projects on a billing account. Place Details, autocomplete sessions, photos, text searches and map loads have different allowances. There is no single shared monthly Maps credit.
+
+**Settings → Usage & budget** (admin) shows instance-wide local estimates, progress toward each free allowance, request sources, and an optional monthly budget in USD. Costs also appear before imports and bulk refreshes. The standard global pay-as-you-go price catalog is dated in the page; subscriptions, volume discounts, negotiated rates, taxes and currency conversion are not included.
+
+Tracking starts when the budget migration is applied. It cannot see earlier requests or usage by other apps, projects or instances. Changing the key does not reset the ledger. Free allowances are excluded from cost estimates by default; enable “Apply the full monthly free allowances” only if they are available to this instance. The allowance bars always assume no outside usage. Month boundaries use US Pacific time.
+
+Enable “Pause requests” to prevent new Placard requests whose estimated cost would exceed the limit. A zero-dollar limit allows only requests estimated to be free. The web server and worker share the same ledger and serialize budget checks. Cached details do not add usage. Attempts with an unknown billing outcome remain counted conservatively; each retry is another attempt. Autocomplete requests are initially counted individually, then reclassified as free after a successful eligible session completion. Map loads are reserved before mounting the map, so interrupted loads may overcount.
+
+The pause applies only to requests made through Placard. Imports may finish with manually saved, needs-review places when Google requests are blocked; refreshes can finish partially. Increasing the budget permits new requests; failed refresh jobs are not automatically resumed. Google Cloud budget alerts are informational, not a hard spending cap. Use Google Cloud quotas and key restrictions as additional controls, and check the Google billing console for reported costs.
+
+Large Takeout commits and mass refreshes consume allowances quickly. Triage Takeout before import, and prefer per-place refresh.
 
 Next: [install.md](install.md) · [MCP](mcp.md)

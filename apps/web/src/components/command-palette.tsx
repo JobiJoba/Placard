@@ -412,6 +412,12 @@ export function CommandPalette({
           run: () => go("/settings/integrations"),
         },
         {
+          id: "settings:budget",
+          label: "Settings · Usage & budget",
+          keywords: "google costs spending quota allowance billing admin",
+          run: () => go("/settings/budget"),
+        },
+        {
           id: "settings:people",
           label: "Settings · People",
           keywords: "invites users admin",

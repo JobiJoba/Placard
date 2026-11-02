@@ -23,6 +23,7 @@ import {
   UserNotFound,
   UserSummary,
 } from "./accounts.ts"
+import { BudgetSettings, BudgetView, CostEstimate, CostEstimateInput } from "./budget.ts"
 import {
   CustomFieldCreate,
   CustomFieldInvalid,
@@ -153,6 +154,8 @@ export class MeApi extends HttpApiGroup.make("me")
 export class AdminApi extends HttpApiGroup.make("admin")
   .add(
     HttpApiEndpoint.get("settings", "/settings", { success: InstanceSettingsView }),
+    HttpApiEndpoint.get("budget", "/budget", { success: BudgetView }),
+    HttpApiEndpoint.put("setBudget", "/budget", { payload: BudgetSettings, success: BudgetView }),
     HttpApiEndpoint.put("setGoogleApiKey", "/settings/google-api-key", {
       payload: Schema.Struct({ apiKey: Schema.Trim.pipe(Schema.check(Schema.isMinLength(1))) }),
       success: InstanceSettingsView,
@@ -361,6 +364,17 @@ export class ListsApi extends HttpApiGroup.make("lists")
 export class GoogleApi extends HttpApiGroup.make("google")
   .add(
     HttpApiEndpoint.get("config", "/config", { success: GoogleConfig }),
+    HttpApiEndpoint.post("estimate", "/estimate", {
+      payload: CostEstimateInput,
+      success: CostEstimate,
+    }),
+    HttpApiEndpoint.post("reserveMap", "/map-load", {
+      payload: Schema.Struct({
+        id: Schema.String.pipe(Schema.check(Schema.isPattern(/^[0-9a-f]{32}$/))),
+      }),
+      success: Schema.Struct({ id: Schema.String }),
+      error: GooglePlacesFailed,
+    }),
     HttpApiEndpoint.post("autocomplete", "/autocomplete", {
       payload: AutocompleteInput,
       success: Schema.Array(PlaceSuggestion),

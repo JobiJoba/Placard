@@ -1,5 +1,6 @@
 import { Effect } from "effect"
 import type PgBoss from "pg-boss"
+import { UsageSource } from "../budget/budget.ts"
 import { Enrichment } from "../places/enrichment.ts"
 import { ENRICH_PLACE, type EnrichPlaceJob } from "./names.ts"
 
@@ -27,7 +28,9 @@ export const registerEnrichPlaceWorker = (boss: PgBoss, run: Run) =>
             await run(
               Effect.gen(function* () {
                 const enrichment = yield* Enrichment
-                yield* enrichment.enrichPlace(ownerId, placeId, { force: true })
+                yield* enrichment
+                  .enrichPlace(ownerId, placeId, { force: true })
+                  .pipe(Effect.provideService(UsageSource, "Refreshes"))
               }),
             )
             if (runId) {

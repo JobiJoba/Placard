@@ -5,12 +5,13 @@ import {
   type MapMouseEvent,
   useMap,
 } from "@vis.gl/react-google-maps"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { MapLocateBar } from "@/components/add/map-locate-bar"
 import { ErrorAlert } from "@/components/error-alert"
+import { GoogleCostEstimate } from "@/components/google-cost-estimate"
 import { api, errorMessage } from "@/lib/api"
 import { type MapStart, useMapStart } from "@/lib/map-start"
-import { GooglePreviewCard } from "./google-preview"
+import { GooglePreviewCard, newSessionToken } from "./google-preview"
 
 function ApplyStart({ start }: { readonly start: MapStart }) {
   const map = useMap()
@@ -24,10 +25,28 @@ function ApplyStart({ start }: { readonly start: MapStart }) {
 
 /** Tap a point of interest on Google's map to preview and save it. */
 export default function GoogleMapPicker({ apiKey }: { readonly apiKey: string }) {
+  const [allowed, setAllowed] = useState(false)
+  const reservation = useRef<Promise<unknown> | null>(null)
   const { start, locating, message, locate, commitStart } = useMapStart()
   const [preview, setPreview] = useState<PlacePreview | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [emptyClickHint, setEmptyClickHint] = useState(false)
+
+  useEffect(() => {
+    let stale = false
+    reservation.current ??= api((c) => c.google.reserveMap({ payload: { id: newSessionToken() } }))
+    reservation.current.then(
+      () => {
+        if (!stale) setAllowed(true)
+      },
+      (cause) => {
+        if (!stale) setError(errorMessage(cause))
+      },
+    )
+    return () => {
+      stale = true
+    }
+  }, [])
 
   const onClick = (event: MapMouseEvent) => {
     const googlePlaceId = event.detail.placeId
@@ -54,22 +73,26 @@ export default function GoogleMapPicker({ apiKey }: { readonly apiKey: string })
       <p className="text-sm text-muted-foreground">
         Zoom in and tap a Google place (restaurant, park, etc.) — empty map taps won’t work.
       </p>
+      <GoogleCostEstimate action="map" count={1} />
       <MapLocateBar locating={locating} message={message} onLocate={locate} />
-      <APIProvider apiKey={apiKey}>
-        <GoogleMap
-          className="h-[min(50vh,360px)] min-h-[240px] overflow-hidden rounded-md ring-1 ring-foreground/10"
-          defaultCenter={start.center}
-          defaultZoom={start.zoom}
-          gestureHandling="cooperative"
-          clickableIcons
-          disableDefaultUI
-          zoomControl
-          onClick={onClick}
-          aria-label="Google map for picking a place"
-        >
-          <ApplyStart start={start} />
-        </GoogleMap>
-      </APIProvider>
+      {!allowed && !error && <p className="text-sm">Checking map budget…</p>}
+      {allowed && (
+        <APIProvider apiKey={apiKey}>
+          <GoogleMap
+            className="h-[min(50vh,360px)] min-h-[240px] overflow-hidden rounded-md ring-1 ring-foreground/10"
+            defaultCenter={start.center}
+            defaultZoom={start.zoom}
+            gestureHandling="cooperative"
+            clickableIcons
+            disableDefaultUI
+            zoomControl
+            onClick={onClick}
+            aria-label="Google map for picking a place"
+          >
+            <ApplyStart start={start} />
+          </GoogleMap>
+        </APIProvider>
+      )}
       {emptyClickHint && (
         <p className="text-sm font-medium text-[var(--crate)]" role="status">
           That wasn’t a Google place. Zoom closer and tap a labeled spot.

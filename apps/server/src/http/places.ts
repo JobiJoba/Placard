@@ -1,6 +1,7 @@
 import { Api, CurrentUser } from "@placard/domain"
 import { Effect, Option, Redacted } from "effect"
 import { HttpApiBuilder } from "effect/http-api"
+import { Budget, UsageSource } from "../budget/budget.ts"
 import { GooglePlaces } from "../google/places.ts"
 import { Enrichment } from "../places/enrichment.ts"
 import { Lists } from "../places/lists.ts"
@@ -61,10 +62,12 @@ export const PlacesApiLive = HttpApiBuilder.group(
       .handle("refresh", ({ params, payload }) =>
         Effect.gen(function* () {
           const me = yield* CurrentUser
-          yield* enrichment.enrichPlace(me.id, params.id, {
-            force: true,
-            mode: payload.mode ?? "merge",
-          })
+          yield* enrichment
+            .enrichPlace(me.id, params.id, {
+              force: true,
+              mode: payload.mode ?? "merge",
+            })
+            .pipe(Effect.provideService(UsageSource, "Refreshes"))
           return yield* places.get(me.id, params.id, me.householdEnabled)
         }),
       )
@@ -141,6 +144,7 @@ export const GoogleApiLive = HttpApiBuilder.group(
   Effect.fn(function* (handlers) {
     const places = yield* Places
     const google = yield* GooglePlaces
+    const budget = yield* Budget
     const settings = yield* InstanceSettings
     return handlers
       .handle("config", () =>
@@ -149,6 +153,14 @@ export const GoogleApiLive = HttpApiBuilder.group(
             mapsApiKey: Option.getOrNull(Option.map(key, Redacted.value)),
           })),
         ),
+      )
+      .handle("estimate", ({ payload }) => budget.estimate(payload))
+      .handle("reserveMap", ({ payload }) =>
+        Effect.gen(function* () {
+          const me = yield* CurrentUser
+          const id = yield* budget.reserve("maps", null, `${me.id}:${payload.id}`)
+          return { id }
+        }),
       )
       .handle("autocomplete", ({ payload }) => google.autocomplete(payload))
       .handle("preview", ({ params, query }) =>

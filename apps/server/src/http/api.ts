@@ -2,6 +2,7 @@ import { Api } from "@placard/domain"
 import { Layer } from "effect"
 import { HttpApiBuilder } from "effect/http-api"
 import { AccountsLayer } from "../accounts/layer.ts"
+import { Budget } from "../budget/budget.ts"
 import { LibraryExport } from "../export/export.ts"
 import { GooglePlaces } from "../google/places.ts"
 import { Import } from "../import/import.ts"
@@ -58,6 +59,7 @@ export const ServicesLayer = Import.layer.pipe(
   Layer.provideMerge(Media.layer),
   Layer.provideMerge(Lists.layer),
   Layer.provideMerge(GooglePlaces.layer),
+  Layer.provideMerge(Budget.layer),
   Layer.provideMerge(Places.layer),
   Layer.provideMerge(Tags.layer),
   Layer.provideMerge(Tokens.layer),

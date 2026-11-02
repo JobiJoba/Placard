@@ -2,6 +2,7 @@ import type { PlacePreview, PlaceSuggestion } from "@placard/domain"
 import { Search } from "lucide-react"
 import { useEffect, useId, useState } from "react"
 import { ErrorAlert } from "@/components/error-alert"
+import { GoogleCostEstimate } from "@/components/google-cost-estimate"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { api, errorMessage } from "@/lib/api"
@@ -12,7 +13,8 @@ const DEBOUNCE_MS = 250
 
 export function SearchAdd() {
   const inputId = useId()
-  const [sessionToken] = useState(newSessionToken)
+  const [sessionToken, setSessionToken] = useState(newSessionToken)
+  const [sessionEnded, setSessionEnded] = useState(false)
   const [query, setQuery] = useState("")
   const [suggestions, setSuggestions] = useState<ReadonlyArray<PlaceSuggestion>>([])
   const [preview, setPreview] = useState<PlacePreview | null>(null)
@@ -21,7 +23,7 @@ export function SearchAdd() {
 
   useEffect(() => {
     const input = query.trim()
-    if (input.length < MIN_INPUT) {
+    if (sessionEnded || input.length < MIN_INPUT) {
       setSuggestions([])
       setLoading(false)
       return
@@ -47,11 +49,12 @@ export function SearchAdd() {
       stale = true
       clearTimeout(timer)
     }
-  }, [query, sessionToken])
+  }, [query, sessionToken, sessionEnded])
 
   const choose = (suggestion: PlaceSuggestion) => {
     setSuggestions([])
     setPreview(null)
+    setSessionEnded(true)
     api((c) =>
       c.google.preview({
         params: { googlePlaceId: suggestion.googlePlaceId },
@@ -80,6 +83,10 @@ export function SearchAdd() {
           placeholder="Search for a restaurant, park, museum…"
           value={query}
           onChange={(event) => {
+            if (sessionEnded) {
+              setSessionToken(newSessionToken())
+              setSessionEnded(false)
+            }
             setQuery(event.target.value)
             setPreview(null)
           }}
@@ -87,6 +94,7 @@ export function SearchAdd() {
           autoFocus
         />
       </div>
+      <GoogleCostEstimate action="add" count={1} />
       <ErrorAlert message={error} />
       {loading && (
         <div className="flex flex-col gap-2" aria-live="polite" aria-busy="true">
@@ -113,9 +121,7 @@ export function SearchAdd() {
           ))}
         </ul>
       )}
-      {preview && (
-        <GooglePreviewCard preview={preview} source="autocomplete" sessionToken={sessionToken} />
-      )}
+      {preview && <GooglePreviewCard preview={preview} source="autocomplete" sessionToken={null} />}
     </div>
   )
 }

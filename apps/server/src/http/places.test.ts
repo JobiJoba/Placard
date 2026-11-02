@@ -3,6 +3,7 @@ import { AdminAuthentication, Api, Authentication, CurrentUser, type Place } fro
 import { DateTime, Effect, Layer, Option } from "effect"
 import { HttpServer } from "effect/http"
 import { HttpApiTest } from "effect/http-api"
+import { StubBudget } from "../../test/layers/budget.ts"
 import { GooglePlaces } from "../google/places.ts"
 import { Enrichment } from "../places/enrichment.ts"
 import { Places } from "../places/places.ts"
@@ -155,7 +156,7 @@ const makeClient = HttpApiTest.groups(Api, ["places", "google"])
 
 layer(
   Layer.mergeAll(PlacesApiLive, GoogleApiLive).pipe(
-    Layer.provide([OneSavedPlace, RecordingGoogle, Settings, StubEnrichment]),
+    Layer.provide([OneSavedPlace, RecordingGoogle, Settings, StubEnrichment, StubBudget]),
     Layer.provideMerge(SignedIn),
   ),
 )("duplicate detection", (it) => {

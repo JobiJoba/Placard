@@ -21,6 +21,7 @@ const staticNavItems: ReadonlyArray<NavItem> = [
     activePrefixes: ["/settings/modules"],
   },
   { to: "/settings/integrations", label: "Integrations", adminOnly: true },
+  { to: "/settings/budget", label: "Usage & budget", adminOnly: true },
   { to: "/settings/people", label: "People", adminOnly: true },
 ]
 

@@ -7,6 +7,7 @@ import { Invites } from "../accounts/invites.ts"
 import { SignupGate } from "../accounts/signup.ts"
 import { type MeBase, Users } from "../accounts/users.ts"
 import { Auth } from "../auth/auth.ts"
+import { Budget } from "../budget/budget.ts"
 import { AppConfig } from "../config.ts"
 import { JobQueue } from "../jobs/queue.ts"
 import { Enrichment } from "../places/enrichment.ts"
@@ -85,9 +86,12 @@ export const AdminApiLive = HttpApiBuilder.group(
     const settings = yield* InstanceSettings
     const enrichment = yield* Enrichment
     const jobs = yield* JobQueue
+    const budget = yield* Budget
     const { publicUrl } = yield* AppConfig
     return handlers
       .handle("settings", () => settings.view)
+      .handle("budget", () => budget.view)
+      .handle("setBudget", ({ payload }) => budget.update(payload))
       .handle("setGoogleApiKey", ({ payload }) => settings.setGoogleApiKey(payload.apiKey))
       .handle("clearGoogleApiKey", () => settings.clearGoogleApiKey)
       .handle("setModuleUpdateCheckHours", ({ payload }) =>

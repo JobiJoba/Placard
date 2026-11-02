@@ -17,6 +17,7 @@ import {
 import { Context, DateTime, Effect, Layer, Option } from "effect"
 import { SqlClient } from "effect/sql"
 import { v7 as uuidv7 } from "uuid"
+import { UsageSource } from "../budget/budget.ts"
 import { GooglePlaces } from "../google/places.ts"
 import { JobQueue } from "../jobs/queue.ts"
 import { Enrichment } from "../places/enrichment.ts"
@@ -72,7 +73,7 @@ const toRun = (row: RunRow): ImportRun => ({
   status: row.status,
   sourceFingerprint: row.source_fingerprint,
   counts: row.counts,
-  expectedApiCalls: row.counts.kept,
+  expectedApiCalls: row.counts.kept * 3,
   createdAt: DateTime.fromDateUnsafe(row.created_at),
   committedAt: row.committed_at ? DateTime.fromDateUnsafe(row.committed_at) : null,
   undoneAt: row.undone_at ? DateTime.fromDateUnsafe(row.undone_at) : null,
@@ -460,7 +461,6 @@ export class Import extends Context.Service<
                   yield* enrichment
                     .applyDetails(ownerId, placeId, matched.details)
                     .pipe(Effect.orDie)
-                  yield* jobs.enqueueEnrichPlace({ placeId, ownerId })
                 }
               }
               yield* sql`
@@ -610,7 +610,7 @@ export class Import extends Context.Service<
           yield* sql`
             update import_runs set status = 'committing' where id = ${runId}`.pipe(Effect.orDie)
           yield* jobs.enqueueImportCommit({ runId })
-          yield* executeCommit(runId)
+          yield* executeCommit(runId).pipe(Effect.provideService(UsageSource, "Imports"))
           return toRun(yield* loadRun(ownerId, runId))
         }),
 
@@ -650,7 +650,8 @@ export class Import extends Context.Service<
             }
           }),
 
-        runCommitJob: executeCommit,
+        runCommitJob: (runId) =>
+          executeCommit(runId).pipe(Effect.provideService(UsageSource, "Imports")),
 
         dismissReview: Effect.fn("Import.dismissReview")(function* (ownerId, runId, entryId) {
           const run = yield* loadRun(ownerId, runId)
@@ -745,6 +746,7 @@ export class Import extends Context.Service<
               })
             }
 
+            const details = yield* google.details(input.googlePlaceId, input.sessionToken)
             if (entry.place_id) {
               yield* sql`
               update places set deleted_at = now()
@@ -752,7 +754,6 @@ export class Import extends Context.Service<
                 and import_run_id = ${runId} and deleted_at is null`.pipe(Effect.orDie)
             }
 
-            const details = yield* google.details(input.googlePlaceId, input.sessionToken)
             const existing = yield* places.findByGooglePlaceId(ownerId, details.googlePlaceId)
             let placeId: string
             if (Option.isSome(existing)) {
@@ -764,7 +765,6 @@ export class Import extends Context.Service<
               placeId = saved.place.id
               if (saved.created) {
                 yield* enrichment.applyDetails(ownerId, placeId, details).pipe(Effect.orDie)
-                yield* jobs.enqueueEnrichPlace({ placeId, ownerId })
               }
             }
 

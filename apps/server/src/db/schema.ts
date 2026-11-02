@@ -543,3 +543,36 @@ export const media = pgTable(
       .where(sql`${table.origin} = 'google'`),
   ],
 )
+
+/** Local cost estimates; never store API keys or search text in the usage ledger. */
+export const googleBudget = pgTable(
+  "google_budget",
+  {
+    id: integer("id").primaryKey().default(1),
+    monthlyLimitCents: integer("monthly_limit_cents"),
+    pauseAtLimit: boolean("pause_at_limit").notNull().default(false),
+    useFreeAllowance: boolean("use_free_allowance").notNull().default(false),
+    trackingSince: timestamp("tracking_since", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("google_budget_single_row", sql`${table.id} = 1`),
+    check("google_budget_nonnegative", sql`${table.monthlyLimitCents} >= 0`),
+  ],
+)
+
+export const googleUsage = pgTable(
+  "google_usage",
+  {
+    id: text("id").primaryKey(),
+    month: text("month").notNull(),
+    sku: text("sku").notNull(),
+    source: text("source").notNull(),
+    sessionHash: text("session_hash"),
+    succeeded: boolean("succeeded").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("google_usage_month_idx").on(table.month),
+    index("google_usage_session_idx").on(table.sessionHash),
+  ],
+)

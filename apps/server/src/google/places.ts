@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto"
+import type { UsageSku } from "@placard/domain"
 import {
   type AutocompleteInput,
   GoogleKeyMissing,
@@ -9,6 +11,7 @@ import {
 } from "@placard/domain"
 import { Clock, Context, Effect, Layer, Option, Redacted, Schema } from "effect"
 import { HttpClient, HttpClientRequest, type HttpClientResponse } from "effect/http"
+import { Budget } from "../budget/budget.ts"
 import { InstanceSettings } from "../settings/instance-settings.ts"
 import { categoryFromGoogleTypes } from "./category.ts"
 
@@ -190,6 +193,7 @@ export class GooglePlaces extends Context.Service<
     Effect.gen(function* () {
       const client = yield* HttpClient.HttpClient
       const settings = yield* InstanceSettings
+      const budget = yield* Budget
       const cache = new Map<string, { readonly details: GooglePlaceDetails; readonly at: number }>()
 
       const apiKey = settings.googleApiKey.pipe(
@@ -209,9 +213,17 @@ export class GooglePlaces extends Context.Service<
       const send = <S extends Schema.Top & { readonly DecodingServices: never }>(
         request: HttpClientRequest.HttpClientRequest,
         schema: S,
+        sku: UsageSku,
+        sessionToken: string | null = null,
       ) =>
         Effect.gen(function* () {
           const key = yield* apiKey
+          const sessionHash = sessionToken
+            ? createHash("sha256")
+                .update(`${Redacted.value(key)}:${sessionToken}`)
+                .digest("hex")
+            : null
+          const eventId = yield* budget.reserve(sku, sessionHash)
           const response = yield* client
             .execute(HttpClientRequest.setHeader(request, "X-Goog-Api-Key", Redacted.value(key)))
             .pipe(
@@ -224,13 +236,15 @@ export class GooglePlaces extends Context.Service<
           if (response.status < 200 || response.status >= 300) {
             return yield* failureFrom(response)
           }
-          return yield* response.json.pipe(
+          const result = yield* response.json.pipe(
             Effect.flatMap(Schema.decodeUnknownEffect(schema)),
             Effect.mapError(
               () =>
                 new GooglePlacesFailed({ message: "Google sent a response Placard can't read." }),
             ),
           )
+          yield* budget.complete(eventId)
+          return result
         })
 
       return {
@@ -258,13 +272,19 @@ export class GooglePlaces extends Context.Service<
               }),
             }),
           )
-          return toSuggestions(yield* send(request, GoogleAutocompleteResponse))
+          return toSuggestions(
+            yield* send(request, GoogleAutocompleteResponse, "autocomplete", sessionToken),
+          )
         }),
 
         details: Effect.fn("GooglePlaces.details")(
           function* (googlePlaceId, sessionToken, options) {
             const now = yield* Clock.currentTimeMillis
-            const cached = cache.get(googlePlaceId)
+            const key = yield* apiKey
+            const cacheKey = createHash("sha256")
+              .update(`${Redacted.value(key)}:${googlePlaceId}`)
+              .digest("hex")
+            const cached = cache.get(cacheKey)
             if (!options?.force && cached && now - cached.at < DETAILS_CACHE_TTL_MS)
               return cached.details
 
@@ -274,10 +294,17 @@ export class GooglePlaces extends Context.Service<
               HttpClientRequest.setHeader("X-Goog-FieldMask", DETAILS_FIELD_MASK),
               sessionToken ? HttpClientRequest.setUrlParam("sessionToken", sessionToken) : (r) => r,
             )
-            const details = toDetails(yield* send(request, GooglePlaceResponse))
+            const details = toDetails(
+              yield* send(
+                request,
+                GooglePlaceResponse,
+                sessionToken ? "detailsSession" : "details",
+                sessionToken,
+              ),
+            )
 
             if (cache.size >= DETAILS_CACHE_MAX) cache.clear()
-            cache.set(googlePlaceId, { details, at: now })
+            cache.set(cacheKey, { details, at: now })
             return details
           },
         ),
@@ -317,6 +344,7 @@ export class GooglePlaces extends Context.Service<
                 ),
               ),
             }),
+            "search",
           )
           return (body.places ?? []).map((place) => ({
             googlePlaceId: place.id,
@@ -335,6 +363,7 @@ export class GooglePlaces extends Context.Service<
             HttpClientRequest.setUrlParam("skipHttpRedirect", "false"),
             HttpClientRequest.setHeader("X-Goog-Api-Key", Redacted.value(key)),
           )
+          const eventId = yield* budget.reserve("photo")
           const response = yield* client.execute(request).pipe(
             Effect.timeout("20 seconds"),
             Effect.mapError(
@@ -354,6 +383,7 @@ export class GooglePlaces extends Context.Service<
           if (bytes.byteLength === 0) {
             return yield* new GooglePlacesFailed({ message: "Google returned an empty photo." })
           }
+          yield* budget.complete(eventId)
           return bytes
         }),
       }

@@ -1,6 +1,8 @@
 import type { EnrichmentRun, InstanceSettingsView } from "@placard/domain"
 import { type FormEvent, useCallback, useEffect, useState } from "react"
+import { Link } from "react-router"
 import { ErrorAlert } from "@/components/error-alert"
+import { GoogleCostEstimate } from "@/components/google-cost-estimate"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
@@ -22,6 +24,9 @@ export function SettingsIntegrationsPage() {
   return (
     <div className="flex flex-col gap-6">
       <GoogleKeyCard />
+      <Link to="/settings/budget" className="text-sm underline">
+        View Google usage & budget →
+      </Link>
       <EnrichmentCard />
     </div>
   )
@@ -161,6 +166,7 @@ function EnrichmentCard() {
               : `This will use about ${plan.placeCount} Place Details ${plan.placeCount === 1 ? "call" : "calls"}.`
             : "Loading…"}
         </p>
+        {plan && <GoogleCostEstimate action="refresh" count={plan.placeCount} />}
         {run && (
           <div className="flex flex-col gap-1 text-sm" data-testid="enrichment-progress">
             <div className="flex justify-between gap-2">

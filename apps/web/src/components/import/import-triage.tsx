@@ -2,6 +2,7 @@ import type { ImportDecision, ImportEntry } from "@placard/domain"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Link } from "react-router"
 import { ErrorAlert } from "@/components/error-alert"
+import { GoogleCostEstimate } from "@/components/google-cost-estimate"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -236,6 +237,7 @@ export function ImportTriagePage({ runId }: { readonly runId: string }) {
                 <p className="text-sm text-muted-foreground">
                   Commit {run.counts.kept} kept places (~{run.expectedApiCalls} Google API calls)?
                 </p>
+                <GoogleCostEstimate action="import" count={run.counts.kept} />
                 <div className="flex gap-2">
                   <Button disabled={busy} onClick={() => void commit()}>
                     {busy ? "Committing…" : "Confirm commit"}

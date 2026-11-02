@@ -3,6 +3,7 @@ import { GoogleKeyMissing, GooglePlacesFailed } from "@placard/domain"
 import { Effect, Layer, Option, Redacted, Schema } from "effect"
 import { HttpClient, type HttpClientRequest } from "effect/http"
 import { TestClock } from "effect/testing"
+import { StubBudget } from "../../test/layers/budget.ts"
 import { InstanceSettings } from "../settings/instance-settings.ts"
 import { GoogleFixtureClient } from "./fixture-client.ts"
 import autocompleteFixture from "./fixtures/autocomplete.json" with { type: "json" }
@@ -37,7 +38,7 @@ const setup = (apiKey: string | null = "test-key") => {
     householdEnabled: Effect.succeed(false),
     setHouseholdEnabled: () => Effect.die("unused"),
   })
-  const layer = GooglePlaces.layer.pipe(Layer.provide([RecordingClient, Settings]))
+  const layer = GooglePlaces.layer.pipe(Layer.provide([RecordingClient, Settings, StubBudget]))
   return { requests, layer }
 }
 

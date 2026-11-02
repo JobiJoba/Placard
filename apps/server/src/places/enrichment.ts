@@ -163,6 +163,9 @@ export class Enrichment extends Context.Service<
         enrichPlace: Effect.fn("Enrichment.enrichPlace")(function* (ownerId, placeId, options) {
           const place = yield* places.get(ownerId, placeId, false)
           if (!place.googlePlaceId) return
+          const details = yield* google.details(place.googlePlaceId, null, {
+            force: options?.force ?? true,
+          })
           const mode = options?.mode ?? "merge"
           if (mode === "replace") {
             // Drop owner fact overrides and edited-field pins so Google can refill them.
@@ -177,9 +180,6 @@ export class Enrichment extends Context.Service<
               Effect.orDie,
             )
           }
-          const details = yield* google.details(place.googlePlaceId, null, {
-            force: options?.force ?? true,
-          })
           yield* applyDetails(ownerId, placeId, details)
         }),
 
