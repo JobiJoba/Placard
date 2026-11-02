@@ -140,6 +140,66 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("modules marketpla
     }),
   )
 
+  it.effect("monorepo installs and updates keep module release streams separate", () =>
+    run(async () => {
+      const fixture = (id: string, version: string, actualId = id) => ({
+        tagName: `${id}@${version}`,
+        assetName: `${id}.placard-module`,
+        zipBytes: zipSync({
+          "placard.module.json": strToU8(
+            JSON.stringify({ ...fixtureManifest, id: actualId, version, nav: [], webRoutes: [] }),
+          ),
+          "server/index.js": strToU8("export function createModule() { return {} }"),
+          "web/index.js": strToU8("export {}"),
+        }),
+      })
+      githubReleaseFixtures.set("acme/plugins#places.menus", fixture("places.menus", "0.1.0"))
+      githubReleaseFixtures.set("acme/plugins#places.pick", fixture("places.pick", "0.1.1"))
+      for (const id of ["places.menus", "places.pick"]) {
+        const installed = await admin.browser.send("POST", "/api/modules/from-github", {
+          url: `Acme/plugins#${id}`,
+        })
+        expect(installed.status).toBe(200)
+        expect(installed.body).toMatchObject({
+          id,
+          githubRepoUrl: `https://github.com/Acme/plugins#${id}`,
+        })
+      }
+      githubReleaseFixtures.set("acme/plugins#places.menus", fixture("places.menus", "0.2.0"))
+      expect((await admin.browser.send("POST", "/api/modules/check-updates", {})).status).toBe(200)
+      const listed = await admin.browser.get("/api/modules/installed")
+      expect(listed.body.find((m: { id: string }) => m.id === "places.menus")).toMatchObject({
+        updateAvailable: true,
+        latestAvailableVersion: "0.2.0",
+      })
+      expect(listed.body.find((m: { id: string }) => m.id === "places.pick")).toMatchObject({
+        updateAvailable: false,
+        version: "0.1.1",
+      })
+      const updated = await admin.browser.send(
+        "POST",
+        "/api/modules/installed/places.menus/update",
+        {},
+      )
+      expect(updated.status).toBe(200)
+      expect(updated.body).toMatchObject({ id: "places.menus", version: "0.2.0" })
+      githubReleaseFixtures.set(
+        "acme/plugins#places.menus",
+        fixture("places.menus", "0.3.0", "places.pick"),
+      )
+      const wrong = await admin.browser.send(
+        "POST",
+        "/api/modules/installed/places.menus/update",
+        {},
+      )
+      expect(wrong.status).toBe(400)
+      expect(wrong.body.message).toContain("expected places.menus")
+      for (const id of ["places.menus", "places.pick"])
+        await admin.browser.send("DELETE", `/api/modules/installed/${id}`)
+      clearGithubReleaseFixtures()
+    }),
+  )
+
   it.effect("install from GitHub latest release, detect update, apply update", () =>
     run(async () => {
       clearGithubReleaseFixtures()

@@ -17,7 +17,7 @@ A minimal uploadable starter lives in the repo:
 
 It exposes `GET /hello`, a small page, a CMD+K action (**Open Skeleton**), and MCP tool `skeleton_hello` so you can verify Marketplace + palette + MCP wiring before adding real behavior. Rename the id/paths when you turn it into a real module.
 
-Richer example: **`places.pick`** — generic “pick any category” wheel in sibling repo [`placard-places-pick`](https://github.com/JobiJoba/placard-places-pick) (next to this monorepo as `../placard-places-pick`). Install via zip upload or GitHub Release.
+Richer example: **`places.pick`** — generic “pick any category” wheel in [plugins workspace](https://github.com/JobiJoba/plugins/tree/main/plugins/places.pick) (next to this monorepo as `../placard-plugins/plugins/places.pick`). Install via zip upload or GitHub Release.
 
 ## What you ship
 
@@ -77,7 +77,7 @@ Rules:
 - `id` is `family.feature` (e.g. `places.pick`)
 - `permissions` ⊆ `places.read` | `search.query` | `media.read`
 - `source` must be `upload` for Marketplace zips
-- `sdkVersion` major must match the host (`0.1.0` today)
+- `sdkVersion` must be supported by the host (SDK 1 plus legacy SDK 0 today)
 - Nav path and API prefix use the same id: `/m/<id>`, `/api/m/<id>/*`
 - Optional `icon` supplies the marketplace and phone navigation image. Use a square SVG or PNG, include it in the zip (e.g. `web/assets/icon.svg`), and set its path relative to the package root. Absolute HTTPS URLs or root-relative URLs also work. Phone navigation shows a puzzle icon when the image is missing or fails to load.
 - Optional `nav[].mobileIcon` selects a [Lucide icon](https://lucide.dev/icons/) by kebab-case name (e.g. `dices`, `shuffle`, `map-pin`) for the phone bottom navigation only. It uses the same size, stroke and active color as the built-in menu icons; the marketplace image stays unchanged. Missing, unknown or unavailable names fall back to the module `icon`, then the puzzle icon.
@@ -88,7 +88,7 @@ Rules:
 Export `createModule()` that returns optional `createHttpApp` and/or `mcpTools`.
 
 - Call the host with `ctx.hostFetch` (e.g. `POST /api/search`) — **never** core SQL
-- Persist module-private data under `ctx.rootDir` (Compose volume `modules`)
+- Persist module-private data under `ctx.dataDir` (Compose volume `modules`); `ctx.rootDir` is replaceable installed code
 - MCP: declare **local** tool names only; Placard registers `places_pick__pick_place` style globals
 - List the same local names under manifest `mcpTools` so Settings can show them
 
@@ -107,7 +107,7 @@ Export `createModule()` that returns optional `createHttpApp` and/or `mcpTools`.
 Reference trees:
 
 - Skeleton starter: `packages/modules/skeleton/`
-- Upload / GitHub wheel: sibling repo `placard-places-pick` (next to this monorepo)
+- Upload / GitHub wheel: sibling workspace `../placard-plugins/plugins/places.pick`
 
 ## Install on an instance
 
@@ -117,12 +117,20 @@ Reference trees:
 4. Enable the module for the instance
 5. Each user: Marketplace → module → **Settings** → show in nav / allow MCP
 
+For multiple modules in one repository, append `#module.id` to the GitHub URL, for
+example `https://github.com/JobiJoba/plugins#places.menus` or `#places.pick`. Publish
+independent stable releases tagged `<module.id>@<version>` with the module's prebuilt
+asset. Installation and update checks follow that selector, skip drafts/prereleases,
+and validate the downloaded manifest ID. Existing single-module repo URLs still use
+GitHub's latest release endpoint. The selector is retained in the installed source URL;
+no database migration is needed.
+
 After install, module tools appear under **Settings → MCP** with their global names. GitHub-sourced modules show an update badge when a newer Release is available.
 
 ## Checklist
 
 - [ ] Zip has `placard.module.json`, `server/index.js`, `web/index.js`
-- [ ] `source: "upload"`, `sdkVersion` major matches host
+- [ ] `source: "upload"`, `sdkVersion` is supported by host
 - [ ] Handlers use `hostFetch` only
 - [ ] UI calls `/api/m/<id>/…`
 - [ ] Optional MCP local names match `mcpTools` in the manifest
@@ -134,3 +142,26 @@ After install, module tools appear under **Settings → MCP** with their global 
 - [FOR AI — module brief](module-brief-for-ai.md)
 - [MCP](mcp.md)
 - [How modules work](architecture-modules.md)
+
+## Place-detail sections and durable data (SDK 1)
+
+Declare `sdkVersion: "1.0.0"` and `requiredCapabilities: ["place-sections", "persistent-data"]`
+when using both features. SDK 0 hosts reject the SDK major before installing; new hosts
+also validate required capabilities at install and load time. Existing SDK 0 modules
+continue to load on SDK 1 hosts.
+
+Add `placeSections: [{ "id": "details", "label": "Details", "exportName": "PlaceSection" }]`
+to the manifest. Export a React component taking `ModulePlaceSectionContext`
+(`placeId`, `category`, `isOwner`). The host loads it after place information, using the
+same visibility preference as navigation, with independent loading and render-error
+handling. A section-only module can declare empty `nav` and `webRoutes` arrays.
+Treat `isOwner` as a presentation hint; validate access through the authenticated host
+place API on every server operation. MCP `hostFetch` supports authenticated place
+reads as well as search. Nested MCP JSON Schemas are preserved for discovery.
+
+HTTP and MCP contexts include `dataDir`, located at `<modules volume>/.data/<moduleId>`.
+Create this directory before writing. It is outside the plugin assets route and survives
+updates, disabling, uninstall, and reinstall. The host does not currently purge retained
+module data automatically; an operator can remove the specific data directory while the
+module is uninstalled. Back up the entire modules volume, including hidden directories,
+with writers stopped. Personal library exports do not include module-private data.

@@ -6,7 +6,7 @@ import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/http"
 import { HttpApiBuilder } from "effect/http-api"
 import { Auth } from "../auth/auth.ts"
 import { AppConfig } from "../config.ts"
-import { ModuleRuntime } from "../modules/loader.ts"
+import { ModuleRuntime, moduleDataDir } from "../modules/loader.ts"
 import { Modules } from "../modules/modules.ts"
 
 const ModulesServiceLive = Modules.layer.pipe(Layer.provide(ModuleRuntime.layer))
@@ -204,6 +204,7 @@ export const ModuleFileRoutesLive = HttpRouter.use(
                 moduleId: id,
                 pathSuffix: suffix,
                 rootDir,
+                dataDir: moduleDataDir(rootDir, id),
                 ownerId: user.value.id,
                 hostFetch: (path, init) => {
                   const url = new URL(path, webRequest.url)

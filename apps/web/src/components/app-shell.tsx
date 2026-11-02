@@ -172,8 +172,8 @@ export function AppShell({ modules }: { readonly modules: ReadonlyArray<MyModule
                   size="sm"
                   aria-current={moreActive ? "true" : undefined}
                   className={cn(
-                    "h-auto gap-1 font-normal hover:bg-transparent aria-expanded:bg-[color-mix(in_srgb,var(--spine-gold)_22%,transparent)] data-[state=open]:bg-[color-mix(in_srgb,var(--spine-gold)_22%,transparent)]",
                     navLink({ isActive: moreActive }),
+                    "h-auto gap-1 font-normal hover:bg-[color-mix(in_srgb,var(--parchment)_12%,transparent)] hover:text-[var(--parchment)] aria-expanded:bg-[color-mix(in_srgb,var(--spine-gold)_32%,transparent)] aria-expanded:text-[var(--parchment)] data-[state=open]:bg-[color-mix(in_srgb,var(--spine-gold)_32%,transparent)] data-[state=open]:text-[var(--parchment)]",
                   )}
                 >
                   More

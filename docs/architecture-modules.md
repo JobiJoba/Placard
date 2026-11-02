@@ -32,7 +32,7 @@ There is no “paste a package into MCP.” MCP discovers tools from **loaded mo
 ## Rules that keep the product stable
 
 1. Modules call host APIs (`hostFetch`) — they do not open core SQL.
-2. Module-private data lives under the module root on the `modules` volume.
+2. Module-private data lives under `ctx.dataDir` on the `modules` volume, separate from replaceable installed code.
 3. One implementation behind HTTP and MCP whenever both exist.
 4. Admins can disable or uninstall a module without wiping the place library.
 5. Users can hide a module from nav and turn off its MCP tools independently.

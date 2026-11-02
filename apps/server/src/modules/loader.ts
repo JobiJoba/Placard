@@ -1,5 +1,5 @@
 import { mkdir } from "node:fs/promises"
-import { join } from "node:path"
+import { dirname, join } from "node:path"
 import { pathToFileURL } from "node:url"
 import {
   type CreateModuleResult,
@@ -8,6 +8,8 @@ import {
   type ModuleManifest as Manifest,
   ModuleManifest,
   type ModuleMcpTool,
+  sdkMajorCompatible,
+  unsupportedCapabilities,
 } from "@placard/module-sdk"
 import { Context, Effect, Layer, Schema } from "effect"
 
@@ -115,6 +117,12 @@ export class ModuleRuntime extends Context.Service<
     loadFromCreateModule: (moduleId, rootDir, manifest, importHref) =>
       Effect.promise(async (): Promise<LoadResult> => {
         try {
+          if (
+            !sdkMajorCompatible(manifest.sdkVersion) ||
+            unsupportedCapabilities(manifest).length
+          ) {
+            return { ok: false, error: "Module requires an unsupported host SDK or capability." }
+          }
           await mkdir(rootDir, { recursive: true })
           const href = `${importHref}${importHref.includes("?") ? "&" : "?"}t=${Date.now()}`
           let mod: Record<string, unknown>
@@ -150,6 +158,12 @@ export class ModuleRuntime extends Context.Service<
             return { ok: false, error: "Missing or invalid placard.module.json on disk." }
           }
 
+          if (
+            !sdkMajorCompatible(manifest.sdkVersion) ||
+            unsupportedCapabilities(manifest).length
+          ) {
+            return { ok: false, error: "Module requires an unsupported host SDK or capability." }
+          }
           const serverEntry = (manifest.serverEntry ?? defaultServerEntry).replace(/^\.\//, "")
           const entryPath = join(rootDir, serverEntry)
           const href = `${pathToFileURL(entryPath).href}?t=${Date.now()}`
@@ -189,3 +203,7 @@ export const webEntryUrlFor = (moduleId: string, webEntry: string) => {
 export const setModuleHostFetch = (fetchImpl: typeof globalThis.fetch) => {
   hostFetchImpl = fetchImpl
 }
+
+/** Outside installed code and the assets route; retained on uninstall. */
+export const moduleDataDir = (rootDir: string, moduleId: string): string =>
+  join(dirname(rootDir), ".data", moduleId)

@@ -7,6 +7,7 @@ import {
   defaultWebEntry,
   ModuleManifest,
   sdkMajorCompatible,
+  unsupportedCapabilities,
 } from "@placard/module-sdk"
 import { Effect, Schema } from "effect"
 import { unzipSync } from "fflate"
@@ -96,6 +97,12 @@ export const extractModuleZipBytes = (
     if (!sdkMajorCompatible(decoded.sdkVersion)) {
       return yield* fail(
         `Plugin sdkVersion ${decoded.sdkVersion ?? "(missing)"} is incompatible with this Placard host.`,
+      )
+    }
+
+    if (unsupportedCapabilities(decoded).length) {
+      return yield* fail(
+        `Unsupported module capabilities: ${unsupportedCapabilities(decoded).join(", ")}`,
       )
     }
 

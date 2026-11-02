@@ -1,10 +1,14 @@
 import { readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "@effect/vitest"
-import { moduleMcpToolName } from "@placard/module-sdk"
+import { moduleMcpToolName, sdkMajorCompatible } from "@placard/module-sdk"
 import { bundledCatalog } from "./catalog.ts"
 
 describe("module plugin architecture", () => {
+  it("supports legacy Pick SDK while old hosts reject SDK 1 modules", () => {
+    expect(sdkMajorCompatible("0.1.0", "1.0.0")).toBe(true)
+    expect(sdkMajorCompatible("1.0.0", "0.1.0")).toBe(false)
+  })
   it("ships no bundled Marketplace modules (wheels install via zip / GitHub)", () => {
     expect(bundledCatalog).toEqual([])
   })

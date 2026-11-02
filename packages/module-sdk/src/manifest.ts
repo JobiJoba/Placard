@@ -47,11 +47,27 @@ export const ModuleMcpToolManifest = Schema.Struct({
 })
 export type ModuleMcpToolManifest = typeof ModuleMcpToolManifest.Type
 
+export const ModulePlaceSection = Schema.Struct({
+  id: Schema.String,
+  label: Schema.String,
+  exportName: Schema.String,
+})
+
+export type ModulePlaceSectionContext = {
+  readonly placeId: string
+  readonly category: string
+  readonly isOwner: boolean
+}
+
+export const HOST_CAPABILITIES = ["place-sections", "persistent-data"] as const
+
 /**
  * Declared shape of a Placard plugin (`placard.module.json` / `defineModule`).
- * Prebuilt zip packages use `server.entry` / `web.entry` relative to the package root.
+ * Prebuilt zip packages use `serverEntry` / `webEntry` relative to the package root.
  */
 export const ModuleManifest = Schema.Struct({
+  placeSections: Schema.optional(Schema.Array(ModulePlaceSection)),
+  requiredCapabilities: Schema.optional(Schema.Array(Schema.String)),
   id: Schema.String.pipe(Schema.check(Schema.isBetweenLength(3, 80))),
   name: Schema.String,
   version: Schema.String,
@@ -66,7 +82,7 @@ export const ModuleManifest = Schema.Struct({
    * Optional CMD+K actions (navigate to `path`). Gated by user module visibility like `nav`.
    */
   actions: Schema.optional(Schema.Array(ModuleAction)),
-  /** Semver of `@placard/module-sdk` the plugin was built against (major must match host). */
+  /** Semver of `@placard/module-sdk` the plugin was built against (SDK 1 hosts also accept legacy SDK 0). */
   sdkVersion: Schema.optional(Schema.String),
   /** Relative path to server ESM entry inside a prebuilt zip. */
   serverEntry: Schema.optional(Schema.String),
@@ -92,14 +108,14 @@ export const ModuleManifest = Schema.Struct({
 export type ModuleManifest = typeof ModuleManifest.Type
 
 /** Host SDK version — bump major when ModuleHost* contracts break. */
-export const HOST_SDK_VERSION = "0.1.0"
+export const HOST_SDK_VERSION = "1.0.0"
 
 export const defineModule = <M extends ModuleManifest>(manifest: M): M => manifest
 
 export const defaultServerEntry = "./server/index.js"
 export const defaultWebEntry = "./web/index.js"
 
-/** True when plugin sdkVersion major matches the host (missing sdkVersion allowed for bundled). */
+/** True for supported SDK majors; SDK 1 retains legacy SDK 0 compatibility. */
 export const sdkMajorCompatible = (
   pluginSdkVersion: string | undefined,
   host = HOST_SDK_VERSION,
@@ -108,5 +124,10 @@ export const sdkMajorCompatible = (
   const pluginMajor = Number.parseInt(pluginSdkVersion.split(".")[0] ?? "", 10)
   const hostMajor = Number.parseInt(host.split(".")[0] ?? "", 10)
   if (!Number.isFinite(pluginMajor) || !Number.isFinite(hostMajor)) return false
-  return pluginMajor === hostMajor
+  return pluginMajor === hostMajor || (hostMajor === 1 && pluginMajor === 0)
 }
+
+export const unsupportedCapabilities = (manifest: ModuleManifest): string[] =>
+  (manifest.requiredCapabilities ?? []).filter(
+    (name) => !(HOST_CAPABILITIES as readonly string[]).includes(name),
+  )

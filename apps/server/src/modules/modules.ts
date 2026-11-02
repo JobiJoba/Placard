@@ -19,6 +19,7 @@ import {
   downloadReleaseAsset,
   fetchLatestPluginZip,
   fetchLatestRelease,
+  type GithubRepoRef,
   isNewerSemver,
   parseGithubRepoUrl,
   pickReleaseAsset,
@@ -360,22 +361,27 @@ export class Modules extends Context.Service<
           mcpEnabled,
           source: row.source,
           iconUrl: resolveModuleMediaUrl(row.module_id, row.source, manifest.icon),
+          hasNavigation: manifest.nav.length > 0,
           nav: visible ? [...manifest.nav] : [],
           webRoutes: visible ? [...manifest.webRoutes] : [],
+          placeSections: visible ? [...(manifest.placeSections ?? [])] : [],
           actions: visible ? [...(manifest.actions ?? [])] : [],
           mcpTools: mcpToolInfos(manifest, row.module_id),
           webEntryUrl: visible && disk ? webEntryUrlFor(row.module_id, webEntry) : null,
         }
       }
 
-      const installGithubPackage = (ref: {
-        readonly owner: string
-        readonly repo: string
-        readonly repoUrl: string
-      }): Effect.Effect<InstalledModule, ModuleInstallFailed> =>
+      const installGithubPackage = (
+        ref: GithubRepoRef,
+      ): Effect.Effect<InstalledModule, ModuleInstallFailed> =>
         withHttp(
           Effect.gen(function* () {
             const { release, asset, bytes } = yield* fetchLatestPluginZip(ref)
+            const manifest = yield* peekModuleManifestFromZip(bytes)
+            if (ref.moduleId && manifest.id !== ref.moduleId)
+              return yield* new ModuleInstallFailed({
+                message: `Release contains ${manifest.id}, expected ${ref.moduleId}.`,
+              })
             const extracted = yield* extractModuleZipBytes(bytes, modulesDir)
             const load = yield* runtime.loadFromDisk(extracted.manifest.id, extracted.rootDir)
             const loadError = load.ok ? null : load.error
@@ -516,6 +522,7 @@ export class Modules extends Context.Service<
           return yield* installGithubPackage({
             owner: row.github_owner,
             repo: row.github_repo,
+            moduleId: parseGithubRepoUrl(row.github_repo_url ?? "")?.moduleId,
             repoUrl:
               row.github_repo_url ?? `https://github.com/${row.github_owner}/${row.github_repo}`,
           })
@@ -553,7 +560,11 @@ export class Modules extends Context.Service<
             const owner = row.github_owner!
             const repo = row.github_repo!
             const result = yield* withHttp(
-              fetchLatestRelease(owner, repo).pipe(
+              fetchLatestRelease(
+                owner,
+                repo,
+                parseGithubRepoUrl(row.github_repo_url ?? "")?.moduleId,
+              ).pipe(
                 Effect.map((release) => ({ ok: true as const, release })),
                 Effect.catchTag("ModuleInstallFailed", (error) =>
                   Effect.succeed({
@@ -598,7 +609,7 @@ export class Modules extends Context.Service<
             const remoteVersion = yield* withHttp(
               downloadReleaseAsset(asset).pipe(
                 Effect.flatMap(peekModuleManifestFromZip),
-                Effect.map((m) => m.version),
+                Effect.map((m) => (m.id === row.module_id ? m.version : null)),
                 Effect.catchTag("ModuleInstallFailed", () => Effect.succeed(null as string | null)),
               ),
             )

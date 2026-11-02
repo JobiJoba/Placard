@@ -77,6 +77,15 @@ export const ModuleMcpToolInfo = Schema.Struct({
 export type ModuleMcpToolInfo = typeof ModuleMcpToolInfo.Type
 
 export const MyModule = Schema.Struct({
+  placeSections: Schema.optional(
+    Schema.Array(
+      Schema.Struct({
+        id: Schema.String,
+        label: Schema.String,
+        exportName: Schema.String,
+      }),
+    ),
+  ),
   id: Schema.String,
   name: Schema.String,
   version: Schema.String,
@@ -87,6 +96,8 @@ export const MyModule = Schema.Struct({
   source: ModuleSource,
   /** Resolved manifest icon for module navigation; null when none is supplied. */
   iconUrl: Schema.NullOr(Schema.String),
+  /** Whether the module declares navigation, even when hidden for the user. */
+  hasNavigation: Schema.Boolean,
   nav: Schema.Array(ModuleNavItem),
   webRoutes: Schema.Array(ModuleWebRoute),
   /** CMD+K actions (empty when module is hidden from the user). */

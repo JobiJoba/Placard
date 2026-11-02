@@ -45,6 +45,8 @@ export type ModuleHostFetch = (
 export type ModuleMcpContext = {
   readonly moduleId: string
   readonly rootDir: string
+  /** Durable data, retained across updates and uninstall. */
+  readonly dataDir: string
   readonly ownerId: string
   readonly hostFetch: ModuleHostFetch
 }
@@ -61,6 +63,8 @@ export type ModuleHttpContext = {
   readonly moduleId: string
   readonly pathSuffix: string
   readonly rootDir: string
+  /** Durable data, retained across updates and uninstall. */
+  readonly dataDir: string
   readonly ownerId: string
   readonly hostFetch?: ModuleHostFetch
 }

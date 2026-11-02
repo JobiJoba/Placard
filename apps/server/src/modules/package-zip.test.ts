@@ -106,3 +106,62 @@ describe("extractModuleZip", () => {
     }),
   )
 })
+
+describe("persistent module data", () => {
+  it.effect("survives updates and uninstall/reinstall outside the asset directory", () =>
+    Effect.gen(function* () {
+      const { mkdir, writeFile } = yield* Effect.promise(() => import("node:fs/promises"))
+      const { moduleDataDir } = yield* Effect.promise(() => import("./loader.ts"))
+      const { removeModuleDir } = yield* Effect.promise(() => import("./package-zip.ts"))
+      const root = yield* Effect.promise(() => mkdtemp(join(tmpdir(), "placard-data-")))
+      yield* Effect.addFinalizer(() =>
+        Effect.promise(() => rm(root, { recursive: true, force: true })).pipe(Effect.asVoid),
+      )
+      const packageFor = (version: string) =>
+        zipBase64({
+          "placard.module.json": JSON.stringify({
+            ...validManifest,
+            version,
+            sdkVersion: "1.0.0",
+            requiredCapabilities: ["persistent-data", "place-sections"],
+          }),
+          "server/index.js": "export function createModule() { return {} }",
+        })
+      const installed = yield* extractModuleZip(packageFor("1.0.0"), root)
+      const data = moduleDataDir(installed.rootDir, validManifest.id)
+      yield* Effect.promise(async () => {
+        await mkdir(data, { recursive: true })
+        await writeFile(join(data, "menus.sqlite"), "persistent database")
+      })
+      yield* extractModuleZip(packageFor("1.0.1"), root)
+      yield* removeModuleDir(root, validManifest.id)
+      yield* extractModuleZip(packageFor("1.0.2"), root)
+      expect(yield* Effect.promise(() => readFile(join(data, "menus.sqlite"), "utf8"))).toBe(
+        "persistent database",
+      )
+      expect(data.startsWith(`${installed.rootDir}/`)).toBe(false)
+    }),
+  )
+
+  it.effect("rejects unsupported capabilities", () =>
+    Effect.gen(function* () {
+      const root = yield* Effect.promise(() => mkdtemp(join(tmpdir(), "placard-cap-")))
+      yield* Effect.addFinalizer(() =>
+        Effect.promise(() => rm(root, { recursive: true, force: true })).pipe(Effect.asVoid),
+      )
+      const result = yield* extractModuleZip(
+        zipBase64({
+          "placard.module.json": JSON.stringify({
+            ...validManifest,
+            requiredCapabilities: ["future-capability"],
+          }),
+          "server/index.js": "export function createModule() { return {} }",
+        }),
+        root,
+      ).pipe(Effect.result)
+      expect(result._tag).toBe("Failure")
+      if (result._tag === "Failure")
+        expect(result.failure.message).toContain("Unsupported module capabilities")
+    }),
+  )
+})

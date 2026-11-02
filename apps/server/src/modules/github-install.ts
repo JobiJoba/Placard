@@ -7,6 +7,7 @@ export interface GithubRepoRef {
   readonly owner: string
   readonly repo: string
   readonly repoUrl: string
+  readonly moduleId?: string | undefined
 }
 
 export interface GithubReleaseAsset {
@@ -41,7 +42,15 @@ const GITHUB_HEADERS = {
 
 /** Parse a public GitHub repo URL or `owner/repo` shorthand. */
 export const parseGithubRepoUrl = (raw: string): GithubRepoRef | null => {
-  const trimmed = raw.trim()
+  const [location, selector, ...extra] = raw.trim().split("#")
+  if (
+    extra.length ||
+    (selector !== undefined && !/^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)+$/.test(selector))
+  )
+    return null
+  const trimmed = location ?? ""
+  const selection = selector ? { moduleId: selector } : {}
+  const suffix = selector ? `#${selector}` : ""
   if (trimmed === "") return null
 
   const shorthand = trimmed.match(/^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/)
@@ -49,7 +58,7 @@ export const parseGithubRepoUrl = (raw: string): GithubRepoRef | null => {
     const owner = shorthand[1]
     const repo = shorthand[2]?.replace(/\.git$/i, "")
     if (!owner || !repo) return null
-    return { owner, repo, repoUrl: `https://github.com/${owner}/${repo}` }
+    return { owner, repo, repoUrl: `https://github.com/${owner}/${repo}${suffix}`, ...selection }
   }
 
   let url: URL
@@ -66,7 +75,7 @@ export const parseGithubRepoUrl = (raw: string): GithubRepoRef | null => {
   const owner = parts[0]
   const repo = parts[1]?.replace(/\.git$/i, "")
   if (!owner || !repo) return null
-  return { owner, repo, repoUrl: `https://github.com/${owner}/${repo}` }
+  return { owner, repo, repoUrl: `https://github.com/${owner}/${repo}${suffix}`, ...selection }
 }
 
 const isSourceLikeName = (name: string): boolean => {
@@ -113,8 +122,10 @@ export const isNewerSemver = (remote: string, installed: string): boolean => {
 export const fetchLatestRelease = (
   owner: string,
   repo: string,
+  moduleId?: string,
 ): Effect.Effect<GithubLatestRelease, ModuleInstallFailed, HttpClient.HttpClient> =>
   Effect.gen(function* () {
+    if (moduleId) return yield* fetchModuleRelease(owner, repo, moduleId)
     const client = yield* HttpClient.HttpClient
     const request = HttpClientRequest.get(
       `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/releases/latest`,
@@ -150,6 +161,53 @@ export const fetchLatestRelease = (
         browserDownloadUrl: a.browser_download_url,
         size: a.size,
       })),
+    }
+  })
+
+/** Module releases use `<moduleId>@<version>` tags; legacy repositories keep /latest. */
+export const fetchModuleRelease = (
+  owner: string,
+  repo: string,
+  moduleId: string,
+): Effect.Effect<GithubLatestRelease, ModuleInstallFailed, HttpClient.HttpClient> =>
+  Effect.gen(function* () {
+    const client = yield* HttpClient.HttpClient
+    for (let page = 1; ; page++) {
+      const response = yield* client
+        .execute(
+          HttpClientRequest.get(
+            `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/releases?per_page=100&page=${page}`,
+          ).pipe(HttpClientRequest.setHeaders(GITHUB_HEADERS)),
+        )
+        .pipe(Effect.mapError(() => fail("Could not reach GitHub.")))
+      if (response.status !== 200)
+        return yield* fail(`GitHub returned HTTP ${response.status} for ${owner}/${repo}.`)
+      const json = yield* response.json.pipe(
+        Effect.mapError(() => fail("GitHub release response was not JSON.")),
+      )
+      const releases = yield* Schema.decodeUnknownEffect(
+        Schema.Array(
+          Schema.Struct({
+            ...GithubReleaseResponse.fields,
+            draft: Schema.Boolean,
+            prerelease: Schema.Boolean,
+          }),
+        ),
+      )(json).pipe(Effect.mapError(() => fail("GitHub release response was unexpected.")))
+      const release = releases.find(
+        (r) => !r.draft && !r.prerelease && r.tag_name.startsWith(`${moduleId}@`),
+      )
+      if (release)
+        return {
+          tagName: release.tag_name,
+          assets: release.assets.map((a) => ({
+            name: a.name,
+            browserDownloadUrl: a.browser_download_url,
+            size: a.size,
+          })),
+        }
+      if (releases.length < 100)
+        return yield* fail(`No public stable release found for ${moduleId} in ${owner}/${repo}.`)
     }
   })
 
@@ -203,7 +261,7 @@ export const fetchLatestPluginZip = (
   HttpClient.HttpClient
 > =>
   Effect.gen(function* () {
-    const release = yield* fetchLatestRelease(ref.owner, ref.repo)
+    const release = yield* fetchLatestRelease(ref.owner, ref.repo, ref.moduleId)
     const asset = pickReleaseAsset(release.assets)
     if (!asset) {
       return yield* fail(

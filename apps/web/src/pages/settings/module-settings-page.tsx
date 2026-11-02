@@ -78,27 +78,29 @@ export function SettingsModulePage() {
 
       <ErrorAlert message={error ?? actionError} />
 
-      <SettingsCard
-        title="Show in navigation"
-        description="When on, this module appears in the app nav and mobile bar for you only. Instance admins still control install/enable in Marketplace."
-      >
-        <div className="flex flex-wrap items-center gap-3">
-          <Button
-            type="button"
-            size="sm"
-            variant={mod.visible ? "secondary" : "outline"}
-            disabled={saving}
-            onClick={() => setVisible(!mod.visible)}
-          >
-            {mod.visible ? "Shown in nav" : "Hidden from nav"}
-          </Button>
-          {mod.visible && mod.nav[0]?.path && (
-            <Button type="button" size="sm" variant="ghost" asChild>
-              <Link to={mod.nav[0].path}>Open {mod.name}</Link>
+      {mod.hasNavigation && (
+        <SettingsCard
+          title="Show in navigation"
+          description="When on, this module appears in the app nav and mobile bar for you only. Instance admins still control install/enable in Marketplace."
+        >
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              size="sm"
+              variant={mod.visible ? "secondary" : "outline"}
+              disabled={saving}
+              onClick={() => setVisible(!mod.visible)}
+            >
+              {mod.visible ? "Shown in nav" : "Hidden from nav"}
             </Button>
-          )}
-        </div>
-      </SettingsCard>
+            {mod.visible && mod.nav[0]?.path && (
+              <Button type="button" size="sm" variant="ghost" asChild>
+                <Link to={mod.nav[0].path}>Open {mod.name}</Link>
+              </Button>
+            )}
+          </div>
+        </SettingsCard>
+      )}
 
       <SettingsCard
         title="MCP access"

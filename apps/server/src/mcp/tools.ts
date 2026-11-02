@@ -3,7 +3,7 @@ import type { ManualPlaceInput, Me, PlaceStatus, SearchFilter } from "@placard/d
 import { moduleMcpToolName } from "@placard/module-sdk"
 import type { Effect } from "effect"
 import { z } from "zod"
-import type { ModuleRuntime } from "../modules/loader.ts"
+import { type ModuleRuntime, moduleDataDir } from "../modules/loader.ts"
 import type { Modules } from "../modules/modules.ts"
 import type { Lists } from "../places/lists.ts"
 import type { Places } from "../places/places.ts"
@@ -96,22 +96,10 @@ const withAudit = async <A>(
   }
 }
 
-/** JSON Schema → loose zod object so MCP SDK accepts plugin schemas. */
-const zodFromJsonSchema = (schema: Record<string, unknown>) => {
-  const props = (schema.properties ?? {}) as Record<string, unknown>
-  const shape: Record<string, z.ZodTypeAny> = {}
-  for (const [key, raw] of Object.entries(props)) {
-    const prop = raw as { type?: string; enum?: unknown[] }
-    let field: z.ZodTypeAny = z.unknown()
-    if (prop.type === "string" && Array.isArray(prop.enum)) {
-      field = z.enum(prop.enum as [string, ...string[]])
-    } else if (prop.type === "string") field = z.string()
-    else if (prop.type === "number") field = z.number()
-    else if (prop.type === "boolean") field = z.boolean()
-    else if (prop.type === "object") field = z.record(z.string(), z.unknown())
-    shape[key] = field.optional()
-  }
-  return shape
+/** Preserve nested module input schemas so assistants can discover structured payloads. */
+export const zodFromJsonSchema = (schema: Record<string, unknown>) => {
+  const converted = z.fromJSONSchema(schema)
+  return converted instanceof z.ZodObject ? converted.shape : {}
 }
 
 /** Register core MCP tools, then enabled module tools. */
@@ -336,6 +324,21 @@ export const registerPlacardTools = async (server: McpServer, ctx: ToolContext) 
                     )
                     return Response.json(hits)
                   }
+                  const placeMatch = pathname?.match(/^\/api\/places\/([^/]+)$/)
+                  if (placeMatch?.[1] && (init?.method ?? "GET").toUpperCase() === "GET") {
+                    try {
+                      const place = await ctx.run(
+                        ctx.places.get(
+                          ctx.user.id,
+                          decodeURIComponent(placeMatch[1]),
+                          ctx.user.householdEnabled,
+                        ),
+                      )
+                      return Response.json(place)
+                    } catch {
+                      return Response.json({ error: "Place unavailable" }, { status: 404 })
+                    }
+                  }
                   const url = new URL(path, ctx.publicUrl)
                   const headers = new Headers(init?.headers)
                   headers.set("authorization", `Bearer ${ctx.tokenSecret}`)
@@ -348,6 +351,7 @@ export const registerPlacardTools = async (server: McpServer, ctx: ToolContext) 
                 return tool.handler(args as Record<string, unknown>, {
                   moduleId: plugin.moduleId,
                   rootDir: plugin.rootDir,
+                  dataDir: moduleDataDir(plugin.rootDir, plugin.moduleId),
                   ownerId: ctx.user.id,
                   hostFetch,
                 })

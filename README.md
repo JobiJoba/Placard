@@ -44,8 +44,10 @@ Requires Node 24+, pnpm 12, Docker, and the [Aspire CLI](https://aspire.dev/get-
 ```sh
 pnpm install
 aspire run                  # PostGIS + server + worker + Vite (dashboard URL in the terminal)
-# App: https://localhost:5173  (fixed HTTPS port; trust the Aspire/dev certificate if prompted)
+# App: https://<LAN-IP>:5173 (see the web endpoint in the Aspire dashboard)
 ```
+
+Aspire exposes the frontend on port 5173 for phone testing on the same LAN and uses that endpoint for authentication. It detects a physical network interface automatically; set `PLACARD_DEV_HOST=192.168.1.10` before `aspire run` to select a specific address, or `PLACARD_DEV_HOST=localhost` for the localhost auth URL. The HTTPS development certificate must be trusted by the phone and valid for the address you use; the default localhost certificate can produce a certificate warning on the LAN address.
 
 Aspire installs the AppHost with `pnpm install --ignore-workspace`, which skips this repo's `allowBuilds` for `esbuild`. If you hit `ERR_PNPM_IGNORED_BUILDS`, set `strictDepBuilds: false` in `~/Library/Preferences/pnpm/config.yaml` (macOS) or `$XDG_CONFIG_HOME/pnpm/config.yaml`.
 

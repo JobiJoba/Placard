@@ -8,7 +8,7 @@ export interface GithubReleaseFixture {
   readonly zipBytes: Uint8Array
 }
 
-/** Mutable registry for integration tests — key is `owner/repo` (lowercase). */
+/** Mutable registry for integration tests — key is `owner/repo` or `owner/repo#module.id` (lowercase). */
 export const githubReleaseFixtures = new Map<string, GithubReleaseFixture>()
 
 export const clearGithubReleaseFixtures = () => {
@@ -17,6 +17,25 @@ export const clearGithubReleaseFixtures = () => {
 
 const respondGithub = (request: HttpClientRequest.HttpClientRequest, url: URL): Response | null => {
   if (url.hostname === "api.github.com") {
+    const list = url.pathname.match(/^\/repos\/([^/]+)\/([^/]+)\/releases$/)
+    if (request.method === "GET" && list) {
+      const repo = `${decodeURIComponent(list[1]!)}/${decodeURIComponent(list[2]!)}`.toLowerCase()
+      const releases = [...githubReleaseFixtures]
+        .filter(([key]) => key.startsWith(`${repo}#`))
+        .map(([key, fixture]) => ({
+          tag_name: fixture.tagName,
+          draft: false,
+          prerelease: false,
+          assets: [
+            {
+              name: fixture.assetName,
+              size: fixture.zipBytes.byteLength,
+              browser_download_url: `https://github.com/fixtures/download/${encodeURIComponent(key)}/${encodeURIComponent(fixture.assetName)}`,
+            },
+          ],
+        }))
+      return Response.json(releases)
+    }
     const match = url.pathname.match(/^\/repos\/([^/]+)\/([^/]+)\/releases\/latest$/)
     if (request.method === "GET" && match) {
       const key = `${decodeURIComponent(match[1]!)}/${decodeURIComponent(match[2]!)}`.toLowerCase()

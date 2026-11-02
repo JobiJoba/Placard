@@ -339,3 +339,12 @@ Day-to-day development: `aspire run` — see the [README](../README.md#develop).
 
 - **Export:** Settings → General → Export library (`GET /api/export`) — personal zip, not instance DR.
 - **MCP:** Settings → MCP — create a PAT; endpoint `$PUBLIC_URL/mcp`. Details: [mcp.md](mcp.md).
+
+### Persistent module data
+
+Module code lives under `/data/modules/<moduleId>`; SDK 1 module data lives under
+`/data/modules/.data/<moduleId>`. The whole-volume archive above includes both,
+including hidden directories. Stop writers before archiving SQLite-backed modules.
+Updates and uninstall retain `.data`; reinstall reconnects to it. To permanently erase
+an uninstalled module's retained data, remove only its `.data/<moduleId>` directory.
+Personal library exports do not contain module data.

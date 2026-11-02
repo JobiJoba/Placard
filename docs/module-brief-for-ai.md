@@ -23,7 +23,7 @@ web/assets/…       # optional icon/cover
 - nav: [{ "path": "/m/<id>", "label": "…", "slot": "primary" | "more" }]
   Each nav item may set mobileIcon: "dices" (Lucide kebab-case name) for phone bottom navigation only. Matches the built-in menu icon style and active color. Missing/unknown/unavailable names fall back to the module icon image, then a puzzle icon. Desktop navigation stays text-only.
 - source: "upload"   # required for Marketplace zips
-- sdkVersion: "0.1.0"  # major must match host
+- sdkVersion: "1.0.0"  # new capabilities require SDK 1; legacy SDK 0 modules remain supported
 - serverEntry: "./server/index.js"
 - webEntry: "./web/index.js"
 - icon (optional): "web/assets/icon.svg" — square SVG/PNG used in marketplace and phone navigation; include the file in the zip. Paths are relative to the package root; absolute HTTPS or root-relative URLs also work. Phone navigation falls back to a puzzle icon if absent or unavailable.
@@ -43,7 +43,7 @@ export function createModule() {
   }
 }
 - Use ctx.hostFetch("POST /api/search", { method, headers, body }) for library queries.
-- Persist private data under ctx.rootDir (JSON files are fine).
+- Persist private data under ctx.dataDir, never ctx.rootDir (installed code is replaced on updates).
 - Do NOT import core SQL, Effect services, or patch host tables.
 - HTTP and MCP should share the same business helpers.
 - Do not hard-code tools into Placard’s core MCP set — implement createModule + optional mcpTools on the module.

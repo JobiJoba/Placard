@@ -11,6 +11,7 @@ import { PlaceHero } from "@/components/place/place-hero"
 import { PlaceRecordSection } from "@/components/place/place-record"
 import { PlaceCustomFieldsSection } from "@/components/place-custom-fields"
 import { PlaceMediaSection } from "@/components/place-media"
+import { PlaceModuleSections } from "@/components/place-module-sections"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
@@ -410,6 +411,8 @@ export function PlacePage() {
       />
 
       <PlaceFactsSection place={place} />
+
+      <PlaceModuleSections placeId={place.id} category={place.category} isOwner={isOwner} />
 
       <PlaceMediaSection placeId={place.id} viewerId={me.id} isPlaceOwner={isOwner} />
 
