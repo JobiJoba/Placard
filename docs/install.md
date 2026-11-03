@@ -267,12 +267,13 @@ Migrations run on boot. Keep named volumes so the library and photos survive. Se
 ## Coolify
 
 1. New Resource → **Docker Compose**
-2. Paste the release `docker-compose.yml` from the [latest release](https://github.com/JobiJoba/Placard/releases/latest)
-3. Set env from `example.env` (`POSTGRES_PASSWORD` ← `openssl rand -hex 24`, `BETTER_AUTH_SECRET` ← `openssl rand -base64 32`, `PUBLIC_URL=https://your-domain`)
-4. Map the domain to the **app** service on port **3000**
-5. Deploy; wait for healthchecks on `app` and `db`
+2. Paste only the release `docker-compose.yml` from the [latest release](https://github.com/JobiJoba/Placard/releases/latest). Skip `docker-compose.override.yml` and `Caddyfile`: they add Caddy for standalone HTTPS; Coolify handles HTTPS itself.
+3. Remove the `ports:` block under `app` from the pasted YAML. Coolify routes to the container directly, so publishing a host port is unnecessary.
+4. Set env from `example.env` (`POSTGRES_PASSWORD` ← `openssl rand -hex 24`, `BETTER_AUTH_SECRET` ← `openssl rand -base64 32`, `PUBLIC_URL=https://your-domain`). Set `PUBLIC_URL` to exactly the public HTTPS origin configured in Coolify.
+5. Map the HTTPS domain to the **app** service on internal container port **3000**
+6. Deploy; wait for healthchecks on `app`, `db`, and `worker`
 
-Volumes `media` and `modules` must persist. MCP is same-origin at `/mcp`.
+Volumes `pgdata` (database), `media`, and `modules` must persist across redeployments and upgrades. MCP is same-origin at `/mcp`.
 
 <details>
 <summary>Coolify with nightly compose</summary>
