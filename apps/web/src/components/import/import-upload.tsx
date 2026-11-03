@@ -1,5 +1,5 @@
 import { MAX_IMPORT_ZIP_BYTES } from "@placard/domain"
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router"
 import { ErrorAlert } from "@/components/error-alert"
 import { Button } from "@/components/ui/button"
@@ -34,6 +34,13 @@ export function ImportUploadPage() {
   const [busy, setBusy] = useState(false)
   const [progress, setProgress] = useState<string | null>(null)
   const { data: runs, reload } = useLoad(useCallback(() => api((c) => c.import.listRuns()), []))
+
+  const processing = runs?.some((run) => run.status === "parsing" || run.status === "committing")
+  useEffect(() => {
+    if (!processing) return
+    const timer = window.setInterval(reload, 2000)
+    return () => window.clearInterval(timer)
+  }, [processing, reload])
 
   const onZip = async (file: File) => {
     if (file.size > MAX_IMPORT_ZIP_BYTES) {
@@ -71,7 +78,8 @@ export function ImportUploadPage() {
       <div>
         <h1 className="text-3xl font-semibold tracking-tight">Import</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Upload a Google Takeout zip. Triage is free — no Places API calls until you commit.
+          Upload a Google Takeout zip. Parsing and importing run in the background. Triage is free —
+          no Places API calls until you commit.
         </p>
       </div>
       {error && <ErrorAlert message={error} />}

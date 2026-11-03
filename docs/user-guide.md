@@ -12,10 +12,10 @@ map. Open the resulting card to add notes, tags, photos, or custom fields.
 ## Bring your Google saves
 
 1. Export your saved places through Google Takeout. Keep the downloaded ZIP.
-2. Open **Import**, choose the ZIP, and wait for parsing.
+2. Open **Import**, choose the ZIP. Parsing runs in the background; you can keep using Placard and return through **Recent imports** when it is ready.
 3. Review entries by source list, text, and keep/skip decision. Use bulk selection
    for groups you want to keep or leave out. You can return to unfinished triage.
-4. Commit your selection. Parsing and triage do not call Google Places; matching
+4. Commit your selection. Importing continues in the background, with progress shown on the import page. Parsing and triage do not call Google Places; matching
    and enrichment can use paid API calls when a key is configured.
 5. Review uncertain matches in **Needs review**. Search for a better match,
    accept an available weak pin, or skip the entry.

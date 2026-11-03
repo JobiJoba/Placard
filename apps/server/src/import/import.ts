@@ -192,8 +192,12 @@ export class Import extends Context.Service<
       entryId: string,
       input: ImportResolveInput,
     ) => Effect.Effect<ImportRun, ImportNotFound | ImportInvalidState | GooglePlacesError>
-    readonly runParseJob: (runId: string) => Effect.Effect<void>
-    readonly runCommitJob: (runId: string) => Effect.Effect<void>
+    readonly runParseJob: (
+      runId: string,
+      upload?: ImportUpload,
+      lastAttempt?: boolean,
+    ) => Effect.Effect<void>
+    readonly runCommitJob: (runId: string, lastAttempt?: boolean) => Effect.Effect<void>
   }
 >()("placard/Import") {
   static readonly layer = Layer.effect(
@@ -439,6 +443,7 @@ export class Import extends Context.Service<
               yield* sql`
                 update import_entries set match_status = 'needs_review'
                 where id = ${entry.id}`.pipe(Effect.orDie)
+              yield* recount(runId)
               continue
             }
 
@@ -497,6 +502,7 @@ export class Import extends Context.Service<
                   .pipe(Effect.orDie)
               }
             }
+            yield* recount(runId)
           }
 
           yield* recount(runId)
@@ -505,28 +511,28 @@ export class Import extends Context.Service<
             where id = ${runId}`.pipe(Effect.orDie)
         })
 
+      const failRun = (runId: string, message: string) =>
+        sql`update import_runs set status = 'failed', error_message = ${message}
+            where id = ${runId}`.pipe(Effect.asVoid, Effect.orDie)
+
       return {
         start: Effect.fn("Import.start")(function* (ownerId, upload) {
-          const files = yield* filesFromUpload(upload)
-          const fingerprint = parseTakeoutFiles(files).fingerprint
           const id = uuidv7()
           yield* sql`
             insert into import_runs (id, owner_id, status, source_fingerprint, counts)
             values (
-              ${id}, ${ownerId}, 'parsing', ${fingerprint},
+              ${id}, ${ownerId}, 'parsing', '',
               ${JSON.stringify(emptyCounts())}::jsonb
             )`.pipe(Effect.orDie)
-          yield* fillStaging(ownerId, id, files).pipe(
-            Effect.catchTag("TakeoutParseError", (error) =>
-              sql`
-                update import_runs set status = 'failed', error_message = ${error.message}
-                where id = ${id}`.pipe(
-                Effect.orDie,
-                Effect.flatMap(() => Effect.fail(error)),
+          yield* jobs
+            .enqueueImportParse({ runId: id, upload })
+            .pipe(
+              Effect.catchCause((cause) =>
+                failRun(id, "Could not queue the import. Please upload it again.").pipe(
+                  Effect.andThen(Effect.failCause(cause)),
+                ),
               ),
-            ),
-          )
-          yield* jobs.enqueueImportParse({ runId: id })
+            )
           return toRun(yield* loadRun(ownerId, id).pipe(Effect.orDie))
         }),
 
@@ -607,10 +613,24 @@ export class Import extends Context.Service<
               message: `Still ${run.counts.pending} pending — keep or skip them first.`,
             })
           }
-          yield* sql`
-            update import_runs set status = 'committing' where id = ${runId}`.pipe(Effect.orDie)
-          yield* jobs.enqueueImportCommit({ runId })
-          yield* executeCommit(runId).pipe(Effect.provideService(UsageSource, "Imports"))
+          const claimed = yield* sql<{ id: string }>`
+            update import_runs set status = 'committing'
+            where id = ${runId} and status = 'triage' returning id`.pipe(Effect.orDie)
+          if (claimed.length === 0) {
+            return yield* new ImportInvalidState({
+              message: "This import is already being committed.",
+            })
+          }
+          yield* jobs
+            .enqueueImportCommit({ runId })
+            .pipe(
+              Effect.catchCause((cause) =>
+                sql`update import_runs set status = 'triage' where id = ${runId}`.pipe(
+                  Effect.orDie,
+                  Effect.andThen(Effect.failCause(cause)),
+                ),
+              ),
+            )
           return toRun(yield* loadRun(ownerId, runId))
         }),
 
@@ -639,19 +659,38 @@ export class Import extends Context.Service<
           return toRun(yield* loadRun(ownerId, runId))
         }),
 
-        runParseJob: (runId) =>
+        runParseJob: (runId, upload, lastAttempt = true) =>
           Effect.gen(function* () {
             const run = yield* loadRunById(runId)
-            if (run.status === "parsing") {
-              yield* sql`
-                update import_runs set status = 'failed',
-                  error_message = 'Parse job found the run still parsing (payload missing).'
-                where id = ${runId}`.pipe(Effect.orDie)
+            if (run.status !== "parsing") return
+            if (!upload) {
+              yield* failRun(runId, "Import upload is missing. Please upload it again.")
+              return
             }
-          }),
+            const files = yield* filesFromUpload(upload)
+            yield* sql
+              .withTransaction(fillStaging(run.owner_id, runId, files))
+              .pipe(Effect.catchTag("SqlError", Effect.die))
+          }).pipe(
+            Effect.catchTag("TakeoutParseError", (error) => failRun(runId, error.message)),
+            Effect.catchCause((cause) =>
+              (lastAttempt
+                ? failRun(runId, "Import parsing failed. Please upload it again.")
+                : Effect.void
+              ).pipe(Effect.andThen(Effect.failCause(cause))),
+            ),
+          ),
 
-        runCommitJob: (runId) =>
-          executeCommit(runId).pipe(Effect.provideService(UsageSource, "Imports")),
+        runCommitJob: (runId, lastAttempt = true) =>
+          executeCommit(runId).pipe(
+            Effect.provideService(UsageSource, "Imports"),
+            Effect.catchCause((cause) =>
+              (lastAttempt
+                ? failRun(runId, "Import could not finish. Some places may have been imported.")
+                : Effect.void
+              ).pipe(Effect.andThen(Effect.failCause(cause))),
+            ),
+          ),
 
         dismissReview: Effect.fn("Import.dismissReview")(function* (ownerId, runId, entryId) {
           const run = yield* loadRun(ownerId, runId)

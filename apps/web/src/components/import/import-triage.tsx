@@ -65,8 +65,19 @@ export function ImportTriagePage({ runId }: { readonly runId: string }) {
     [runId],
   )
 
-  const { data: run, reload: reloadRun } = useLoad(loadRun)
-  const { data: allEntries, reload: reloadEntries } = useLoad(loadEntries)
+  const { data: run, error: runError, reload: reloadRun } = useLoad(loadRun)
+  const { data: allEntries, error: entriesError, reload: reloadEntries } = useLoad(loadEntries)
+
+  const processing = run?.status === "parsing" || run?.status === "committing"
+  useEffect(() => {
+    if (!processing) return
+    const timer = window.setInterval(reloadRun, 2000)
+    return () => window.clearInterval(timer)
+  }, [processing, reloadRun])
+
+  useEffect(() => {
+    if (run?.status === "triage" || run?.status === "done") reloadEntries()
+  }, [run?.status, reloadEntries])
 
   const lists = useMemo(() => summarizeLists(allEntries ?? []), [allEntries])
 
@@ -203,7 +214,12 @@ export function ImportTriagePage({ runId }: { readonly runId: string }) {
     )
   }
 
-  if (!run) return <p className="text-sm text-muted-foreground">Loading import…</p>
+  if (!run)
+    return runError ? (
+      <ErrorAlert message={runError} />
+    ) : (
+      <p className="text-sm text-muted-foreground">Loading import…</p>
+    )
 
   const savedPlaces = lists.find((list) => list.key === null)
 
@@ -286,7 +302,30 @@ export function ImportTriagePage({ runId }: { readonly runId: string }) {
         </div>
       </div>
 
-      {error && <ErrorAlert message={error} />}
+      {(error || runError || entriesError) && (
+        <ErrorAlert message={error || runError || entriesError || "Could not load import"} />
+      )}
+      {run.errorMessage && <ErrorAlert message={run.errorMessage} />}
+      {processing && (
+        <div className="rounded-lg border border-border p-4" role="status">
+          <p className="font-medium">
+            {run.status === "parsing"
+              ? "Preparing your import in the background…"
+              : "Importing your kept places in the background…"}
+          </p>
+          {run.status === "committing" && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              {run.counts.matched + run.counts.needsReview} of {run.counts.kept} places processed.
+            </p>
+          )}
+          <p className="mt-1 text-sm text-muted-foreground">
+            You can leave this page and keep using Placard. Check Recent imports for updates.
+          </p>
+          <Button asChild variant="outline" className="mt-3">
+            <Link to="/">Go to library</Link>
+          </Button>
+        </div>
+      )}
 
       {run.status === "triage" && (
         <>

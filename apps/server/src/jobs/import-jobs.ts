@@ -14,7 +14,11 @@ export const registerImportWorkers = (boss: PgBoss, run: Run) =>
           { includeMetadata: true, batchSize: 1, pollingIntervalSeconds: 1 },
           async ([job]) => {
             if (!job) return
-            await run(Effect.flatMap(Import, (imp) => imp.runParseJob(job.data.runId)))
+            await run(
+              Effect.flatMap(Import, (imp) =>
+                imp.runParseJob(job.data.runId, job.data.upload, job.retryCount >= job.retryLimit),
+              ),
+            )
           },
         ),
       catch: (cause) => new Error(`Failed to register import.parse worker: ${String(cause)}`),
@@ -27,7 +31,11 @@ export const registerImportWorkers = (boss: PgBoss, run: Run) =>
           { includeMetadata: true, batchSize: 1, pollingIntervalSeconds: 1 },
           async ([job]) => {
             if (!job) return
-            await run(Effect.flatMap(Import, (imp) => imp.runCommitJob(job.data.runId)))
+            await run(
+              Effect.flatMap(Import, (imp) =>
+                imp.runCommitJob(job.data.runId, job.retryCount >= job.retryLimit),
+              ),
+            )
           },
         ),
       catch: (cause) => new Error(`Failed to register import.commit worker: ${String(cause)}`),

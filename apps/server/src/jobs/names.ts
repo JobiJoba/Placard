@@ -1,3 +1,5 @@
+import type { ImportUpload } from "@placard/domain"
+
 /** pg-boss queue names and payloads. */
 
 export const ENRICH_PLACE = "enrich.place"
@@ -13,6 +15,8 @@ export interface EnrichPlaceJob {
 
 export interface ImportParseJob {
   readonly runId: string
+  /** Durable upload, consumed only by the background worker. */
+  readonly upload?: ImportUpload
 }
 
 export interface ImportCommitJob {
