@@ -39,6 +39,10 @@ COPY apps/server/drizzle ./apps/server/drizzle
 COPY --from=build /app/apps/web/dist ./web-dist
 
 FROM node:26-slim AS runner
+ARG PLACARD_VERSION=development
+ARG PLACARD_REVISION
+ENV PLACARD_VERSION=$PLACARD_VERSION \
+    PLACARD_REVISION=$PLACARD_REVISION
 ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0 \
     PORT=3000 \

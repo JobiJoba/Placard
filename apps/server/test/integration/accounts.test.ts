@@ -81,6 +81,18 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("accounts", (it) =
     }),
   )
 
+  it.effect("debug diagnostics are available only to the admin", () =>
+    run(async (app) => {
+      expect((await app.browser().get("/api/admin/debug")).status).toBe(401)
+      expect((await member.browser.get("/api/admin/debug")).status).toBe(403)
+      const response = await admin.browser.get("/api/admin/debug")
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({ nodeVersion: process.version, logCapacity: 500 })
+      expect(typeof response.body.version).toBe("string")
+      expect(Array.isArray(response.body.logs)).toBe(true)
+    }),
+  )
+
   it.effect("an invite works only once", () =>
     run(async (app) => {
       const token = inviteTokenFrom(memberInviteUrl)

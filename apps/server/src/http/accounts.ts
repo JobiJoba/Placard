@@ -9,6 +9,7 @@ import { type MeBase, Users } from "../accounts/users.ts"
 import { Auth } from "../auth/auth.ts"
 import { Budget } from "../budget/budget.ts"
 import { AppConfig } from "../config.ts"
+import { debugView } from "../debug/debug.ts"
 import { JobQueue } from "../jobs/queue.ts"
 import { Enrichment } from "../places/enrichment.ts"
 import { InstanceSettings } from "../settings/instance-settings.ts"
@@ -90,6 +91,7 @@ export const AdminApiLive = HttpApiBuilder.group(
     const { publicUrl } = yield* AppConfig
     return handlers
       .handle("settings", () => settings.view)
+      .handle("debug", () => debugView)
       .handle("budget", () => budget.view)
       .handle("setBudget", ({ payload }) => budget.update(payload))
       .handle("setGoogleApiKey", ({ payload }) => settings.setGoogleApiKey(payload.apiKey))

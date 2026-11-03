@@ -13,6 +13,7 @@ import { PlacePage } from "@/pages/place-page"
 import {
   RequireSettingsAdmin,
   SettingsBudgetPage,
+  SettingsDebugPage,
   SettingsGeneralPage,
   SettingsIntegrationsPage,
   SettingsLayout,
@@ -96,6 +97,14 @@ function AuthenticatedRoutes() {
             element={
               <RequireSettingsAdmin>
                 <SettingsIntegrationsPage />
+              </RequireSettingsAdmin>
+            }
+          />
+          <Route
+            path="debug"
+            element={
+              <RequireSettingsAdmin>
+                <SettingsDebugPage />
               </RequireSettingsAdmin>
             }
           />

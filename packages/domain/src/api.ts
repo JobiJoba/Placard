@@ -30,6 +30,7 @@ import {
   CustomFieldNotFound,
   CustomFieldUpdate,
 } from "./custom-fields.ts"
+import { DebugView } from "./debug.ts"
 import {
   EnrichmentBusy,
   EnrichmentRun,
@@ -154,6 +155,7 @@ export class MeApi extends HttpApiGroup.make("me")
 export class AdminApi extends HttpApiGroup.make("admin")
   .add(
     HttpApiEndpoint.get("settings", "/settings", { success: InstanceSettingsView }),
+    HttpApiEndpoint.get("debug", "/debug", { success: DebugView }),
     HttpApiEndpoint.get("budget", "/budget", { success: BudgetView }),
     HttpApiEndpoint.put("setBudget", "/budget", { payload: BudgetSettings, success: BudgetView }),
     HttpApiEndpoint.put("setGoogleApiKey", "/settings/google-api-key", {

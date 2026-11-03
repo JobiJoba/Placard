@@ -50,6 +50,9 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
+          build-args: |
+            PLACARD_VERSION=nightly
+            PLACARD_REVISION=${{ github.sha }}
           tags: |
             ${{ steps.image.outputs.name }}:nightly
             ${{ steps.image.outputs.name }}:nightly-${{ github.sha }}

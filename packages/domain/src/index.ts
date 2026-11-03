@@ -18,6 +18,7 @@ export {
 } from "./api.ts"
 export * from "./budget.ts"
 export * from "./custom-fields.ts"
+export * from "./debug.ts"
 export * from "./export.ts"
 export * from "./facts.ts"
 export {

@@ -5,6 +5,7 @@ import { Effect, Layer } from "effect"
 import { FetchHttpClient, HttpRouter } from "effect/http"
 import { AppConfig, loadConfigOrExit } from "./config.ts"
 import { runMigrations } from "./db/migrate.ts"
+import { DebugLoggingLive } from "./debug/debug.ts"
 import { GoogleFixtureClient } from "./google/fixture-client.ts"
 import { RoutesLive } from "./http/api.ts"
 import { SecurityHeadersLive } from "./http/security.ts"
@@ -60,4 +61,4 @@ const program = Effect.gen(function* () {
   yield* Layer.launch(ServerLive)
 })
 
-NodeRuntime.runMain(program)
+NodeRuntime.runMain(program.pipe(Effect.provide(DebugLoggingLive)))

@@ -418,6 +418,12 @@ export function CommandPalette({
           run: () => go("/settings/budget"),
         },
         {
+          id: "settings:debug",
+          label: "Settings · Debug",
+          keywords: "version logs diagnostics admin",
+          run: () => go("/settings/debug"),
+        },
+        {
           id: "settings:people",
           label: "Settings · People",
           keywords: "invites users admin",

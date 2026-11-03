@@ -1,4 +1,5 @@
 export { SettingsBudgetPage } from "./budget-page"
+export { SettingsDebugPage } from "./debug-page"
 export { SettingsGeneralPage } from "./general-page"
 export { SettingsIntegrationsPage } from "./integrations-page"
 export { SettingsMarketplacePage } from "./marketplace-page"

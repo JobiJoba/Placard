@@ -6,23 +6,26 @@ import { useMe } from "@/session"
 type NavItem = {
   readonly to: string
   readonly label: string
+  readonly section: "Personal" | "Library" | "Administration"
   readonly adminOnly?: boolean
   /** Extra path prefixes that keep this item active (e.g. module detail under Marketplace). */
   readonly activePrefixes?: ReadonlyArray<string>
 }
 
 const staticNavItems: ReadonlyArray<NavItem> = [
-  { to: "/settings/general", label: "General" },
-  { to: "/settings/mcp", label: "MCP" },
+  { to: "/settings/general", label: "General", section: "Personal" },
+  { to: "/settings/mcp", label: "MCP", section: "Personal" },
   {
     to: "/settings/marketplace",
     label: "Marketplace",
+    section: "Library",
     adminOnly: true,
     activePrefixes: ["/settings/modules"],
   },
-  { to: "/settings/integrations", label: "Integrations", adminOnly: true },
-  { to: "/settings/budget", label: "Usage & budget", adminOnly: true },
-  { to: "/settings/people", label: "People", adminOnly: true },
+  { to: "/settings/integrations", label: "Integrations", section: "Library", adminOnly: true },
+  { to: "/settings/budget", label: "Usage & budget", section: "Administration", adminOnly: true },
+  { to: "/settings/people", label: "People", section: "Administration", adminOnly: true },
+  { to: "/settings/debug", label: "Debug", section: "Administration", adminOnly: true },
 ]
 
 const adminPaths = new Set(staticNavItems.filter((item) => item.adminOnly).map((item) => item.to))
@@ -69,18 +72,31 @@ export function SettingsLayout() {
           aria-label="Settings sections"
           className="settings-nav -mx-1 flex gap-1 overflow-x-auto px-1 pb-1 md:mx-0 md:w-52 md:shrink-0 md:flex-col md:overflow-visible md:px-0 md:pb-0"
         >
-          {items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end
-              className={({ isActive }) =>
-                linkClass(isNavActive(item, location.pathname, isActive))
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
+          {(["Personal", "Library", "Administration"] as const).map((section) => {
+            const sectionItems = items.filter((item) => item.section === section)
+            if (sectionItems.length === 0) return null
+            return (
+              <div key={section} className="flex shrink-0 flex-col gap-1 md:mb-3 md:last:mb-0">
+                <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {section}
+                </p>
+                <div className="flex gap-1 md:flex-col">
+                  {sectionItems.map((item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end
+                      className={({ isActive }) =>
+                        linkClass(isNavActive(item, location.pathname, isActive))
+                      }
+                    >
+                      {item.label}
+                    </NavLink>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
         </nav>
         <div className="min-w-0 flex-1">
           <Outlet />

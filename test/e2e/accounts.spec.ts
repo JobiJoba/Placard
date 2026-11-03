@@ -33,10 +33,34 @@ test("a second visitor cannot sign up without an invite", async ({ page }) => {
   await expect(page.getByText("Ask the admin of this Placard for an invite link.")).toBeVisible()
 })
 
-test("the admin invites a user who gets their own empty library", async ({ page, browser }) => {
+test("the admin invites a user who gets their own empty library", async ({
+  page,
+  browser,
+}, testInfo) => {
   await signIn(page, admin)
   await expectEmptyLibrary(page)
   await openNav(page, "Settings")
+  const settingsNav = page.getByRole("navigation", { name: "Settings sections" })
+  for (const section of ["Personal", "Library", "Administration"]) {
+    await expect(settingsNav.getByText(section, { exact: true })).toBeVisible()
+  }
+  await settingsNav.getByRole("link", { name: "Debug" }).click()
+  await expect(page.getByText("Placard version", { exact: true })).toBeVisible()
+  const logs = page.getByRole("region", { name: "Server logs" })
+  await expect(logs).toContainText("Starting Placard")
+  await page.getByLabel("Search logs").fill("no-such-log-entry")
+  await expect(logs).toContainText("No logs match your filters.")
+  await page.getByLabel("Search logs").fill("")
+  await page.getByLabel("Log level").selectOption("info")
+  await expect(logs).toContainText("Starting Placard")
+  await page.screenshot({ path: testInfo.outputPath("debug-desktop.png"), fullPage: true })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(settingsNav.getByRole("link", { name: "Debug" })).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  )
+  await page.screenshot({ path: testInfo.outputPath("debug-mobile.png"), fullPage: true })
+  await page.setViewportSize({ width: 1280, height: 720 })
   await page.getByRole("link", { name: "People" }).click()
   await page.getByLabel("Email").fill(member.email)
   await page.getByRole("button", { name: "Create invite" }).click()
@@ -58,6 +82,11 @@ test("the admin invites a user who gets their own empty library", async ({ page,
   await expect(memberPage.getByText("Distance unit")).toBeVisible()
   await expect(memberPage.getByRole("link", { name: "People" })).toHaveCount(0)
   await expect(memberPage.getByRole("link", { name: "Marketplace" })).toHaveCount(0)
+
+  await expect(memberPage.getByRole("link", { name: "Debug" })).toHaveCount(0)
+  await memberPage.goto("/settings/debug")
+  await expect(memberPage).toHaveURL(/\/settings\/general$/)
+  await expect(memberPage.getByRole("region", { name: "Server logs" })).toHaveCount(0)
 
   await memberPage.getByRole("radio", { name: "Miles" }).click()
   await expect(memberPage.getByRole("radio", { name: "Miles" })).toBeChecked()
