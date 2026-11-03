@@ -46,7 +46,8 @@ export function PluginsPage() {
           <h1>Your library. A few extra possibilities.</h1>
           <p className="lede">
             Optional plugins for the places you keep. Add the tools you need to your own Placard
-            instance, from restaurant menus and choosing where to go to printing a board of your favorite places.
+            instance, from restaurant menus and choosing where to go to printing a board of your
+            favorite places.
           </p>
           <a href={REPOSITORY} target="_blank" rel="noreferrer">
             Browse the plugins repository on GitHub →
@@ -110,8 +111,8 @@ export function PluginsPage() {
               <li>Install and enable the plugin, then make it visible for your account.</li>
             </ol>
             <p>
-              Keep the module selector (such as <code>#places.board</code>) in the URL to
-              select the correct plugin. You can also upload its package from{" "}
+              Keep the module selector (such as <code>#places.board</code>) in the URL to select the
+              correct plugin. You can also upload its package from{" "}
               <a href={`${REPOSITORY}/releases`} target="_blank" rel="noreferrer">
                 GitHub Releases
               </a>
