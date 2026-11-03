@@ -17,9 +17,7 @@ const latLng = z.object({
 
 const searchFilterShape = {
   text: z.string().min(1).max(200).optional(),
-  category: z
-    .enum(["restaurant", "cafe", "bar", "park", "museum", "cinema", "hotel", "trail", "other"])
-    .optional(),
+  category: z.string().trim().min(1).max(80).optional(),
   open: z.enum(["now", "tonight"]).optional(),
   near: latLng.optional(),
   radiusKm: z.number().gt(0).lte(500).optional(),
@@ -163,17 +161,7 @@ export const registerPlacardTools = async (server: McpServer, ctx: ToolContext) 
         "Add a manual place (pin) to your library. Use when you already know name and coordinates.",
       inputSchema: {
         name: z.string().min(1).max(200),
-        category: z.enum([
-          "restaurant",
-          "cafe",
-          "bar",
-          "park",
-          "museum",
-          "cinema",
-          "hotel",
-          "trail",
-          "other",
-        ]),
+        category: z.string().trim().min(1).max(80),
         lat: z.number().min(-90).max(90),
         lng: z.number().min(-180).max(180),
         address: z.string().nullable().optional(),

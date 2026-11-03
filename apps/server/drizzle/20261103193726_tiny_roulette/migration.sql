@@ -1,0 +1,2 @@
+ALTER TABLE "users" ADD COLUMN "custom_place_types" jsonb DEFAULT '[]' NOT NULL;--> statement-breakpoint
+ALTER TABLE "places" DROP CONSTRAINT "places_category_check", ADD CONSTRAINT "places_category_check" CHECK (length(btrim("category")) between 1 and 80);

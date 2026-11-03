@@ -23,6 +23,7 @@ import {
   SettingsModulesIndexRedirect,
   SettingsPeoplePage,
 } from "@/pages/settings"
+import { SettingsPlaceTypesPage } from "@/pages/settings/place-types-page"
 import { FullPageMessage, RequireUser, SessionProvider } from "@/session"
 
 function AuthenticatedRoutes() {
@@ -59,6 +60,7 @@ function AuthenticatedRoutes() {
         <Route path="/settings" element={<SettingsLayout />}>
           <Route index element={<Navigate to="general" replace />} />
           <Route path="general" element={<SettingsGeneralPage />} />
+          <Route path="place-types" element={<SettingsPlaceTypesPage />} />
           <Route path="mcp" element={<SettingsMcpPage />} />
           <Route
             path="modules"

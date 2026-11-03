@@ -1,4 +1,4 @@
-import type { Place, PlaceCategory, SearchHit } from "@placard/domain"
+import type { Place, SearchHit } from "@placard/domain"
 import {
   AdvancedMarker,
   APIProvider,
@@ -9,19 +9,13 @@ import {
 } from "@vis.gl/react-google-maps"
 import { useEffect, useState } from "react"
 import { Link } from "react-router"
-import { categoryIcons, categoryLabels, formatDistance, statusLabels } from "@/lib/places"
-
-const sleeveTone: Record<PlaceCategory, string> = {
-  restaurant: "oklch(0.72 0.06 55)",
-  cafe: "oklch(0.78 0.05 85)",
-  bar: "oklch(0.55 0.06 30)",
-  park: "oklch(0.72 0.07 145)",
-  museum: "oklch(0.7 0.04 250)",
-  cinema: "oklch(0.58 0.05 320)",
-  hotel: "oklch(0.74 0.04 220)",
-  trail: "oklch(0.68 0.07 130)",
-  other: "oklch(0.7 0.03 70)",
-}
+import {
+  categoryIcon,
+  categoryLabel,
+  categoryTone,
+  formatDistance,
+  statusLabels,
+} from "@/lib/places"
 
 /** Short place line — city/area, not the full postal wall. */
 const pinLocality = (address: string | null): string | null => {
@@ -81,8 +75,8 @@ function FitResults({
 }
 
 function PlacePin({ place, selected }: { readonly place: Place; readonly selected: boolean }) {
-  const Icon = categoryIcons[place.category]
-  const tone = sleeveTone[place.category]
+  const Icon = categoryIcon(place.category)
+  const tone = categoryTone(place.category)
   return (
     <div
       className={`relative flex size-7 items-center justify-center rounded-full shadow-sm transition-[box-shadow,transform] ${
@@ -143,7 +137,7 @@ function PlaceInfoContent({
         </p>
         <p className="mt-0.5 text-[11px] tracking-wide text-[color-mix(in_srgb,var(--crate)_65%,transparent)] uppercase">
           {[
-            categoryLabels[place.category],
+            categoryLabel(place.category),
             place.status ? statusLabels[place.status] : null,
             distanceMeters != null ? formatDistance(distanceMeters, distanceUnit) : null,
           ]

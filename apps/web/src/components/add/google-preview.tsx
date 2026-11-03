@@ -5,7 +5,7 @@ import { ErrorAlert } from "@/components/error-alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { api, errorMessage } from "@/lib/api"
-import { categoryIcons, categoryLabels } from "@/lib/places"
+import { categoryIcon, categoryLabel } from "@/lib/places"
 import type { PlacePageState } from "@/pages/place-page"
 
 const alreadySaved: PlacePageState = { alreadySaved: true }
@@ -29,7 +29,7 @@ export function GooglePreviewCard({
   const navigate = useNavigate()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const Icon = categoryIcons[preview.category]
+  const Icon = categoryIcon(preview.category)
 
   const save = () => {
     setSaving(true)
@@ -52,7 +52,7 @@ export function GooglePreviewCard({
     <Card aria-label="Place preview">
       <CardHeader>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Icon className="size-3.5" aria-hidden /> {categoryLabels[preview.category]}
+          <Icon className="size-3.5" aria-hidden /> {categoryLabel(preview.category)}
         </div>
         <CardTitle>{preview.name}</CardTitle>
         {preview.address && <CardDescription>{preview.address}</CardDescription>}

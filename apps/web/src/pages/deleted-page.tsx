@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import { api, errorMessage } from "@/lib/api"
-import { categoryIcons, categoryLabels } from "@/lib/places"
+import { categoryIcon, categoryLabel } from "@/lib/places"
 import { useLoad } from "@/lib/use-load"
 
 export function DeletedPage() {
@@ -118,7 +118,7 @@ function DeletedRow({
   readonly onRestore: () => void
   readonly busy: boolean
 }) {
-  const Icon = categoryIcons[entry.place.category]
+  const Icon = categoryIcon(entry.place.category)
   return (
     <li className="flex items-center gap-3 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
       <Checkbox
@@ -129,7 +129,7 @@ function DeletedRow({
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Icon className="size-3.5" aria-hidden />
-          {categoryLabels[entry.place.category]}
+          {categoryLabel(entry.place.category)}
         </div>
         <span className="truncate font-medium">{entry.place.name}</span>
         <span className="text-xs text-muted-foreground">

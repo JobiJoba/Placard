@@ -47,6 +47,12 @@ export const MeApiLive = HttpApiBuilder.group(
           return yield* asMe(base)
         }),
       )
+      .handle("setPlaceTypes", ({ payload }) =>
+        Effect.gen(function* () {
+          const me = yield* CurrentUser
+          return yield* asMe(yield* users.setPlaceTypes(me.id, payload.types))
+        }),
+      )
       .handle("updateProfile", ({ payload }) =>
         Effect.gen(function* () {
           const me = yield* CurrentUser

@@ -1,12 +1,11 @@
-import {
-  type BulkAction,
-  placeCategories as categories,
-  type HouseholdScope,
-  type OpenWhen,
-  type PlaceCategory,
-  type PlaceStatus,
-  type SearchFilter,
-  type SearchHit,
+import type {
+  BulkAction,
+  HouseholdScope,
+  OpenWhen,
+  PlaceCategory,
+  PlaceStatus,
+  SearchFilter,
+  SearchHit,
 } from "@placard/domain"
 import { LayoutGrid, Map as MapIcon, Plus, Trash2 } from "lucide-react"
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -60,9 +59,7 @@ const parseOpen = (value: string | null): OpenWhen | undefined =>
   value === "now" || value === "tonight" ? value : undefined
 
 const parseCategory = (value: string | null): PlaceCategory | undefined =>
-  value && (categories as ReadonlyArray<string>).includes(value)
-    ? (value as PlaceCategory)
-    : undefined
+  value?.trim() && value.length <= 80 ? value : undefined
 
 export function LibraryPage() {
   const me = useMe()

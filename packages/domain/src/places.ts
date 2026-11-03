@@ -11,10 +11,41 @@ export const placeCategories = [
   "cinema",
   "hotel",
   "trail",
+  "bakery",
+  "ice_cream",
+  "brewery",
+  "winery",
+  "beach",
+  "garden",
+  "viewpoint",
+  "lake",
+  "campground",
+  "gallery",
+  "theatre",
+  "library",
+  "landmark",
+  "shop",
+  "bookshop",
+  "market",
+  "gym",
+  "spa",
+  "swimming_pool",
+  "sports_venue",
+  "zoo",
+  "amusement_park",
+  "hostel",
+  "airport",
+  "train_station",
+  "parking",
   "other",
 ] as const
 
-export const PlaceCategory = Schema.Literals(placeCategories)
+/** Built-ins use stable keys; custom types store their display name directly. */
+export const PlaceCategory = Schema.Trim.pipe(Schema.check(Schema.isBetweenLength(1, 80)))
+
+export const CustomPlaceTypes = Schema.Array(PlaceCategory).pipe(
+  Schema.check(Schema.isMaxLength(100)),
+)
 export type PlaceCategory = typeof PlaceCategory.Type
 
 export const placeSources = ["manual", "autocomplete", "map_pick", "takeout", "mcp"] as const

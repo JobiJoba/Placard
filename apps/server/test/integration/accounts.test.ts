@@ -160,6 +160,36 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("accounts", (it) =
     }),
   )
 
+  it.effect("custom place types persist per account and validate names", () =>
+    run(async (app) => {
+      const saved = await member.browser.send("PUT", "/api/me/place-types", {
+        types: [" Record shop ", "Climbing gym", "Record shop"],
+      })
+      expect(saved.status).toBe(200)
+      expect(saved.body.customPlaceTypes).toEqual(["Record shop", "Climbing gym"])
+      expect((await member.browser.get("/api/me")).body.customPlaceTypes).toEqual([
+        "Record shop",
+        "Climbing gym",
+      ])
+      expect((await admin.browser.get("/api/me")).body.customPlaceTypes).toEqual([])
+      expect((await app.browser().send("PUT", "/api/me/place-types", { types: [] })).status).toBe(
+        401,
+      )
+      for (const types of [
+        ["   "],
+        ["x".repeat(81)],
+        Array.from({ length: 101 }, (_, i) => `Type ${i}`),
+      ]) {
+        expect((await member.browser.send("PUT", "/api/me/place-types", { types })).status).toBe(
+          400,
+        )
+      }
+      const cleared = await member.browser.send("PUT", "/api/me/place-types", { types: [] })
+      expect(cleared.status).toBe(200)
+      expect(cleared.body.customPlaceTypes).toEqual([])
+    }),
+  )
+
   it.effect("a user can change their name and avatar", () =>
     run(async () => {
       const renamed = await member.browser.send("PATCH", "/api/me/profile", { name: "Robert" })

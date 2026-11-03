@@ -1,5 +1,6 @@
 import { Context, Schema } from "effect"
 import { HttpApiMiddleware } from "effect/http-api"
+import { CustomPlaceTypes } from "./places.ts"
 
 export const UserRole = Schema.Literals(["admin", "member"])
 export type UserRole = typeof UserRole.Type
@@ -17,6 +18,7 @@ export const Me = Schema.Struct({
   email: Schema.String,
   role: UserRole,
   distanceUnit: DistanceUnit,
+  customPlaceTypes: Schema.optional(CustomPlaceTypes),
   /** Public avatar URL path, or null when using the letter stand-in. */
   image: Schema.NullOr(Schema.String),
   /** Instance admin toggle; gates share UI and household library filters. */

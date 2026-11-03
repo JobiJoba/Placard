@@ -1,11 +1,4 @@
-import {
-  type DistanceUnit,
-  type MyModule,
-  type PlaceList,
-  placeCategories,
-  type SearchHit,
-  type TagSummary,
-} from "@placard/domain"
+import type { DistanceUnit, MyModule, PlaceList, SearchHit, TagSummary } from "@placard/domain"
 import {
   Download,
   Filter,
@@ -37,7 +30,8 @@ import {
   mapsProviderLabels,
   useMapsProvider,
 } from "@/lib/maps-provider"
-import { categoryLabels, statusLabels } from "@/lib/places"
+import { usePlaceCategories } from "@/lib/place-categories"
+import { categoryLabel, statusLabels } from "@/lib/places"
 import { useMe, useSession } from "@/session"
 
 type PaletteCommand = {
@@ -69,6 +63,7 @@ export function CommandPalette({
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
 }) {
+  const placeCategories = usePlaceCategories()
   const navigate = useNavigate()
   const me = useMe()
   const { setMe, signOut } = useSession()
@@ -356,9 +351,9 @@ export function CommandPalette({
     for (const category of placeCategories) {
       items.push({
         id: `filter:cat:${category}`,
-        label: `Filter · ${categoryLabels[category]}`,
+        label: `Filter · ${categoryLabel(category)}`,
         keywords: `category ${category}`,
-        run: () => go(`/?category=${category}`),
+        run: () => go(`/?category=${encodeURIComponent(category)}`),
       })
     }
     for (const tag of tags) {
@@ -378,10 +373,17 @@ export function CommandPalette({
       })
     }
     return items
-  }, [go, lists, tags])
+  }, [go, lists, tags, placeCategories])
 
   const settings = useMemo((): ReadonlyArray<PaletteCommand> => {
     const items: PaletteCommand[] = [
+      {
+        id: "settings:place-types",
+        label: "Settings · Place types",
+        keywords: "categories custom types",
+        icon: <Settings className="size-4" />,
+        run: () => go("/settings/place-types"),
+      },
       {
         id: "settings:general",
         label: "Settings · General",

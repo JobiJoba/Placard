@@ -14,6 +14,7 @@ type NavItem = {
 
 const staticNavItems: ReadonlyArray<NavItem> = [
   { to: "/settings/general", label: "General", section: "Personal" },
+  { to: "/settings/place-types", label: "Place types", section: "Library" },
   { to: "/settings/mcp", label: "MCP", section: "Personal" },
   {
     to: "/settings/marketplace",

@@ -1,19 +1,13 @@
-import type { Place, PlaceCategory } from "@placard/domain"
+import type { Place } from "@placard/domain"
 import { Link } from "react-router"
 import { Checkbox } from "@/components/ui/checkbox"
-import { categoryIcons, categoryLabels, formatDistance, statusLabels } from "@/lib/places"
-
-const sleeveTone: Record<PlaceCategory, string> = {
-  restaurant: "oklch(0.72 0.06 55)",
-  cafe: "oklch(0.78 0.05 85)",
-  bar: "oklch(0.55 0.06 30)",
-  park: "oklch(0.72 0.07 145)",
-  museum: "oklch(0.7 0.04 250)",
-  cinema: "oklch(0.58 0.05 320)",
-  hotel: "oklch(0.74 0.04 220)",
-  trail: "oklch(0.68 0.07 130)",
-  other: "oklch(0.7 0.03 70)",
-}
+import {
+  categoryIcon,
+  categoryLabel,
+  categoryTone,
+  formatDistance,
+  statusLabels,
+} from "@/lib/places"
 
 /** Short place line for covers — city/area, not the full postal wall. */
 const coverLocality = (address: string | null): string | null => {
@@ -54,7 +48,7 @@ export function PlaceCard({
   readonly viewerId: string
   readonly householdEnabled: boolean
 }) {
-  const Icon = categoryIcons[place.category]
+  const Icon = categoryIcon(place.category)
   const coverSrc = place.coverThumbUrl
   const locality = coverLocality(place.address)
   const sharedByOther =
@@ -88,7 +82,7 @@ export function PlaceCard({
         <div
           className="pointer-events-none absolute inset-0 opacity-90"
           style={{
-            background: `linear-gradient(160deg, ${sleeveTone[place.category]} 0%, color-mix(in srgb, var(--crate) 55%, ${sleeveTone[place.category]}) 55%, var(--crate) 100%)`,
+            background: `linear-gradient(160deg, ${categoryTone(place.category)} 0%, color-mix(in srgb, var(--crate) 55%, ${categoryTone(place.category)}) 55%, var(--crate) 100%)`,
           }}
           aria-hidden
         />
@@ -121,7 +115,7 @@ export function PlaceCard({
       >
         <div className="cover-meta flex items-center gap-1.5 text-xs font-medium tracking-wide text-[var(--parchment)] uppercase [text-shadow:0_1px_2px_rgb(26_22_18_/_70%)]">
           <Icon className="size-3.5 shrink-0" aria-hidden />
-          <span className="truncate">{categoryLabels[place.category]}</span>
+          <span className="truncate">{categoryLabel(place.category)}</span>
           {distanceMeters != null && (
             <span className="ml-auto tabular-nums">
               {formatDistance(distanceMeters, distanceUnit)}

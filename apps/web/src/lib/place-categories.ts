@@ -1,18 +1,39 @@
-import type { PlaceCategory } from "@placard/domain"
 import { placeCategories } from "@placard/domain"
+import { useMemo } from "react"
+import { useMe } from "@/session"
 
-/** Grouped for the add Type select — fewer simultaneous decisions than a flat 9. */
-export const categoryGroups: ReadonlyArray<{
-  readonly label: string
-  readonly values: ReadonlyArray<PlaceCategory>
-}> = [
-  { label: "Food & drink", values: ["restaurant", "cafe", "bar"] },
-  { label: "Outdoors", values: ["park", "trail"] },
-  { label: "Culture", values: ["museum", "cinema"] },
-  { label: "Stay", values: ["hotel"] },
+export const categoryGroups = [
+  {
+    label: "Food & drink",
+    values: ["restaurant", "cafe", "bakery", "ice_cream", "bar", "brewery", "winery"],
+  },
+  { label: "Outdoors", values: ["park", "garden", "trail", "beach", "lake", "viewpoint"] },
+  { label: "Culture", values: ["museum", "gallery", "cinema", "theatre", "library", "landmark"] },
+  { label: "Shopping", values: ["shop", "bookshop", "market"] },
+  {
+    label: "Activities & wellness",
+    values: ["gym", "spa", "swimming_pool", "sports_venue", "zoo", "amusement_park"],
+  },
+  {
+    label: "Stay & travel",
+    values: ["hotel", "hostel", "campground", "airport", "train_station", "parking"],
+  },
   { label: "Other", values: ["other"] },
-]
+] as const
 
-const known = new Set<string>(placeCategories)
+export function usePlaceCategories() {
+  const { customPlaceTypes } = useMe()
+  return useMemo(
+    () => [...new Set([...placeCategories, ...(customPlaceTypes ?? [])])],
+    [customPlaceTypes],
+  )
+}
 
-export const isPlaceCategory = (value: string): value is PlaceCategory => known.has(value)
+export function useCategoryGroups() {
+  const { customPlaceTypes } = useMe()
+  return useMemo(() => {
+    const builtins = new Set<string>(placeCategories)
+    const values = [...new Set(customPlaceTypes ?? [])].filter((value) => !builtins.has(value))
+    return values.length ? [...categoryGroups, { label: "Your types", values }] : categoryGroups
+  }, [customPlaceTypes])
+}

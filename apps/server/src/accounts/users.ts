@@ -17,6 +17,7 @@ interface UserRow {
   readonly name: string
   readonly email: string
   readonly role: UserRole
+  readonly custom_place_types: ReadonlyArray<string>
   readonly distance_unit: DistanceUnit
   readonly image: string | null
   readonly blocked_at: Date | null
@@ -36,6 +37,7 @@ const toMeBase = (row: UserRow): MeBase => ({
   email: row.email,
   role: row.role,
   distanceUnit: row.distance_unit,
+  customPlaceTypes: row.custom_place_types,
   image: row.image,
 })
 
@@ -90,6 +92,7 @@ export class Users extends Context.Service<
     readonly unblock: (id: string) => Effect.Effect<UserSummary, UserNotFound>
     /** Permanently remove the account and everything it owns. */
     readonly remove: (id: string) => Effect.Effect<void, UserNotFound>
+    readonly setPlaceTypes: (id: string, types: ReadonlyArray<string>) => Effect.Effect<MeBase>
     readonly setDistanceUnit: (id: string, unit: DistanceUnit) => Effect.Effect<MeBase>
     readonly updateProfile: (id: string, name: string) => Effect.Effect<MeBase>
     readonly setAvatar: (id: string, upload: AvatarUpload) => Effect.Effect<MeBase, MediaRejected>
@@ -105,7 +108,7 @@ export class Users extends Context.Service<
       const sql = yield* SqlClient.SqlClient
       const config = yield* AppConfig
       const root = config.mediaDir
-      const columns = sql`id, name, email, role, distance_unit, image, blocked_at, created_at`
+      const columns = sql`id, name, email, role, distance_unit, custom_place_types, image, blocked_at, created_at`
 
       const requireRow = (id: string, rows: ReadonlyArray<UserRow>) =>
         rows[0] ? Effect.succeed(toMeBase(rows[0])) : Effect.die(`user ${id} not found`)
@@ -171,6 +174,13 @@ export class Users extends Context.Service<
             ])
           })
         }),
+        setPlaceTypes: (id, types) =>
+          sql<UserRow>`
+            update users set custom_place_types = ${JSON.stringify([...new Set(types)])}::jsonb, updated_at = now()
+            where id = ${id} returning ${columns}`.pipe(
+            Effect.flatMap((rows) => requireRow(id, rows)),
+            Effect.orDie,
+          ),
         setDistanceUnit: (id, unit) =>
           sql<UserRow>`
             update users set distance_unit = ${unit}, updated_at = now()

@@ -1,10 +1,4 @@
-import {
-  placeCategories as categories,
-  type PlaceCategory,
-  type PlaceList,
-  type PlaceStatus,
-  type TagSummary,
-} from "@placard/domain"
+import type { PlaceCategory, PlaceList, PlaceStatus, TagSummary } from "@placard/domain"
 import { useMemo } from "react"
 import {
   Select,
@@ -13,7 +7,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { categoryLabels } from "@/lib/places"
+import { usePlaceCategories } from "@/lib/place-categories"
+import { categoryLabel } from "@/lib/places"
 
 export function Filters({
   tags,
@@ -38,6 +33,7 @@ export function Filters({
   readonly onStatus: (value: PlaceStatus | undefined) => void
   readonly onCategory: (value: PlaceCategory | undefined) => void
 }) {
+  const categories = usePlaceCategories()
   const listOptions = useMemo(() => lists, [lists])
   return (
     <div className="flex flex-wrap gap-2">
@@ -50,9 +46,9 @@ export function Filters({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Any type</SelectItem>
-          {categories.map((value) => (
+          {[...new Set([...categories, ...(category ? [category] : [])])].map((value) => (
             <SelectItem key={value} value={value}>
-              {categoryLabels[value]}
+              {categoryLabel(value)}
             </SelectItem>
           ))}
         </SelectContent>

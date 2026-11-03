@@ -19,8 +19,8 @@ import {
 } from "@/components/ui/select"
 import { api, errorMessage } from "@/lib/api"
 import { type MapStart, useMapStart } from "@/lib/map-start"
-import { categoryGroups, isPlaceCategory } from "@/lib/place-categories"
-import { categoryLabels, formatCoordinates } from "@/lib/places"
+import { useCategoryGroups } from "@/lib/place-categories"
+import { categoryLabel, formatCoordinates } from "@/lib/places"
 
 function PinOnClick({ onPin }: { readonly onPin: (location: LatLng) => void }) {
   useMapEvents({
@@ -47,6 +47,7 @@ const parseCoord = (raw: string): number | null => {
 
 /** Drop a pin on an OpenStreetMap map and name it; needs no Google key. */
 export default function PinDropper() {
+  const categoryGroups = useCategoryGroups()
   const navigate = useNavigate()
   const mapLabelId = useId()
   const { start, locating, message, locate, commitStart } = useMapStart()
@@ -197,7 +198,7 @@ export default function PinDropper() {
               <Select
                 value={category || undefined}
                 onValueChange={(v) => {
-                  if (isPlaceCategory(v)) setCategory(v)
+                  setCategory(v)
                 }}
                 required
               >
@@ -210,7 +211,7 @@ export default function PinDropper() {
                       <SelectLabel>{group.label}</SelectLabel>
                       {group.values.map((value) => (
                         <SelectItem key={value} value={value}>
-                          {categoryLabels[value]}
+                          {categoryLabel(value)}
                         </SelectItem>
                       ))}
                     </SelectGroup>

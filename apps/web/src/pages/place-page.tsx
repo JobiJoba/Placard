@@ -30,7 +30,7 @@ import {
   orderedMapsProviders,
   useMapsProvider,
 } from "@/lib/maps-provider"
-import { categoryIcons, formatCoordinates, sourceLabels } from "@/lib/places"
+import { categoryIcon, formatCoordinates, sourceLabels } from "@/lib/places"
 import { useLoad } from "@/lib/use-load"
 import { useMe } from "@/session"
 
@@ -198,7 +198,7 @@ export function PlacePage() {
     )
   }
 
-  const Icon = categoryIcons[place.category]
+  const Icon = categoryIcon(place.category)
   const mapProviders = orderedMapsProviders(mapsProvider)
   const preferredMapsHref = mapsUrlFor(mapsProvider, place)
 

@@ -1,0 +1,72 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "f3d09df0-a2fe-4054-a892-85a9aeba5d8b",
+  "prevIds": [
+    "58ce59fe-516b-4242-b067-36ca737df111"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "users",
+        "custom_place_types"
+      ],
+      "writes": [
+        "s|col|public.users.custom_place_types",
+        "n|col|public.users.custom_place_types",
+        "e|col|public.users.custom_place_types"
+      ],
+      "reads": [
+        "n|tbl|public.users",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "places"
+      ],
+      "writes": [
+        "s|ck|public.places.places_category_check"
+      ],
+      "reads": [
+        "n|tbl|public.places",
+        "n|sch|public",
+        "n|col|public.places.category",
+        "e|col|public.places.category"
+      ],
+      "sqlHash": "86b3f35f887dcfcf"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "users",
+        "name": "custom_place_types",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'[]'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "checks\u0000[\"public\",\"places\",\"places_category_check\"]",
+      "set": {
+        "value": "length(btrim(\"category\")) between 1 and 80"
+      }
+    }
+  ]
+}

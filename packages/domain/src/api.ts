@@ -90,6 +90,7 @@ import {
 import {
   AutocompleteInput,
   CopyIntoHouseholdInput,
+  CustomPlaceTypes,
   DeletedPlace,
   GoogleConfig,
   GoogleKeyMissing,
@@ -134,6 +135,10 @@ export class MeApi extends HttpApiGroup.make("me")
     HttpApiEndpoint.get("get", "/api/me", { success: Me }),
     HttpApiEndpoint.patch("updateSettings", "/api/me/settings", {
       payload: Schema.Struct({ distanceUnit: DistanceUnit }),
+      success: Me,
+    }),
+    HttpApiEndpoint.put("setPlaceTypes", "/api/me/place-types", {
+      payload: Schema.Struct({ types: CustomPlaceTypes }),
       success: Me,
     }),
     HttpApiEndpoint.patch("updateProfile", "/api/me/profile", {

@@ -1,25 +1,13 @@
-import type { Place, PlaceCategory } from "@placard/domain"
+import type { Place } from "@placard/domain"
 import { Badge } from "@/components/ui/badge"
-import { type categoryIcons, categoryLabels, statusLabels } from "@/lib/places"
-
-const sleeveTone: Record<PlaceCategory, string> = {
-  restaurant: "oklch(0.72 0.06 55)",
-  cafe: "oklch(0.78 0.05 85)",
-  bar: "oklch(0.55 0.06 30)",
-  park: "oklch(0.72 0.07 145)",
-  museum: "oklch(0.7 0.04 250)",
-  cinema: "oklch(0.58 0.05 320)",
-  hotel: "oklch(0.74 0.04 220)",
-  trail: "oklch(0.68 0.07 130)",
-  other: "oklch(0.7 0.03 70)",
-}
+import { type categoryIcon, categoryLabel, categoryTone, statusLabels } from "@/lib/places"
 
 export function PlaceHero({
   place,
   Icon,
 }: {
   readonly place: Place
-  readonly Icon: (typeof categoryIcons)[PlaceCategory]
+  readonly Icon: ReturnType<typeof categoryIcon>
 }) {
   const coverSrc = place.coverThumbUrl
   return (
@@ -47,7 +35,7 @@ export function PlaceHero({
         <div
           className="pointer-events-none absolute inset-0 opacity-90"
           style={{
-            background: `linear-gradient(160deg, ${sleeveTone[place.category]} 0%, color-mix(in srgb, var(--crate) 55%, ${sleeveTone[place.category]}) 55%, var(--crate) 100%)`,
+            background: `linear-gradient(160deg, ${categoryTone(place.category)} 0%, color-mix(in srgb, var(--crate) 55%, ${categoryTone(place.category)}) 55%, var(--crate) 100%)`,
           }}
           aria-hidden
         />
@@ -68,7 +56,7 @@ export function PlaceHero({
             variant="secondary"
             className="w-fit gap-1.5 border-0 bg-[color-mix(in_srgb,var(--crate)_55%,transparent)] text-[var(--parchment)]"
           >
-            <Icon aria-hidden className="size-3.5" /> {categoryLabels[place.category]}
+            <Icon aria-hidden className="size-3.5" /> {categoryLabel(place.category)}
           </Badge>
           {place.status ? (
             <Badge

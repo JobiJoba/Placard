@@ -180,6 +180,43 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("places", (it) => 
     }),
   )
 
+  it.effect("expanded and custom types survive saves, edits, and filtering", () =>
+    run(async () => {
+      for (const category of ["bakery", "beach", "Record shop & café"]) {
+        const saved = await admin.browser.send("POST", "/api/places/manual", {
+          name: `Type test ${category}`,
+          category,
+          location: { lat: 50.85, lng: 4.35 },
+          address: null,
+        })
+        expect(saved.status).toBe(200)
+        const id = saved.body.place.id
+        expect((await admin.browser.get(`/api/places/${id}`)).body.category).toBe(category)
+        const found = await admin.browser.send("POST", "/api/search", { category })
+        expect(found.status).toBe(200)
+        expect(found.body.some((hit: { place: { id: string } }) => hit.place.id === id)).toBe(true)
+        const edited = await admin.browser.send("PATCH", `/api/places/${id}`, {
+          category: "Climbing gym",
+        })
+        expect(edited.status).toBe(200)
+        expect(edited.body.category).toBe("Climbing gym")
+        await admin.browser.send("DELETE", `/api/places/${id}`)
+      }
+      for (const category of ["   ", "x".repeat(81)]) {
+        expect(
+          (
+            await admin.browser.send("POST", "/api/places/manual", {
+              name: "Invalid type",
+              category,
+              location: { lat: 1, lng: 1 },
+              address: null,
+            })
+          ).status,
+        ).toBe(400)
+      }
+    }),
+  )
+
   it.effect("manual input is validated", () =>
     run(async () => {
       const outOfRange = await admin.browser.send("POST", "/api/places/manual", {

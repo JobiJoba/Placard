@@ -3,7 +3,6 @@ import {
   type MediaOrigin,
   mediaKinds,
   mediaOrigins,
-  placeCategories,
   placeSources,
   placeStatuses,
 } from "@placard/domain"
@@ -45,6 +44,10 @@ export const users = pgTable(
     emailVerified: boolean("email_verified").notNull().default(false),
     image: text("image"),
     role: text("role").$type<UserRole>().notNull().default("member"),
+    customPlaceTypes: jsonb("custom_place_types")
+      .$type<ReadonlyArray<string>>()
+      .notNull()
+      .default([]),
     distanceUnit: text("distance_unit").$type<DistanceUnit>().notNull().default("km"),
     /** Set by the admin to revoke access without deleting the account or its data. */
     blockedAt: timestamp("blocked_at", { withTimezone: true }),
@@ -177,7 +180,7 @@ export const places = pgTable(
   },
   (table) => [
     check("places_visibility_check", sql`${table.visibility} in ('private', 'household')`),
-    check("places_category_check", sql`${table.category} in ${inList(placeCategories)}`),
+    check("places_category_check", sql`length(btrim(${table.category})) between 1 and 80`),
     check("places_source_check", sql`${table.source} in ${inList(placeSources)}`),
     check("places_status_check", sql`${table.status} in ${inList(placeStatuses)}`),
     index("places_location_idx").using("gist", table.location),

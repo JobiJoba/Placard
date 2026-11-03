@@ -1,10 +1,4 @@
-import {
-  type Place,
-  type PlaceCategory,
-  type PlaceList,
-  type PlaceStatus,
-  placeCategories,
-} from "@placard/domain"
+import type { Place, PlaceCategory, PlaceList, PlaceStatus } from "@placard/domain"
 import { type FormEvent, useEffect, useState } from "react"
 import { ErrorAlert } from "@/components/error-alert"
 import { Button } from "@/components/ui/button"
@@ -19,7 +13,8 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { api, errorMessage } from "@/lib/api"
-import { categoryLabels } from "@/lib/places"
+import { usePlaceCategories } from "@/lib/place-categories"
+import { categoryLabel } from "@/lib/places"
 
 export function EditPlace({
   place,
@@ -33,6 +28,7 @@ export function EditPlace({
   readonly onCancel: () => void
 }) {
   const [name, setName] = useState(place.name)
+  const placeCategories = usePlaceCategories()
   const [category, setCategory] = useState<PlaceCategory>(place.category)
   const [address, setAddress] = useState(place.address ?? "")
   const [notes, setNotes] = useState(place.notes ?? "")
@@ -134,9 +130,9 @@ export function EditPlace({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {placeCategories.map((value) => (
+              {[...new Set([...placeCategories, place.category])].map((value) => (
                 <SelectItem key={value} value={value}>
-                  {categoryLabels[value]}
+                  {categoryLabel(value)}
                 </SelectItem>
               ))}
             </SelectContent>

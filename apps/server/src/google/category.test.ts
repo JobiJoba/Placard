@@ -8,12 +8,20 @@ describe("categoryFromGoogleTypes", () => {
     ["coffee_shop", [], "cafe"],
     ["wine_bar", [], "bar"],
     ["national_park", [], "park"],
-    ["art_gallery", [], "museum"],
+    ["art_gallery", [], "gallery"],
     ["movie_theater", [], "cinema"],
     ["boutique_hotel", [], "hotel"],
     ["lodging", [], "hotel"],
     ["hiking_area", [], "trail"],
     ["dentist", [], "other"],
+    ["bakery", ["cafe", "restaurant"], "bakery"],
+    ["book_store", ["store"], "bookshop"],
+    ["botanical_garden", ["park"], "garden"],
+    ["hostel", ["lodging"], "hostel"],
+    ["campground", ["park", "lodging"], "campground"],
+    ["swimming_pool", [], "swimming_pool"],
+    ["train_station", [], "train_station"],
+    ["clothing_store", [], "shop"],
   ] as const)("maps primary type %s", (primaryType, types, expected) => {
     expect(categoryFromGoogleTypes(primaryType, types)).toBe(expected)
   })
