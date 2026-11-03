@@ -1,16 +1,33 @@
 import { Link } from "react-router"
 import { CopySnippet } from "../components/CopySnippet"
+import { PluginPreview } from "../components/PluginPreview"
 import { SiteChrome } from "../components/SiteChrome"
 
 const REPOSITORY = "https://github.com/JobiJoba/plugins"
 
 const plugins = [
   {
+    id: "places.day-out",
+    name: "Day Out",
+    tagline: "One favourite place. A whole day of possibilities.",
+    description:
+      "Build a day around a saved place. Find a café before the museum or dinner nearby, arrange your stops and keep the outing ready for next time.",
+    image: "day-out.svg",
+    screenshot: "day-out-desktop.png",
+    alt: "Day Out route connecting a coffee stop, a favourite place and dinner nearby",
+    features: [
+      "Nearby stops from your library",
+      "Editable, private itineraries",
+      "Navigation links & MCP planning",
+    ],
+  },
+  {
     id: "places.board",
     name: "Board",
     tagline: "Your favorite places. A board of your own.",
     description:
       "Turn 22 saved places into a travel board. Arrange your stops, customize the labels, explore a 3D preview and export a print-ready PDF for a print shop or your home printer.",
+    screenshot: "board-desktop.png",
     image: "board.svg",
     alt: "Illustration of a travel board with colored place tiles around its edge",
     features: ["22 places from your library", "Flat & 3D previews", "Print-ready PDF exports"],
@@ -21,6 +38,7 @@ const plugins = [
     tagline: "The menu, saved with the place.",
     description:
       "Keep lunch, dinner and drinks menus on your restaurant, café and bar cards. Organize sections and dishes, add prices, variants and item photos, and edit them manually or with an MCP assistant.",
+    screenshot: "menus-desktop.png",
     image: "menus.svg",
     alt: "Illustration of a restaurant menu with sections, dishes and prices",
     features: ["Menus on place details", "Prices, variants & photos", "MCP editing"],
@@ -31,6 +49,7 @@ const plugins = [
     tagline: "Let your library choose tonight.",
     description:
       "Choose a random place from your collection. Narrow the pool by category, list, tag, opening hours or distance, and avoid recent picks when you want somewhere different. Save your preferred settings for next time.",
+    screenshot: "pick-desktop.png",
     image: "pick.svg",
     alt: "Placard Pick plugin cover illustration",
     features: ["A dedicated Pick page", "Library & distance filters", "Avoid recent picks"],
@@ -47,7 +66,7 @@ export function PluginsPage() {
           <p className="lede">
             Optional plugins for the places you keep. Add the tools you need to your own Placard
             instance, from restaurant menus and choosing where to go to printing a board of your
-            favorite places.
+            favorite places, or planning a day around them.
           </p>
           <a href={REPOSITORY} target="_blank" rel="noreferrer">
             Browse the plugins repository on GitHub →
@@ -74,6 +93,7 @@ export function PluginsPage() {
                     <li key={feature}>{feature}</li>
                   ))}
                 </ul>
+                <PluginPreview name={plugin.name} image={plugin.screenshot} />
                 <div className="plugin-install">
                   <CopySnippet
                     code={`${REPOSITORY}#${plugin.id}`}

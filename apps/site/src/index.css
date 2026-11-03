@@ -1016,3 +1016,92 @@ code {
     scroll-behavior: auto;
   }
 }
+
+/* Real installed-module previews, kept separate from the illustrated covers. */
+.plugin-preview {
+  display: block;
+  width: 100%;
+  padding: 0;
+  margin: 1.25rem 0 1.75rem;
+  overflow: hidden;
+  text-align: left;
+  border: 1px solid #b6a58d;
+  border-radius: var(--radius);
+  background: var(--background);
+  color: inherit;
+  cursor: zoom-in;
+}
+.plugin-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: top;
+  transition: transform 0.2s ease;
+}
+.plugin-preview > span {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.65rem 0.85rem;
+  border-top: 1px solid #b6a58d;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.plugin-preview:focus-visible,
+.plugin-lightbox button:focus-visible {
+  outline: 3px solid var(--action, #aa3d26);
+  outline-offset: 4px;
+}
+.plugin-lightbox {
+  padding: 0;
+  border: 1px solid #b6a58d;
+  border-radius: 8px;
+  width: min(1440px, 94vw);
+  max-width: 94vw;
+  max-height: 92dvh;
+  margin: auto;
+  overflow: auto;
+  background: #f5f0e7;
+  color: #252019;
+  box-shadow: 0 30px 100px #0006;
+}
+.plugin-lightbox::backdrop {
+  background: #17140fe0;
+  backdrop-filter: blur(5px);
+}
+.plugin-lightbox-bar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+  background: #f5f0e7;
+  border-bottom: 1px solid #b6a58d;
+  z-index: 1;
+  font-size: 0.9rem;
+}
+.plugin-lightbox-bar button {
+  border: 1px solid #b6a58d;
+  background: transparent;
+  padding: 0.5rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  color: inherit;
+}
+.plugin-lightbox > img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.plugin-preview:hover img {
+  transform: scale(1.015);
+}
+@media (prefers-reduced-motion: reduce) {
+  .plugin-preview img {
+    transition: none;
+  }
+}
