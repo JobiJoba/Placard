@@ -6,6 +6,16 @@ const REPOSITORY = "https://github.com/JobiJoba/plugins"
 
 const plugins = [
   {
+    id: "places.board",
+    name: "Board",
+    tagline: "Your favorite places. A board of your own.",
+    description:
+      "Turn 22 saved places into a travel board. Arrange your stops, customize the labels, explore a 3D preview and export a print-ready PDF for a print shop or your home printer.",
+    image: "board.svg",
+    alt: "Illustration of a travel board with colored place tiles around its edge",
+    features: ["22 places from your library", "Flat & 3D previews", "Print-ready PDF exports"],
+  },
+  {
     id: "places.menus",
     name: "Menus",
     tagline: "The menu, saved with the place.",
@@ -36,7 +46,7 @@ export function PluginsPage() {
           <h1>Your library. A few extra possibilities.</h1>
           <p className="lede">
             Optional plugins for the places you keep. Add the tools you need to your own Placard
-            instance, from restaurant menus to a little help choosing where to go.
+            instance, from restaurant menus and choosing where to go to printing a board of your favorite places.
           </p>
           <a href={REPOSITORY} target="_blank" rel="noreferrer">
             Browse the plugins repository on GitHub →
@@ -100,7 +110,7 @@ export function PluginsPage() {
               <li>Install and enable the plugin, then make it visible for your account.</li>
             </ol>
             <p>
-              Keep the <code>#places.menus</code> or <code>#places.pick</code> part of the URL to
+              Keep the module selector (such as <code>#places.board</code>) in the URL to
               select the correct plugin. You can also upload its package from{" "}
               <a href={`${REPOSITORY}/releases`} target="_blank" rel="noreferrer">
                 GitHub Releases
