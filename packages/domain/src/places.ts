@@ -48,6 +48,11 @@ export const CustomPlaceTypes = Schema.Array(PlaceCategory).pipe(
 )
 export type PlaceCategory = typeof PlaceCategory.Type
 
+/** All selectable types for an account, in the same order as the library. */
+export const resolvePlaceCategories = (customTypes: ReadonlyArray<string> = []): string[] => [
+  ...new Set([...placeCategories, ...customTypes]),
+]
+
 export const placeSources = ["manual", "autocomplete", "map_pick", "takeout", "mcp"] as const
 export const PlaceSource = Schema.Literals(placeSources)
 export type PlaceSource = typeof PlaceSource.Type

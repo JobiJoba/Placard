@@ -172,6 +172,15 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("accounts", (it) =
         "Climbing gym",
       ])
       expect((await admin.browser.get("/api/me")).body.customPlaceTypes).toEqual([])
+      const types = await member.browser.get("/api/me/place-types")
+      expect(types.status).toBe(200)
+      expect(types.body.types).toEqual(
+        expect.arrayContaining(["restaurant", "bakery", "Record shop", "Climbing gym"]),
+      )
+      const adminTypes = (await admin.browser.get("/api/me/place-types")).body.types
+      expect(adminTypes).not.toContain("Record shop")
+      expect(adminTypes).not.toContain("Climbing gym")
+      expect((await app.browser().get("/api/me/place-types")).status).toBe(401)
       expect((await app.browser().send("PUT", "/api/me/place-types", { types: [] })).status).toBe(
         401,
       )

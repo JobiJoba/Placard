@@ -1,5 +1,12 @@
 import { readFile } from "node:fs/promises"
-import { Api, CurrentUser, Forbidden, MediaNotFound, Unauthorized } from "@placard/domain"
+import {
+  Api,
+  CurrentUser,
+  Forbidden,
+  MediaNotFound,
+  resolvePlaceCategories,
+  Unauthorized,
+} from "@placard/domain"
 import { Effect, Option } from "effect"
 import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/http"
 import { HttpApiBuilder } from "effect/http-api"
@@ -40,6 +47,9 @@ export const MeApiLive = HttpApiBuilder.group(
 
     return handlers
       .handle("get", () => CurrentUser)
+      .handle("getPlaceTypes", () =>
+        Effect.map(CurrentUser, (me) => ({ types: resolvePlaceCategories(me.customPlaceTypes) })),
+      )
       .handle("updateSettings", ({ payload }) =>
         Effect.gen(function* () {
           const me = yield* CurrentUser

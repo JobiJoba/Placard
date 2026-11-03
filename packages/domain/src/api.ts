@@ -100,6 +100,7 @@ import {
   HouseholdPlaceConflict,
   ManualPlaceInput,
   Place,
+  PlaceCategory,
   PlaceFilter,
   PlaceNotFound,
   PlacePreview,
@@ -136,6 +137,9 @@ export class MeApi extends HttpApiGroup.make("me")
     HttpApiEndpoint.patch("updateSettings", "/api/me/settings", {
       payload: Schema.Struct({ distanceUnit: DistanceUnit }),
       success: Me,
+    }),
+    HttpApiEndpoint.get("getPlaceTypes", "/api/me/place-types", {
+      success: Schema.Struct({ types: Schema.Array(PlaceCategory) }),
     }),
     HttpApiEndpoint.put("setPlaceTypes", "/api/me/place-types", {
       payload: Schema.Struct({ types: CustomPlaceTypes }),

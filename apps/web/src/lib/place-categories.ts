@@ -1,4 +1,4 @@
-import { placeCategories } from "@placard/domain"
+import { placeCategories, resolvePlaceCategories } from "@placard/domain"
 import { useMemo } from "react"
 import { useMe } from "@/session"
 
@@ -23,10 +23,7 @@ export const categoryGroups = [
 
 export function usePlaceCategories() {
   const { customPlaceTypes } = useMe()
-  return useMemo(
-    () => [...new Set([...placeCategories, ...(customPlaceTypes ?? [])])],
-    [customPlaceTypes],
-  )
+  return useMemo(() => resolvePlaceCategories(customPlaceTypes), [customPlaceTypes])
 }
 
 export function useCategoryGroups() {
