@@ -10,8 +10,9 @@ on:
       - "pnpm-lock.yaml"
       - "package.json"
       - "pnpm-workspace.yaml"
-  release:
-    types: [published]
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -26,33 +27,37 @@ concurrency:
 jobs:
   installers-ready:
     runs-on: ubuntu-latest
-    outputs:
-      ready: ${{ steps.check.outputs.ready }}
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     steps:
       - name: Check latest release installer assets
         id: check
         shell: bash
         run: |
-          ready=true
+          missing=()
           for asset in install.sh install.ps1 docker-compose.yml example.env docker-compose.override.yml Caddyfile; do
-            status=$(curl --silent --show-error --location --output /dev/null --write-out '%{http_code}' "https://github.com/JobiJoba/Placard/releases/latest/download/$asset")
-            case "$status" in
-              200) ;;
-              404) ready=false ;;
-              *) echo "Unexpected HTTP $status checking $asset" >&2; exit 1 ;;
-            esac
+            for attempt in 1 2 3; do
+              status=$(curl --silent --show-error --location --retry 2 --connect-timeout 10 --max-time 60 --output /dev/null --write-out '%{http_code}' "https://github.com/JobiJoba/Placard/releases/latest/download/$asset")
+              [ "$status" = 200 ] && break
+              if [ "$attempt" -lt 3 ]; then sleep 10; fi
+            done
+            if [ "$status" != 200 ]; then
+              echo "::error::Installer asset $asset returned HTTP $status after 3 attempts"
+              missing+=("$asset (HTTP $status)")
+            fi
           done
-          echo "ready=$ready" >> "$GITHUB_OUTPUT"
-          if [ "$ready" = false ]; then
-            echo 'Installer assets are not published yet; keeping the existing website.' >> "$GITHUB_STEP_SUMMARY"
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing installer assets: %s\n' "${missing[*]}" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
 
   build:
     needs: installers-ready
-    if: needs.installers-ready.outputs.ready == 'true'
     runs-on: ubuntu-latest
     steps:
+      # workflow_run uses the trusted default-branch site, never release artifacts.
       - uses: actions/checkout@v5
+        with:
+          ref: main
 
       - uses: pnpm/action-setup@v4
         with:
@@ -74,11 +79,6 @@ jobs:
           # with "/Placard/" makes every asset 404 on the custom domain.
           BASE_PATH: /
         run: pnpm --filter @placard/site build
-
-      - name: SPA fallback for GitHub Pages
-        run: |
-          touch apps/site/dist/.nojekyll
-          cp apps/site/dist/index.html apps/site/dist/404.html
 
       - uses: actions/upload-pages-artifact@v3
         with:

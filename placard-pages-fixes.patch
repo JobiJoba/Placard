@@ -1,0 +1,308 @@
+diff --git a/.github/workflows/checks.yml b/.github/workflows/checks.yml
+index cbb115a..ad8cd73 100644
+--- a/.github/workflows/checks.yml
++++ b/.github/workflows/checks.yml
+@@ -40,7 +40,7 @@ jobs:
+       - run: pnpm audit --prod --audit-level high
+       - run: pnpm lint
+       - run: pnpm typecheck
+-      - run: pnpm --filter @placard/site check:links
++      - run: pnpm --filter @placard/site build
+       - run: pnpm test:unit
+       - run: pnpm compose:generate
+ 
+diff --git a/.github/workflows/pages.yml b/.github/workflows/pages.yml
+index a7d214d..5fecbe2 100644
+--- a/.github/workflows/pages.yml
++++ b/.github/workflows/pages.yml
+@@ -10,8 +10,9 @@ on:
+       - "pnpm-lock.yaml"
+       - "package.json"
+       - "pnpm-workspace.yaml"
+-  release:
+-    types: [published]
++  workflow_run:
++    workflows: [Release]
++    types: [completed]
+   workflow_dispatch:
+ 
+ permissions:
+@@ -26,33 +27,37 @@ concurrency:
+ jobs:
+   installers-ready:
+     runs-on: ubuntu-latest
+-    outputs:
+-      ready: ${{ steps.check.outputs.ready }}
++    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+     steps:
+       - name: Check latest release installer assets
+         id: check
+         shell: bash
+         run: |
+-          ready=true
++          missing=()
+           for asset in install.sh install.ps1 docker-compose.yml example.env docker-compose.override.yml Caddyfile; do
+-            status=$(curl --silent --show-error --location --output /dev/null --write-out '%{http_code}' "https://github.com/JobiJoba/Placard/releases/latest/download/$asset")
+-            case "$status" in
+-              200) ;;
+-              404) ready=false ;;
+-              *) echo "Unexpected HTTP $status checking $asset" >&2; exit 1 ;;
+-            esac
++            for attempt in 1 2 3; do
++              status=$(curl --silent --show-error --location --retry 2 --connect-timeout 10 --max-time 60 --output /dev/null --write-out '%{http_code}' "https://github.com/JobiJoba/Placard/releases/latest/download/$asset")
++              [ "$status" = 200 ] && break
++              if [ "$attempt" -lt 3 ]; then sleep 10; fi
++            done
++            if [ "$status" != 200 ]; then
++              echo "::error::Installer asset $asset returned HTTP $status after 3 attempts"
++              missing+=("$asset (HTTP $status)")
++            fi
+           done
+-          echo "ready=$ready" >> "$GITHUB_OUTPUT"
+-          if [ "$ready" = false ]; then
+-            echo 'Installer assets are not published yet; keeping the existing website.' >> "$GITHUB_STEP_SUMMARY"
++          if [ "${#missing[@]}" -gt 0 ]; then
++            printf 'Missing installer assets: %s\n' "${missing[*]}" >> "$GITHUB_STEP_SUMMARY"
++            exit 1
+           fi
+ 
+   build:
+     needs: installers-ready
+-    if: needs.installers-ready.outputs.ready == 'true'
+     runs-on: ubuntu-latest
+     steps:
++      # workflow_run uses the trusted default-branch site, never release artifacts.
+       - uses: actions/checkout@v5
++        with:
++          ref: main
+ 
+       - uses: pnpm/action-setup@v4
+         with:
+@@ -75,11 +80,6 @@ jobs:
+           BASE_PATH: /
+         run: pnpm --filter @placard/site build
+ 
+-      - name: SPA fallback for GitHub Pages
+-        run: |
+-          touch apps/site/dist/.nojekyll
+-          cp apps/site/dist/index.html apps/site/dist/404.html
+-
+       - uses: actions/upload-pages-artifact@v3
+         with:
+           path: apps/site/dist
+diff --git a/.gitignore b/.gitignore
+index e47847a..c7f73bf 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -31,3 +31,6 @@ test-results/
+ # Media / data volumes (local docker)
+ data/
+ *.log
++
++# Temporary marketing-site server bundle
++apps/site/.prerender/
+diff --git a/apps/site/package.json b/apps/site/package.json
+index a55340c..60ef9fa 100644
+--- a/apps/site/package.json
++++ b/apps/site/package.json
+@@ -5,7 +5,7 @@
+   "type": "module",
+   "scripts": {
+     "dev": "vite",
+-    "build": "pnpm check:links && tsc -b && vite build",
++    "build": "pnpm check:links && tsc -b && vite build && vite build --ssr src/entry-server.tsx --outDir .prerender && node scripts/prerender.mjs",
+     "preview": "vite preview",
+     "typecheck": "tsc -b --noEmit",
+     "check:links": "node ./scripts/check-doc-links.mjs"
+diff --git a/apps/site/scripts/prerender.mjs b/apps/site/scripts/prerender.mjs
+new file mode 100644
+index 0000000..1699ceb
+--- /dev/null
++++ b/apps/site/scripts/prerender.mjs
+@@ -0,0 +1,47 @@
++import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
++import { resolve } from "node:path"
++import { fileURLToPath } from "node:url"
++import { pageMetadata, render, routes, SITE_ORIGIN } from "../.prerender/entry-server.js"
++
++const root = fileURLToPath(new URL("../", import.meta.url))
++const dist = resolve(root, "dist")
++const template = await readFile(resolve(dist, "index.html"), "utf8")
++const escapeHtml = (value) =>
++  value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
++function page(path) {
++  const meta = pageMetadata(path)
++  return template
++    .replace(/<title>.*?<\/title>/s, `<title>${escapeHtml(meta.title)}</title>`)
++    .replace(
++      /<meta\s+name="description"\s+content="[^"]*"\s*\/>/,
++      `<meta name="description" content="${escapeHtml(meta.description)}" />`,
++    )
++    .replace("</head>", `<link rel="canonical" href="${SITE_ORIGIN}${meta.path}" /></head>`)
++    .replace('<div id="root"></div>', () => `<div id="root">${render(path)}</div>`)
++}
++for (const path of routes) {
++  const directory = resolve(dist, `.${path}`)
++  await mkdir(directory, { recursive: true })
++  await writeFile(resolve(directory, "index.html"), page(path))
++}
++// Static alias: Pages cannot issue custom HTTP redirects, so preserve the old install link.
++await mkdir(resolve(dist, "install"), { recursive: true })
++await writeFile(
++  resolve(dist, "install/index.html"),
++  `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=/docs/install"><link rel="canonical" href="${SITE_ORIGIN}/docs/install"><title>Install · Placard</title></head><body><a href="/docs/install">Installation guide</a></body></html>`,
++)
++await writeFile(
++  resolve(dist, "404.html"),
++  page("/404").replace("</head>", '<meta name="robots" content="noindex" /></head>'),
++)
++await writeFile(resolve(dist, ".nojekyll"), "")
++await writeFile(
++  resolve(dist, "sitemap.xml"),
++  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${routes.map((path) => `<url><loc>${SITE_ORIGIN}${path}</loc></url>`).join("")}</urlset>\n`,
++)
++await writeFile(
++  resolve(dist, "robots.txt"),
++  `User-agent: *\nAllow: /\nSitemap: ${SITE_ORIGIN}/sitemap.xml\n`,
++)
++await rm(resolve(root, ".prerender"), { recursive: true, force: true })
++console.log(`Prerendered ${routes.length} public routes`)
+diff --git a/apps/site/src/App.tsx b/apps/site/src/App.tsx
+index 619383d..09067ca 100644
+--- a/apps/site/src/App.tsx
++++ b/apps/site/src/App.tsx
+@@ -1,10 +1,24 @@
+-import { Navigate, Route, Routes } from "react-router"
++import { useEffect } from "react"
++import { Link, Navigate, Route, Routes, useLocation } from "react-router"
++import { SiteChrome } from "./components/SiteChrome"
++import { pageMetadata, SITE_ORIGIN } from "./metadata"
+ import { DocsIndexPage } from "./pages/DocsIndexPage"
+ import { DocsPage } from "./pages/DocsPage"
+ import { HomePage } from "./pages/HomePage"
+ import { PluginsPage } from "./pages/PluginsPage"
+ 
+ export function App() {
++  const { pathname } = useLocation()
++  useEffect(() => {
++    const meta = pageMetadata(pathname)
++    document.title = meta.title
++    document.querySelector('meta[name="description"]')?.setAttribute("content", meta.description)
++    const canonical =
++      document.querySelector('link[rel="canonical"]') ??
++      document.head.appendChild(document.createElement("link"))
++    canonical.setAttribute("rel", "canonical")
++    canonical.setAttribute("href", `${SITE_ORIGIN}${meta.path}`)
++  }, [pathname])
+   return (
+     <Routes>
+       <Route path="/" element={<HomePage />} />
+@@ -12,7 +26,17 @@ export function App() {
+       <Route path="/docs" element={<DocsIndexPage />} />
+       <Route path="/docs/:slug" element={<DocsPage />} />
+       <Route path="/install" element={<Navigate to="/docs/install" replace />} />
+-      <Route path="*" element={<Navigate to="/" replace />} />
++      <Route
++        path="*"
++        element={
++          <SiteChrome>
++            <main id="main">
++              <h1>Page not found</h1>
++              <Link to="/">Back to Placard</Link>
++            </main>
++          </SiteChrome>
++        }
++      />
+     </Routes>
+   )
+ }
+diff --git a/apps/site/src/entry-server.tsx b/apps/site/src/entry-server.tsx
+new file mode 100644
+index 0000000..ba001cb
+--- /dev/null
++++ b/apps/site/src/entry-server.tsx
+@@ -0,0 +1,19 @@
++import { renderToString } from "react-dom/server"
++import { StaticRouter } from "react-router"
++import { App } from "./App"
++import { listPublishedSlugs } from "./docs/catalog"
++
++export { pageMetadata, SITE_ORIGIN } from "./metadata"
++export const routes = [
++  "/",
++  "/plugins",
++  "/docs",
++  ...listPublishedSlugs().map((slug) => `/docs/${slug}`),
++]
++export function render(path: string) {
++  return renderToString(
++    <StaticRouter location={path}>
++      <App />
++    </StaticRouter>,
++  )
++}
+diff --git a/apps/site/src/metadata.ts b/apps/site/src/metadata.ts
+new file mode 100644
+index 0000000..96381d4
+--- /dev/null
++++ b/apps/site/src/metadata.ts
+@@ -0,0 +1,24 @@
++import { getDocMeta } from "./docs/catalog"
++
++export const SITE_ORIGIN = "https://placard.fyi"
++export function pageMetadata(pathname: string) {
++  const path = pathname.replace(/\/$/, "") || "/"
++  const doc = path.startsWith("/docs/") ? getDocMeta(path.slice(6)) : null
++  const title = doc
++    ? `${doc.title} · Placard`
++    : path === "/docs"
++      ? "Documentation · Placard"
++      : path === "/plugins"
++        ? "Plugins · Placard"
++        : path === "/"
++          ? "Placard — Good places. Worth keeping."
++          : "Page not found · Placard"
++  const description =
++    doc?.summary ??
++    (path === "/docs"
++      ? "Install, run, and extend your self-hosted Placard library."
++      : path === "/plugins"
++        ? "Discover plugins for your Placard library."
++        : "A self-hosted library for places worth keeping. Import saved places, organize notes and photos, and share with your household.")
++  return { path, title, description }
++}
+diff --git a/apps/site/src/pages/DocsPage.tsx b/apps/site/src/pages/DocsPage.tsx
+index 84d7aa9..7e8f603 100644
+--- a/apps/site/src/pages/DocsPage.tsx
++++ b/apps/site/src/pages/DocsPage.tsx
+@@ -10,9 +10,8 @@ export function DocsPage() {
+   const source = getDocMarkdown(slug)
+ 
+   useEffect(() => {
+-    document.title = `${meta?.title ?? "Documentation"} · Placard`
+-    window.scrollTo(0, 0)
+-  }, [meta])
++    if (slug) window.scrollTo(0, 0)
++  }, [slug])
+ 
+   if (!meta || !source) {
+     return <Navigate to="/docs" replace />
+diff --git a/apps/site/src/pages/HomePage.tsx b/apps/site/src/pages/HomePage.tsx
+index 5744030..f636c59 100644
+--- a/apps/site/src/pages/HomePage.tsx
++++ b/apps/site/src/pages/HomePage.tsx
+@@ -1,4 +1,3 @@
+-import { useEffect } from "react"
+ import { Link } from "react-router"
+ import { CopySnippet } from "../components/CopySnippet"
+ import { CrateStage } from "../components/CrateStage"
+@@ -28,9 +27,6 @@ const features = [
+ ]
+ 
+ export function HomePage() {
+-  useEffect(() => {
+-    document.title = "Placard — Good places. Worth keeping."
+-  }, [])
+   return (
+     <SiteChrome>
+       <main id="main">

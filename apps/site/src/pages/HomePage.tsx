@@ -1,4 +1,3 @@
-import { useEffect } from "react"
 import { Link } from "react-router"
 import { CopySnippet } from "../components/CopySnippet"
 import { CrateStage } from "../components/CrateStage"
@@ -28,9 +27,6 @@ const features = [
 ]
 
 export function HomePage() {
-  useEffect(() => {
-    document.title = "Placard — Good places. Worth keeping."
-  }, [])
   return (
     <SiteChrome>
       <main id="main">

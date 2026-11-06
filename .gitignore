@@ -31,3 +31,6 @@ test-results/
 # Media / data volumes (local docker)
 data/
 *.log
+
+# Temporary marketing-site server bundle
+apps/site/.prerender/
