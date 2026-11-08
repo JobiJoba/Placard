@@ -7,13 +7,9 @@ test("marketplace discovery and immediate activation work on desktop and mobile"
 }, testInfo) => {
   await signInAsAdmin(page, baseURL ?? "http://localhost:3100")
   await page.goto("/?scope=all")
-  await expect(
-    page
-      .getByRole("heading", { name: "Start your crate", exact: true })
-      .or(page.getByRole("heading", { name: "Library", exact: true })),
-  ).toBeVisible()
-  const invitationDismiss = page.getByRole("button", { name: "Maybe later", exact: true })
-  if (await invitationDismiss.isVisible()) await invitationDismiss.click()
+  await expect(page.getByRole("heading", { name: "Start your crate" })).toBeVisible()
+  await expect(page.getByRole("link", { name: "Explore plugins" })).toHaveCount(0)
+  await expect(page.getByRole("link", { name: "Import places" })).toBeVisible()
   await page
     .getByRole("navigation", { name: "Main", exact: true })
     .getByRole("link", { name: "Marketplace" })
