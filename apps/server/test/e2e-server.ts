@@ -3,6 +3,9 @@
  * Playwright always sees a fresh install. Used as Playwright's `webServer`.
  */
 import { spawn } from "node:child_process"
+import { mkdtemp, rm } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { PostgreSqlContainer } from "@testcontainers/postgresql"
 
@@ -10,6 +13,7 @@ const POSTGIS_IMAGE = "imresamu/postgis:18-3.6"
 const serverDir = fileURLToPath(new URL("..", import.meta.url))
 const port = process.env.PORT ?? "3100"
 
+const modulesDir = await mkdtemp(join(tmpdir(), "placard-e2e-modules-"))
 const container = await new PostgreSqlContainer(POSTGIS_IMAGE).start()
 
 const server = spawn(process.execPath, ["src/main.ts"], {
@@ -20,6 +24,7 @@ const server = spawn(process.execPath, ["src/main.ts"], {
     DATABASE_URL: container.getConnectionUri(),
     BETTER_AUTH_SECRET: "e2e-only-secret-0123456789abcdefghijklmnop",
     PORT: port,
+    PLACARD_MODULES_DIR: modulesDir,
     PUBLIC_URL: `http://localhost:${port}`,
     WEB_DIST_DIR: "../web/dist",
     PLACARD_FAKE_GOOGLE: "true",
@@ -32,6 +37,7 @@ const stop = async (code: number) => {
   stopping = true
   server.kill("SIGTERM")
   await container.stop().catch(() => undefined)
+  await rm(modulesDir, { recursive: true, force: true })
   process.exit(code)
 }
 
