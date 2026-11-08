@@ -20,6 +20,8 @@ test("the first visitor creates the admin account, signs out and back in", async
   await expect(page.getByText("Connect Google Maps", { exact: true })).toBeVisible()
   await page.getByRole("button", { name: "Skip for now" }).click()
   await expectEmptyLibrary(page)
+  await expect(page.getByRole("link", { name: "Explore plugins" })).toHaveCount(0)
+  await expect(page.getByRole("link", { name: "Import places" })).toBeVisible()
 
   await signOut(page)
   await expect(page).toHaveURL(/\/login$/)
