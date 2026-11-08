@@ -4,6 +4,7 @@ import { Api, CurrentUser, ModuleInstallFailed } from "@placard/domain"
 import { Effect, Layer, Option } from "effect"
 import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/http"
 import { HttpApiBuilder } from "effect/http-api"
+import { SqlClient } from "effect/sql"
 import { Auth } from "../auth/auth.ts"
 import { AppConfig } from "../config.ts"
 import { createModuleHostFetch } from "../modules/host-fetch.ts"
@@ -178,6 +179,26 @@ export const ModuleFileRoutesLive = HttpRouter.use(
             "cache-control": "private, max-age=60",
           },
         })
+      }).pipe(Effect.orDie),
+    )
+
+    yield* router.add(
+      "*",
+      "/api/marketplace/welcome",
+      Effect.gen(function* () {
+        const request = yield* HttpServerRequest.HttpServerRequest
+        const user = yield* auth.currentUser(new Headers(request.headers))
+        if (Option.isNone(user)) return HttpServerResponse.empty({ status: 401 })
+        const sql = yield* SqlClient.SqlClient
+        if (request.method === "POST") {
+          yield* sql`insert into user_module_prefs (user_id, module_id, visible)
+            values (${user.value.id}, 'placard.marketplace-welcome-v1', false)
+            on conflict (user_id, module_id) do nothing`
+          return HttpServerResponse.empty({ status: 204 })
+        }
+        const rows = yield* sql`select module_id from user_module_prefs
+          where user_id = ${user.value.id} and module_id = 'placard.marketplace-welcome-v1'`
+        return HttpServerResponse.jsonUnsafe({ show: rows.length === 0 })
       }).pipe(Effect.orDie),
     )
 

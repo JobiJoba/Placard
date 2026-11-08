@@ -1,12 +1,15 @@
 import { type FormEvent, type ReactNode, useEffect, useState } from "react"
 import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router"
+import { ErrorAlert } from "@/components/error-alert"
+import { GoogleKeyGuide } from "@/components/google-key-guide"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { api } from "@/lib/api"
+import { api, errorMessage } from "@/lib/api"
 import { signIn, signUp } from "@/lib/auth-client"
+import { useLoad } from "@/lib/use-load"
 import { FullPageMessage, useSession } from "@/session"
 
 const MIN_PASSWORD = 8
@@ -199,7 +202,8 @@ export function LoginPage() {
 
 export function SetupPage() {
   const signupOpen = useSignupOpen()
-  const afterAuth = useAfterAuth()
+  const { refresh } = useSession()
+  const navigate = useNavigate()
 
   if (signupOpen === null) return <FullPageMessage>Loading…</FullPageMessage>
   if (!signupOpen) return <Navigate to="/login" replace />
@@ -213,10 +217,105 @@ export function SetupPage() {
         submitLabel="Create admin account"
         onSubmit={async (fields) => {
           const message = await signUp(fields)
-          if (!message) await afterAuth()
+          if (!message) {
+            await refresh()
+            navigate("/setup/google", { replace: true })
+          }
           return message
         }}
       />
+    </AuthLayout>
+  )
+}
+
+const loadGoogleSettings = () => api((client) => client.admin.settings())
+
+export function GoogleSetupPage() {
+  const { state } = useSession()
+  if (state.status === "loading") return <FullPageMessage>Loading…</FullPageMessage>
+  if (state.status === "signedOut") return <Navigate to="/login" replace />
+  if (state.me.role !== "admin") return <Navigate to="/" replace />
+  return <GoogleSetupForm />
+}
+
+function GoogleSetupForm() {
+  const { data, error: loadError, reload } = useLoad(loadGoogleSettings)
+  const navigate = useNavigate()
+  const [error, setError] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
+  const finish = () => navigate("/", { replace: true })
+  const save = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const apiKey = String(new FormData(event.currentTarget).get("apiKey")).trim()
+    setPending(true)
+    setError(null)
+    try {
+      await api((client) => client.admin.setGoogleApiKey({ payload: { apiKey } }))
+      finish()
+    } catch (cause) {
+      setError(errorMessage(cause))
+    } finally {
+      setPending(false)
+    }
+  }
+
+  return (
+    <AuthLayout
+      title="Connect Google Maps"
+      description="Enable place search, map picking, and enrichment for everyone on this instance. You can skip this step and add a key later in Settings → Integrations."
+    >
+      <div className="flex flex-col gap-6">
+        <ErrorAlert message={loadError} />
+        {loadError && (
+          <Button variant="outline" onClick={reload}>
+            Retry loading settings
+          </Button>
+        )}
+        {data ? (
+          data.googleApiKey.source === "none" ? (
+            <form onSubmit={save}>
+              <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="apiKey">Google Maps API key</FieldLabel>
+                  <Input
+                    id="apiKey"
+                    name="apiKey"
+                    type="password"
+                    autoComplete="off"
+                    spellCheck={false}
+                    required
+                  />
+                </Field>
+                <ErrorAlert message={error} />
+                <Button type="submit" disabled={pending}>
+                  {pending ? "Testing…" : "Test and continue"}
+                </Button>
+                <Button type="button" variant="outline" disabled={pending} onClick={finish}>
+                  Skip for now
+                </Button>
+              </FieldGroup>
+            </form>
+          ) : (
+            <>
+              <p className="text-sm">
+                {data.googleApiKey.source === "env"
+                  ? "Using the GOOGLE_MAPS_API_KEY environment variable"
+                  : "Using the key saved for this instance"}{" "}
+                (ending in {data.googleApiKey.last4}).
+              </p>
+              <Button onClick={finish}>Continue to library</Button>
+            </>
+          )
+        ) : (
+          !loadError && <p className="text-sm">Loading settings…</p>
+        )}
+        {loadError && (
+          <Button variant="outline" onClick={finish}>
+            Skip for now
+          </Button>
+        )}
+        <GoogleKeyGuide />
+      </div>
     </AuthLayout>
   )
 }

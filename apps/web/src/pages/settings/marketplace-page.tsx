@@ -269,7 +269,7 @@ export function SettingsMarketplacePage() {
   return (
     <div className="flex flex-col gap-6">
       <SettingsCard
-        title="Module marketplace"
+        title="Manage plugins"
         description="Install plugins for this instance. Preinstalled modules ship with Placard; upload a zip or install from a public GitHub Release. Disable is the kill switch (a restart may be needed to fully unload)."
       >
         <ErrorAlert message={catalogError ?? installedError ?? settingsError ?? actionError} />
@@ -537,9 +537,17 @@ function ModuleCard({
               >
                 {mod.enabled ? "Disable" : "Enable"}
               </Button>
-              <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={onUninstall}>
-                Uninstall
-              </Button>
+              {mod.source !== "bundled" && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  disabled={busy}
+                  onClick={onUninstall}
+                >
+                  Uninstall
+                </Button>
+              )}
             </>
           )}
         </div>

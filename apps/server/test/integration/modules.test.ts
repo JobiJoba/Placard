@@ -107,6 +107,14 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("modules marketpla
     }),
   )
 
+  it.effect("persists the marketplace welcome invitation per account", () =>
+    run(async () => {
+      expect((await admin.browser.get("/api/marketplace/welcome")).body.show).toBe(true)
+      expect((await admin.browser.send("POST", "/api/marketplace/welcome")).status).toBe(204)
+      expect((await admin.browser.get("/api/marketplace/welcome")).body.show).toBe(false)
+    }),
+  )
+
   it.effect(
     "members can browse inactive artwork but cannot activate or fetch executable assets",
     () =>
@@ -134,6 +142,7 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("modules marketpla
               .status,
           ).not.toBe(200)
         }
+        expect((await member.get("/api/marketplace/welcome")).body.show).toBe(true)
       }),
   )
 

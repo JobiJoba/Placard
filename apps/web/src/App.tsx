@@ -4,11 +4,12 @@ import { AppShell } from "@/components/app-shell"
 import { moduleRouteElements } from "@/components/module-routes"
 import { ModulesProvider, useModules } from "@/modules"
 import { AddPlacePage } from "@/pages/add-place-page"
-import { InvitePage, LoginPage, SetupPage } from "@/pages/auth-pages"
+import { GoogleSetupPage, InvitePage, LoginPage, SetupPage } from "@/pages/auth-pages"
 import { DeletedPage } from "@/pages/deleted-page"
 import { ImportPage } from "@/pages/import-page"
 import { LibraryPage } from "@/pages/library-page"
 import { ListsPage } from "@/pages/lists-page"
+import { MarketplacePage } from "@/pages/marketplace-page"
 import { PlacePage } from "@/pages/place-page"
 import {
   RequireSettingsAdmin,
@@ -51,6 +52,7 @@ function AuthenticatedRoutes() {
     <Routes>
       <Route element={<AppShell modules={list} />}>
         <Route index element={<LibraryPage />} />
+        <Route path="/marketplace" element={<MarketplacePage />} />
         <Route path="/add" element={<AddPlacePage />} />
         <Route path="/import" element={<ImportPage />} />
         <Route path="/import/:runId" element={<ImportPage />} />
@@ -58,6 +60,14 @@ function AuthenticatedRoutes() {
         <Route path="/lists" element={<ListsPage />} />
         <Route path="/deleted" element={<DeletedPage />} />
         <Route path="/settings" element={<SettingsLayout />}>
+          <Route
+            path="manage-plugins"
+            element={
+              <RequireSettingsAdmin>
+                <SettingsMarketplacePage />
+              </RequireSettingsAdmin>
+            }
+          />
           <Route index element={<Navigate to="general" replace />} />
           <Route path="general" element={<SettingsGeneralPage />} />
           <Route path="place-types" element={<SettingsPlaceTypesPage />} />
@@ -78,14 +88,7 @@ function AuthenticatedRoutes() {
               </RequireSettingsAdmin>
             }
           />
-          <Route
-            path="marketplace"
-            element={
-              <RequireSettingsAdmin>
-                <SettingsMarketplacePage />
-              </RequireSettingsAdmin>
-            }
-          />
+          <Route path="marketplace" element={<Navigate to="/marketplace" replace />} />
           <Route
             path="budget"
             element={
@@ -133,6 +136,7 @@ export function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/setup" element={<SetupPage />} />
+          <Route path="/setup/google" element={<GoogleSetupPage />} />
           <Route path="/invite/:token" element={<InvitePage />} />
           <Route
             path="/*"

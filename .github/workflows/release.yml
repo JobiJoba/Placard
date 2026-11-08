@@ -27,7 +27,7 @@ jobs:
         id: image
         run: echo "name=ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/placard" >> "$GITHUB_OUTPUT"
 
-      # Stable releases only (git tags v*). Nightly tip of main is CI → :nightly (never :latest).
+      # Versioned releases include release candidates. Stable tags also publish :latest.
       - name: Image metadata
         id: meta
         uses: docker/metadata-action@v6
@@ -74,6 +74,7 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
           files: |
             dist-release/docker-compose.yml
             dist-release/docker-compose.override.yml

@@ -3,6 +3,7 @@ import { type FormEvent, useCallback, useEffect, useState } from "react"
 import { Link } from "react-router"
 import { ErrorAlert } from "@/components/error-alert"
 import { GoogleCostEstimate } from "@/components/google-cost-estimate"
+import { GoogleKeyGuide } from "@/components/google-key-guide"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
@@ -78,12 +79,20 @@ function GoogleKeyCard() {
           </p>
           <Field>
             <FieldLabel htmlFor="apiKey">New key</FieldLabel>
-            <Input id="apiKey" name="apiKey" autoComplete="off" spellCheck={false} required />
+            <Input
+              id="apiKey"
+              name="apiKey"
+              type="password"
+              autoComplete="off"
+              spellCheck={false}
+              required
+            />
             <FieldDescription>
               Needs Places API (New) enabled, plus Maps JavaScript API for picking places on the
               map.
             </FieldDescription>
           </Field>
+          <GoogleKeyGuide />
           <ErrorAlert message={error ?? loadError} />
           {saved && (
             <Alert>

@@ -17,8 +17,8 @@ const staticNavItems: ReadonlyArray<NavItem> = [
   { to: "/settings/place-types", label: "Place types", section: "Library" },
   { to: "/settings/mcp", label: "MCP", section: "Personal" },
   {
-    to: "/settings/marketplace",
-    label: "Marketplace",
+    to: "/settings/manage-plugins",
+    label: "Manage plugins",
     section: "Library",
     adminOnly: true,
     activePrefixes: ["/settings/modules"],

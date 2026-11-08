@@ -20,6 +20,7 @@ import { useMe, useSession } from "@/session"
 const corePrimary = [
   { to: "/", label: "Library", end: true },
   { to: "/lists", label: "Lists" },
+  { to: "/marketplace", label: "Marketplace" },
 ] as const
 
 const collectPrimary = { to: "/add", label: "Add" } as const
@@ -328,6 +329,10 @@ export function AppShell({ modules }: { readonly modules: ReadonlyArray<MyModule
           <NavLink to="/add" className={bottomLink}>
             <Plus size={19} aria-hidden />
             Add
+          </NavLink>
+          <NavLink to="/marketplace" className={bottomLink}>
+            <Puzzle size={19} aria-hidden />
+            Marketplace
           </NavLink>
           {primaryPlugins[0] ? null : (
             <NavLink to="/settings" className={bottomLink}>

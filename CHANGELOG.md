@@ -7,6 +7,22 @@ and this project aims to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.0-rc1] — 2026-11-08
+
+### Added
+
+- Marketplace in desktop and mobile navigation, with illustrated plugin cards, previews, and admin activation
+- Five official plugins included and inactive by default, with immediate activation and preserved existing installations
+- A dismissible marketplace invitation for populated libraries, saved per account across devices
+- Optional Google Maps setup after creating the administrator account, with guided API-key instructions
+- Decide Together on the public plugins page
+
+### Changed
+
+- Plugin uploads, GitHub installs, and update controls are grouped under Manage plugins
+- Empty libraries focus on importing or adding places
+
+
 ### Fixed
 
 - Installers fall back to exact release-asset API URLs when GitHub release downloads fail; the docs site serves verified installer copies to avoid the same failure on the initial download
@@ -95,3 +111,5 @@ First v0.1 release candidate after phases 0–10.
 - Instance disaster recovery is still `pg_dump` + volumes (documented); one-click backup UI is later
 
 [0.1.0]: https://github.com/JobiJoba/Placard/releases/tag/v0.1.0
+
+[1.0.0-rc1]: https://github.com/JobiJoba/Placard/releases/tag/v1.0.0-rc1

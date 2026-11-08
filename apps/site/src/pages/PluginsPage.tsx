@@ -1,5 +1,4 @@
 import { Link } from "react-router"
-import { CopySnippet } from "../components/CopySnippet"
 import { PluginPreview } from "../components/PluginPreview"
 import { SiteChrome } from "../components/SiteChrome"
 
@@ -54,6 +53,16 @@ const plugins = [
     alt: "Placard Pick plugin cover illustration",
     features: ["A dedicated Pick page", "Library & distance filters", "Avoid recent picks"],
   },
+  {
+    id: "places.decide-together",
+    name: "Decide Together",
+    tagline: "Vote on where to go.",
+    description: "Vote on a shortlist and reveal your household’s favorite places.",
+    image: "decide-together.svg",
+    screenshot: "decide-together.svg",
+    alt: "Decide Together voting illustration",
+    features: ["Shared shortlists", "Household voting", "Reveal your favorites"],
+  },
 ]
 
 export function PluginsPage() {
@@ -95,10 +104,6 @@ export function PluginsPage() {
                 </ul>
                 <PluginPreview name={plugin.name} image={plugin.screenshot} />
                 <div className="plugin-install">
-                  <CopySnippet
-                    code={`${REPOSITORY}#${plugin.id}`}
-                    label={`${plugin.name} install URL`}
-                  />
                   <a
                     href={`${REPOSITORY}/tree/main/plugins/${plugin.id}`}
                     target="_blank"
@@ -123,21 +128,10 @@ export function PluginsPage() {
           </div>
           <div>
             <ol>
-              <li>Copy the install URL for the plugin you want above.</li>
-              <li>
-                Open <strong>Settings → Module marketplace → Install from GitHub</strong> on your
-                instance and paste the URL.
-              </li>
-              <li>Install and enable the plugin, then make it visible for your account.</li>
+              <li>Open Marketplace in Placard’s main navigation.</li>
+              <li>Choose a plugin and ask an instance admin to activate it.</li>
+              <li>Open its page or find the feature on your place cards.</li>
             </ol>
-            <p>
-              Keep the module selector (such as <code>#places.board</code>) in the URL to select the
-              correct plugin. You can also upload its package from{" "}
-              <a href={`${REPOSITORY}/releases`} target="_blank" rel="noreferrer">
-                GitHub Releases
-              </a>
-              .
-            </p>
             <p>
               Plugins run with full access to your instance. Install code you trust and back up your
               database, media and module data before installing or updating.

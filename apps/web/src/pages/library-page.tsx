@@ -44,6 +44,7 @@ import {
 } from "@/lib/library-browse-prefs"
 import { useLibraryDensity } from "@/lib/library-density"
 import { useLoad } from "@/lib/use-load"
+import { MarketplaceInvitation } from "@/pages/marketplace-page"
 import { useMe } from "@/session"
 
 const ResultsMap = lazy(() => import("@/components/library/results-map"))
@@ -377,7 +378,7 @@ export function LibraryPage() {
         </h1>
         <p className="max-w-md text-muted-foreground">
           Welcome, {me.name}. Import a Takeout export or add places by hand — once the collection is
-          here, you can browse it for inspiration (and modules later).
+          here, you can browse it for inspiration.
         </p>
         <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
           <Button asChild>
@@ -395,6 +396,7 @@ export function LibraryPage() {
 
   return (
     <section className="library-page flex flex-col gap-6">
+      <MarketplaceInvitation />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="page-heading flex flex-col gap-1">
           <p className="section-label">Your personal atlas</p>

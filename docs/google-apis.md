@@ -47,7 +47,7 @@ You do **not** need the legacy Places API, Geocoding API, or Directions API for 
 | Restriction | Recommendation |
 | --- | --- |
 | **API restrictions** | Restrict key to **Places API (New)** and **Maps JavaScript API** only |
-| **Application restrictions** | Prefer **None** for a self-hosted instance, *or* IP allowlist if your server has a stable egress IP. **Do not** use HTTP-referrer-only restrictions: Placard’s server calls Places with no browser referrer, so referrer-locked keys fail enrichment / autocomplete |
+| **Application restrictions** | Choose **None** for the shared key. Website restrictions block server-side Places calls, and server-IP restrictions block the browser map. Under **API restrictions**, choose **Restrict key** and select the two APIs above. |
 | **Quota** | Set a **daily quota cap** on Places (New) and Maps JavaScript so a runaway import cannot surprise-bill you |
 
 One key is intentional: the same value is used in the browser (map) and on the server (Places). Treat it like a secret that is also visible to signed-in users’ browsers — API + quota restrictions are the real guardrails.
@@ -57,7 +57,7 @@ One key is intentional: the same value is used in the browser (map) and on the s
 Either:
 
 - Set `GOOGLE_MAPS_API_KEY=...` in `.env` and recreate/restart the `app` (and `worker`) containers, **or**
-- After first signup: **Settings → Integrations** (admin) — Placard tests the key with a cheap Places call before saving
+- During first-admin onboarding: **Connect Google Maps**, or later in **Settings → Integrations** (admin) — Placard tests the key with a cheap Places call before saving
 
 ```sh
 GOOGLE_MAPS_API_KEY=your-key-here
