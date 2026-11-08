@@ -36,6 +36,7 @@ COPY packages/domain/src ./packages/domain/src
 COPY packages/module-sdk/src ./packages/module-sdk/src
 COPY apps/server/src ./apps/server/src
 COPY apps/server/drizzle ./apps/server/drizzle
+COPY apps/server/bundled-plugins ./apps/server/bundled-plugins
 COPY --from=build /app/apps/web/dist ./web-dist
 
 FROM node:26-slim AS runner

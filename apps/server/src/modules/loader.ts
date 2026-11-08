@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import { mkdir } from "node:fs/promises"
 import { dirname, join } from "node:path"
 import { pathToFileURL } from "node:url"
@@ -124,7 +125,7 @@ export class ModuleRuntime extends Context.Service<
             return { ok: false, error: "Module requires an unsupported host SDK or capability." }
           }
           await mkdir(rootDir, { recursive: true })
-          const href = `${importHref}${importHref.includes("?") ? "&" : "?"}t=${Date.now()}`
+          const href = `${importHref}${importHref.includes("?") ? "&" : "?"}t=${randomUUID()}`
           let mod: Record<string, unknown>
           try {
             mod = (await import(href)) as Record<string, unknown>
@@ -166,7 +167,7 @@ export class ModuleRuntime extends Context.Service<
           }
           const serverEntry = (manifest.serverEntry ?? defaultServerEntry).replace(/^\.\//, "")
           const entryPath = join(rootDir, serverEntry)
-          const href = `${pathToFileURL(entryPath).href}?t=${Date.now()}`
+          const href = `${pathToFileURL(entryPath).href}?t=${randomUUID()}`
 
           let mod: Record<string, unknown>
           try {

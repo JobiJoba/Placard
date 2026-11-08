@@ -1,11 +1,17 @@
-import { access } from "node:fs/promises"
+import { access, writeFile } from "node:fs/promises"
+import { join } from "node:path"
 import { expect, layer } from "@effect/vitest"
-import { Effect } from "effect"
+import { Effect, Layer } from "effect"
+import { SqlClient } from "effect/sql"
 import { strToU8, zipSync } from "fflate"
+import { AppConfig } from "../../src/config.ts"
 import {
   clearGithubReleaseFixtures,
   githubReleaseFixtures,
+  TestHttpFixtureClient,
 } from "../../src/modules/github-fixture.ts"
+import { ModuleRuntime } from "../../src/modules/loader.ts"
+import { Modules } from "../../src/modules/modules.ts"
 import { type Browser, TestApp } from "../layers/app.ts"
 
 const password = "correct horse battery"
@@ -62,14 +68,144 @@ layer(TestApp.layer, { concurrent: false, timeout: 120_000 })("modules marketpla
     }),
   )
 
-  it.effect("catalog has no bundled Decide / empty preinstalled catalog", () =>
+  it.effect("catalog includes five inactive official plugins", () =>
     run(async () => {
       const catalog = await admin.browser.get("/api/modules/catalog")
       expect(catalog.status).toBe(200)
       expect(
         catalog.body.find((m: { id: string }) => m.id === "restaurants.decide"),
       ).toBeUndefined()
-      expect(catalog.body.filter((m: { source: string }) => m.source === "bundled")).toEqual([])
+      expect(catalog.body.filter((m: { source: string }) => m.source === "bundled")).toHaveLength(5)
+      const installed = await admin.browser.get("/api/modules/installed")
+      expect(installed.body.every((m: { enabled: boolean }) => !m.enabled)).toBe(true)
+    }),
+  )
+
+  it.effect("activates and deactivates every bundled plugin without restart", () =>
+    run(async () => {
+      const catalog = await admin.browser.get("/api/modules/catalog")
+      for (const plugin of catalog.body) {
+        expect(plugin.coverUrl ?? plugin.iconUrl).toBeTruthy()
+        const artwork = await admin.browser.getRaw(plugin.coverUrl ?? plugin.iconUrl)
+        expect(artwork.status).toBe(200)
+        const activated = await admin.browser.send("PATCH", `/api/modules/installed/${plugin.id}`, {
+          enabled: true,
+        })
+        expect(activated.status, JSON.stringify(activated.body)).toBe(200)
+        expect(activated.body.loadError).toBeNull()
+        const mine = await admin.browser.get("/api/modules/me")
+        expect(mine.body.find((m: { id: string }) => m.id === plugin.id).webEntryUrl).toBeTruthy()
+        const deactivated = await admin.browser.send(
+          "PATCH",
+          `/api/modules/installed/${plugin.id}`,
+          { enabled: false },
+        )
+        expect(deactivated.status).toBe(200)
+        const after = await admin.browser.get("/api/modules/me")
+        expect(after.body.some((m: { id: string }) => m.id === plugin.id)).toBe(false)
+      }
+    }),
+  )
+
+  it.effect(
+    "members can browse inactive artwork but cannot activate or fetch executable assets",
+    () =>
+      run(async (app) => {
+        const invite = await admin.browser.send("POST", "/api/admin/invites", {
+          email: "market-member@example.com",
+        })
+        const member = app.browser()
+        const signup = await member.send("POST", "/api/auth/sign-up/email", {
+          name: "Member",
+          email: "market-member@example.com",
+          password,
+          inviteToken: new URL(invite.body.url).pathname.split("/").pop(),
+        })
+        expect(signup.status).toBe(200)
+        const catalog = await member.get("/api/modules/catalog")
+        expect(catalog.status).toBe(200)
+        for (const plugin of catalog.body) {
+          expect((await member.getRaw(plugin.coverUrl ?? plugin.iconUrl)).status).toBe(200)
+          expect(
+            (await member.getRaw(`/api/modules/${plugin.id}/assets/web/index.js`)).status,
+          ).toBe(404)
+          expect(
+            (await member.send("PATCH", `/api/modules/installed/${plugin.id}`, { enabled: true }))
+              .status,
+          ).not.toBe(200)
+        }
+      }),
+  )
+
+  it.effect("a failed activation stays inactive and can be retried after repair", () =>
+    Effect.gen(function* () {
+      const config = yield* AppConfig
+      yield* run(async () => {
+        const broken = { ...fixtureManifest, id: "demo.broken" }
+        const zip = Buffer.from(
+          zipSync({
+            "placard.module.json": strToU8(JSON.stringify(broken)),
+            "server/index.js": strToU8("throw new Error('broken plugin')"),
+            "web/index.js": strToU8("export const DemoPage = () => null"),
+          }),
+        ).toString("base64")
+        await admin.browser.send("POST", "/api/modules/upload", {
+          filename: "broken.zip",
+          contentBase64: zip,
+        })
+        const failed = await admin.browser.send("PATCH", "/api/modules/installed/demo.broken", {
+          enabled: true,
+        })
+        expect(failed.status).not.toBe(200)
+        const installed = await admin.browser.get("/api/modules/installed")
+        expect(installed.body.find((m: { id: string }) => m.id === broken.id)).toMatchObject({
+          enabled: false,
+          loadError: "broken plugin",
+        })
+        await writeFile(
+          join(config.modulesDir, broken.id, "server/index.js"),
+          "export function createModule() { return {} }",
+        )
+        const retry = await admin.browser.send("PATCH", "/api/modules/installed/demo.broken", {
+          enabled: true,
+        })
+        expect(retry.status, JSON.stringify(retry.body)).toBe(200)
+        expect(retry.body).toMatchObject({ enabled: true, loadError: null })
+        await admin.browser.send("DELETE", "/api/modules/installed/demo.broken")
+      })
+    }),
+  )
+
+  it.effect("boot preserves existing versions, sources, enabled state and preferences", () =>
+    Effect.gen(function* () {
+      const sql = yield* SqlClient.SqlClient
+      yield* sql`update instance_modules set source = 'github', version = '0.0.9', enabled = true where module_id = 'places.pick'`
+      yield* run(async () => {
+        await admin.browser.send("PATCH", "/api/modules/me/places.pick", { visible: false })
+      })
+      yield* Effect.gen(function* () {
+        const modules = yield* Modules
+        yield* modules.loadDiskModules
+      }).pipe(
+        Effect.provide(
+          Modules.layer.pipe(
+            Layer.provide(ModuleRuntime.layer),
+            Layer.provide(TestHttpFixtureClient),
+          ),
+        ),
+      )
+      yield* run(async () => {
+        const installed = await admin.browser.get("/api/modules/installed")
+        expect(installed.body.find((m: { id: string }) => m.id === "places.pick")).toMatchObject({
+          source: "github",
+          version: "0.0.9",
+          enabled: true,
+        })
+        const mine = await admin.browser.get("/api/modules/me")
+        expect(mine.body.find((m: { id: string }) => m.id === "places.pick").visible).toBe(false)
+        await admin.browser.send("PATCH", "/api/modules/installed/places.pick", { enabled: false })
+      })
+      yield* sql`update instance_modules set source = 'bundled' where module_id = 'places.pick'`
     }),
   )
 

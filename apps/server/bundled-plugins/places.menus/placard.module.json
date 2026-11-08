@@ -1,0 +1,49 @@
+{
+  "id": "places.menus",
+  "name": "Menus",
+  "version": "0.2.0",
+  "description": "Keep restaurant menus, dishes and prices together with the places you save.",
+  "permissions": [
+    "places.read"
+  ],
+  "nav": [],
+  "source": "bundled",
+  "sdkVersion": "0.2.0",
+  "requiredCapabilities": [
+    "place-sections",
+    "persistent-data"
+  ],
+  "serverEntry": "./server/index.js",
+  "webEntry": "./web/index.js",
+  "webRoutes": [],
+  "placeSections": [
+    {
+      "id": "menus",
+      "label": "Menus",
+      "exportName": "MenuSection"
+    }
+  ],
+  "mcpTools": [
+    {
+      "name": "get_menus",
+      "description": "Read menus, stable IDs and revisions for a place."
+    },
+    {
+      "name": "save_menu",
+      "description": "Atomically create or explicitly replace a complete menu."
+    },
+    {
+      "name": "upsert_menu_items",
+      "description": "Add or update items in existing sections."
+    },
+    {
+      "name": "delete_menu_items",
+      "description": "Remove specified menu items."
+    },
+    {
+      "name": "delete_menu",
+      "description": "Delete one menu."
+    }
+  ],
+  "cover": "web/assets/marketplace-cover.svg"
+}

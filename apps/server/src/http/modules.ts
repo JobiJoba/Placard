@@ -143,7 +143,15 @@ export const ModuleFileRoutesLive = HttpRouter.use(
         }
         // Members need the module enabled+visible; admins can fetch covers for marketplace cards.
         const available = yield* modules.isAvailableToUser(user.value.id, id)
-        if (!available && user.value.role !== "admin") {
+        const catalog = yield* modules.catalog(user.value.id)
+        const card = catalog.find((entry) => entry.id === id)
+        const requestedUrl = `/api/modules/${encodeURIComponent(id)}/assets/${wildcard}`
+        const isArtwork =
+          (requestedUrl === card?.coverUrl ||
+            requestedUrl === card?.iconUrl ||
+            (card?.source === "bundled" && wildcard === "web/assets/preview.png")) &&
+          /\.(png|jpe?g|webp|svg)$/i.test(wildcard)
+        if (!available && !isArtwork && user.value.role !== "admin") {
           return HttpServerResponse.empty({ status: 404 })
         }
 

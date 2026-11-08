@@ -20,8 +20,10 @@ describe("resolveModuleMediaUrl", () => {
     )
   })
 
-  it("returns null for empty or relative bundled paths", () => {
+  it("serves bundled artwork and handles empty paths", () => {
     expect(resolveModuleMediaUrl("x", "bundled", "")).toBeNull()
-    expect(resolveModuleMediaUrl("x", "bundled", "./icon.png")).toBeNull()
+    expect(resolveModuleMediaUrl("x", "bundled", "./icon.png")).toBe(
+      "/api/modules/x/assets/icon.png",
+    )
   })
 })

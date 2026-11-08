@@ -1,3 +1,4 @@
+import { cp, mkdir } from "node:fs/promises"
 import { join } from "node:path"
 import {
   type CatalogModule,
@@ -10,11 +11,11 @@ import {
   type MyModule,
 } from "@placard/domain"
 import { defaultWebEntry, type ModuleManifest, moduleMcpToolName } from "@placard/module-sdk"
-import { Context, DateTime, Effect, Layer } from "effect"
+import { Context, DateTime, Effect, Layer, Semaphore } from "effect"
 import { HttpClient } from "effect/http"
 import { SqlClient } from "effect/sql"
 import { AppConfig } from "../config.ts"
-import { allCatalogManifests, catalogManifest } from "./catalog.ts"
+import { allCatalogManifests, bundledPluginsDir, catalogManifest } from "./catalog.ts"
 import {
   downloadReleaseAsset,
   fetchLatestPluginZip,
@@ -32,14 +33,7 @@ import {
   removeModuleDir,
 } from "./package-zip.ts"
 
-/** Resolve bundled plugin server entry for dynamic import (same contract as upload). */
-const bundledPluginImportHref = (packageName: string): string | null => {
-  try {
-    return import.meta.resolve(`${packageName}/plugin-server`)
-  } catch {
-    return null
-  }
-}
+const activationLock = Semaphore.makeUnsafe(1)
 
 interface InstanceRow {
   readonly module_id: string
@@ -79,11 +73,10 @@ export const resolveModuleMediaUrl = (
   if (media == null || media.trim() === "") return null
   const value = media.trim()
   if (/^https?:\/\//i.test(value) || value.startsWith("/")) return value
-  if (isDiskSource(source)) {
+  if (isDiskSource(source) || source === "bundled") {
     const relative = value.replace(/^\.\//, "")
     return `/api/modules/${encodeURIComponent(moduleId)}/assets/${relative}`
   }
-  // Bundled relative paths are not served from disk; prefer absolute /public paths in manifests.
   return null
 }
 
@@ -221,7 +214,9 @@ export class Modules extends Context.Service<
       const resolveManifest = (row: InstanceRow): Effect.Effect<ModuleManifest | null> =>
         Effect.gen(function* () {
           const bundled = catalogManifest(row.module_id)
-          if (bundled) return bundled
+          if (bundled && row.source === "bundled") {
+            return (yield* runtime.readManifest(join(modulesDir, row.module_id))) ?? bundled
+          }
           if (isDiskSource(row.source)) {
             const loaded = runtime.get(row.module_id)
             if (loaded) return loaded.manifest
@@ -350,7 +345,7 @@ export class Modules extends Context.Service<
         visible: boolean,
         mcpEnabled: boolean,
       ): MyModule => {
-        const disk = isDiskSource(row.source)
+        const disk = isDiskSource(row.source) || row.source === "bundled"
         const webEntry = manifest.webEntry ?? defaultWebEntry
         return {
           id: row.module_id,
@@ -404,28 +399,21 @@ export class Modules extends Context.Service<
 
       const loadBundledRuntime = (manifest: ModuleManifest) =>
         Effect.gen(function* () {
-          const packageName = manifest.packageName
-          if (!packageName) {
-            return { ok: false as const, error: "Bundled module is missing packageName." }
-          }
-          const href = bundledPluginImportHref(packageName)
-          if (!href) {
-            return {
-              ok: false as const,
-              error: `Could not resolve ${packageName}/plugin-server.`,
-            }
-          }
-          const rootDir = join(modulesDir, manifest.id)
-          return yield* runtime.loadFromCreateModule(manifest.id, rootDir, manifest, href)
+          return yield* runtime.loadFromDisk(manifest.id, join(modulesDir, manifest.id))
         })
 
       return {
         catalog: Effect.fn("Modules.catalog")(function* (_ownerId) {
           const installed = yield* listRows()
           const installedIds = new Set(installed.map((r) => r.module_id))
-          const fromBundled = allCatalogManifests().map((m) =>
-            catalogEntry(m, m.source, installedIds.has(m.id)),
-          )
+          const fromBundled: CatalogModule[] = []
+          for (const bundled of allCatalogManifests()) {
+            const row = installed.find((entry) => entry.module_id === bundled.id)
+            const manifest = row ? ((yield* resolveManifest(row)) ?? bundled) : bundled
+            fromBundled.push(
+              catalogEntry(manifest, row?.source ?? "bundled", installedIds.has(bundled.id)),
+            )
+          }
           const extras: CatalogModule[] = []
           for (const row of installed) {
             if (catalogManifest(row.module_id)) continue
@@ -641,6 +629,10 @@ export class Modules extends Context.Service<
           if (!row) {
             return yield* new ModuleNotFound({ message: `Module "${moduleId}" is not installed.` })
           }
+          if (row.source === "bundled")
+            return yield* new ModuleInstallFailed({
+              message: "Deactivate included plugins from the marketplace.",
+            })
           runtime.unregister(moduleId)
           yield* sql`delete from user_module_prefs where module_id = ${moduleId}`.pipe(Effect.orDie)
           yield* sql`delete from instance_modules where module_id = ${moduleId}`.pipe(Effect.orDie)
@@ -655,8 +647,22 @@ export class Modules extends Context.Service<
               message: "Only an admin can enable or disable modules for the instance.",
             })
           }
+          const existing = yield* getRow(moduleId)
+          if (!existing) return yield* new ModuleNotFound({ message: "Plugin is not installed." })
+          if (enabled) {
+            const load = yield* runtime.loadFromDisk(moduleId, join(modulesDir, moduleId))
+            if (!load.ok) {
+              yield* sql`update instance_modules set enabled = false, load_error = ${load.error} where module_id = ${moduleId}`.pipe(
+                Effect.orDie,
+              )
+              runtime.unregister(moduleId)
+              return yield* new ModuleNotFound({ message: load.error })
+            }
+          } else {
+            runtime.unregister(moduleId)
+          }
           const rows = yield* sql<InstanceRow>`
-            update instance_modules set enabled = ${enabled}
+            update instance_modules set load_error = null, enabled = ${enabled}
             where module_id = ${moduleId}
             returning module_id, version, source, package_name, enabled, load_error, installed_at,
               github_owner, github_repo, github_repo_url, github_release_tag, github_asset_name,
@@ -667,7 +673,7 @@ export class Modules extends Context.Service<
           }
           const meta = yield* metaFor(moduleId, row)
           return toInstalled(row, meta)
-        }),
+        }, activationLock.withPermits(1)),
 
         me: Effect.fn("Modules.me")(function* (ownerId) {
           const rows = yield* sql<
@@ -770,6 +776,19 @@ export class Modules extends Context.Service<
         ),
 
         loadDiskModules: Effect.gen(function* () {
+          for (const manifest of allCatalogManifests()) {
+            const existing = yield* getRow(manifest.id)
+            if (existing) continue
+            yield* Effect.promise(async () => {
+              await mkdir(modulesDir, { recursive: true })
+              await cp(join(bundledPluginsDir, manifest.id), join(modulesDir, manifest.id), {
+                recursive: true,
+              })
+            })
+            yield* sql`insert into instance_modules (module_id, version, source, enabled)
+              values (${manifest.id}, ${manifest.version}, 'bundled', false)
+              on conflict (module_id) do nothing`.pipe(Effect.orDie)
+          }
           const rows = yield* listRows()
           for (const row of rows) {
             if (!row.enabled) continue
@@ -780,7 +799,7 @@ export class Modules extends Context.Service<
               continue
             }
             if (row.source === "bundled") {
-              const manifest = catalogManifest(row.module_id)
+              const manifest = yield* resolveManifest(row)
               if (!manifest) continue
               const load = yield* loadBundledRuntime(manifest)
               yield* setLoadError(row.module_id, load.ok ? null : load.error)

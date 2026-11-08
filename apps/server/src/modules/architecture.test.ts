@@ -9,8 +9,14 @@ describe("module plugin architecture", () => {
     expect(sdkMajorCompatible("0.1.0", "1.0.0")).toBe(true)
     expect(sdkMajorCompatible("1.0.0", "0.1.0")).toBe(false)
   })
-  it("ships no bundled Marketplace modules (wheels install via zip / GitHub)", () => {
-    expect(bundledCatalog).toEqual([])
+  it("ships all five official Marketplace plugins", () => {
+    expect(bundledCatalog.map((m) => m.id).sort()).toEqual([
+      "places.board",
+      "places.day-out",
+      "places.decide-together",
+      "places.menus",
+      "places.pick",
+    ])
   })
 
   it("namespaces module MCP tool names by module id", () => {
