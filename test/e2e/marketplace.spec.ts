@@ -26,7 +26,7 @@ test("marketplace discovery and immediate activation work on desktop and mobile"
   await pick.getByRole("button", { name: "Activate", exact: true }).click()
   await pick.getByRole("link", { name: "Open Pick" }).click()
   await expect(page).toHaveURL(/\/m\/places.pick$/)
-  await expect(page.getByRole("heading", { name: /Pick/ }).first()).toBeVisible()
+  await expect(page.getByRole("button", { name: "Choose for me", exact: true })).toBeVisible()
   await expect(page.getByRole("alert")).toHaveCount(0)
   await page.goto("/marketplace")
   await page.screenshot({ path: testInfo.outputPath("marketplace-desktop.png"), fullPage: true })
