@@ -1,6 +1,7 @@
 import { Context, Effect, Layer, Redacted } from "effect"
-import PgBoss from "pg-boss"
+import { PgBoss } from "pg-boss"
 import { AppConfig } from "../config.ts"
+import { migrateV10Jobs, queueSchema } from "./migrate-v10.ts"
 import {
   ENRICH_PLACE,
   type EnrichPlaceJob,
@@ -39,6 +40,7 @@ export class JobQueue extends Context.Service<
           try: async () => {
             const instance = new PgBoss({
               connectionString: Redacted.value(databaseUrl),
+              schema: queueSchema,
               application_name: "placard-jobs",
               supervise: false,
               schedule: false,
@@ -46,19 +48,16 @@ export class JobQueue extends Context.Service<
             instance.on("error", (error) => {
               console.error("pg-boss error", error)
             })
-            await instance.start()
-            await instance.createQueue(ENRICH_PLACE, {
-              name: ENRICH_PLACE,
-              ...enrichPlaceOptions,
-            })
-            await instance.createQueue(IMPORT_PARSE, {
-              name: IMPORT_PARSE,
-              ...importJobOptions,
-            })
-            await instance.createQueue(IMPORT_COMMIT, {
-              name: IMPORT_COMMIT,
-              ...importJobOptions,
-            })
+            try {
+              await instance.start()
+              await instance.createQueue(ENRICH_PLACE, enrichPlaceOptions)
+              await instance.createQueue(IMPORT_PARSE, importJobOptions)
+              await instance.createQueue(IMPORT_COMMIT, importJobOptions)
+              await migrateV10Jobs(instance.getDb())
+            } catch (error) {
+              await instance.stop()
+              throw error
+            }
             return instance
           },
           catch: (cause) => new Error(`Failed to start job queue: ${String(cause)}`),

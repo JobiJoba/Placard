@@ -6,6 +6,10 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     groups:
+      effect:
+        patterns:
+          - "effect"
+          - "@effect/*"
       dev-dependencies:
         dependency-type: development
       production-dependencies:

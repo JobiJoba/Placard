@@ -21,6 +21,11 @@ Placard runs database migrations when the app starts. Restoring the pre-upgrade
 backup is the recovery path if the new release changes the schema; switching only
 the image back is not a supported database rollback.
 
+When upgrading from a release using pg-boss 10, stop the old API and worker before
+starting the new version. On startup Placard moves pending, delayed, and interrupted
+jobs into `pgboss_v12`. Interrupted jobs resume from the beginning of their handler.
+Completed jobs and the v10 archive stay in `pgboss`.
+
 ## Docker Compose and script installations
 
 The commands use Bash and run from your existing installation directory. Check

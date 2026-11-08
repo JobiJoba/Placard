@@ -15,30 +15,30 @@
     "test:integration": "vitest run --project integration"
   },
   "dependencies": {
-    "@effect/platform-node": "4.0.6",
-    "@effect/sql-pg": "4.0.6",
+    "@effect/platform-node": "4.1.2",
+    "@effect/sql-pg": "4.1.2",
     "@modelcontextprotocol/sdk": "1.32.2",
     "@placard/domain": "workspace:*",
     "@placard/module-sdk": "workspace:*",
-    "better-auth": "1.7.13",
+    "better-auth": "1.7.17",
     "drizzle-orm": "1.0.0-rc.5",
-    "effect": "4.0.6",
+    "effect": "4.1.2",
     "fflate": "^0.8.3",
     "pg": "^8.23.1",
-    "pg-boss": "^10.4.2",
+    "pg-boss": "^12.38.0",
     "sharp": "^0.35.5",
     "uuid": "^14.0.3",
     "zod": "4.6.7"
   },
   "devDependencies": {
-    "@effect/vitest": "4.0.6",
+    "@effect/vitest": "4.1.2",
     "@testcontainers/postgresql": "12.2.1",
-    "@types/node": "^24.19.2",
+    "@types/node": "^26.6.6",
     "@types/pg": "^8.23.1",
     "@types/sharp": "^0.32.0",
     "drizzle-kit": "1.0.0-rc.5",
     "testcontainers": "12.2.1",
-    "typescript": "6.0.3",
-    "vitest": "5.0.5"
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
   }
 }

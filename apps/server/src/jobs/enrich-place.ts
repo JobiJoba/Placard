@@ -1,8 +1,8 @@
 import { Effect } from "effect"
-import type PgBoss from "pg-boss"
+import type { PgBoss } from "pg-boss"
 import { UsageSource } from "../budget/budget.ts"
 import { Enrichment } from "../places/enrichment.ts"
-import { ENRICH_PLACE, type EnrichPlaceJob } from "./names.ts"
+import { ENRICH_PLACE, type EnrichPlaceJob, workerOptions } from "./names.ts"
 
 const isRetryable = (error: unknown): boolean => {
   if (typeof error !== "object" || error === null || !("_tag" in error)) return true
@@ -16,9 +16,9 @@ type Run = <A, E>(effect: Effect.Effect<A, E, Enrichment>) => Promise<A>
 export const registerEnrichPlaceWorker = (boss: PgBoss, run: Run) =>
   Effect.tryPromise({
     try: () =>
-      boss.work<EnrichPlaceJob>(
+      boss.work<EnrichPlaceJob, void, typeof workerOptions>(
         ENRICH_PLACE,
-        { includeMetadata: true, batchSize: 1, pollingIntervalSeconds: 1 },
+        workerOptions,
         async ([job]) => {
           if (!job) return
           const { placeId, ownerId, runId } = job.data
