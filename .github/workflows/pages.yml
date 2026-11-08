@@ -85,6 +85,11 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: Fetch verified published installers
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node apps/site/scripts/fetch-installers.mjs
+
       - name: Build site
         env:
           # placard.fyi is a custom domain, so GitHub Pages serves the site from

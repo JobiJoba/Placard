@@ -13,6 +13,11 @@ commands from the install directory containing your configuration.
 - **Download failed / 404:** check connectivity and that the selected release contains
   installer assets. Use manual installation for older releases. Failed downloads do
   not create an installation directory.
+- **GitHub download returns 504:** the release-download route timed out. Download a
+  fresh installer from `https://placard.fyi/install.sh` (or `install.ps1`); the site
+  serves a verified copy and updated installers fall back to the same configuration
+  assets through GitHub's API. No installation directory is created if both routes
+  fail. Switching between curl and wget alone does not change the download route.
 - **Destination or project exists:** the installer only creates fresh installations.
   Use the existing directory and documented upgrade steps; never delete volumes to
   bypass this check. A separate installation requires a separate Docker host/context.

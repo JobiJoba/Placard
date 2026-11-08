@@ -46,7 +46,17 @@ else
   )
 writeFileSync(
   join(bin, "curl"),
-  `#!/bin/bash\n[ "$INSTALL_TEST_MODE" != download ] || exit 22\nprintf '%s\\n' "$*" >> "$INSTALL_TEST_LOG"\nurl=''; out=''; while [ "$#" -gt 0 ]; do case "$1" in https:*) url=$1;; -o) shift; out=$1;; esac; shift; done\ncase "$url" in */docker-compose.override.yml) cp '${join(temp, "docker-compose.override.yml")}' "$out";; */Caddyfile) cp '${join(temp, "Caddyfile")}' "$out";; */example.env) cp '${join(temp, "example.env")}' "$out";; *) cp '${join(temp, "compose.yml")}' "$out";; esac\n`,
+  `#!/bin/bash
+printf '%s\\n' "$*" >> "$INSTALL_TEST_LOG"
+url=''; out=''; while [ "$#" -gt 0 ]; do case "$1" in https:*) url=$1;; -o) shift; out=$1;; esac; shift; done
+[ "$INSTALL_TEST_MODE" != download ] || exit 22
+if [ "$INSTALL_TEST_MODE" = fallback ] && [[ "$url" == */releases/download/* ]]; then exit 22; fi
+case "$url" in
+*/docker-compose.override.yml|*/assets/103) cp '${join(temp, "docker-compose.override.yml")}' "$out";;
+*/Caddyfile|*/assets/104) cp '${join(temp, "Caddyfile")}' "$out";;
+*/example.env|*/assets/102) cp '${join(temp, "example.env")}' "$out";;
+*) cp '${join(temp, "compose.yml")}' "$out";; esac
+`,
   { mode: 0o755 },
 )
 writeFileSync(join(temp, "example.env"), example)
@@ -60,11 +70,28 @@ for (const [source, target] of [
 let source = readFileSync(join(root, `scripts/install.${shell === "bash" ? "sh" : "ps1"}`), "utf8")
   .replaceAll("@PLACARD_RELEASE@", "v1.2.3")
   .replaceAll("@PLACARD_REPOSITORY@", "JobiJoba/Placard")
+  .replaceAll(
+    "@PLACARD_COMPOSE_API@",
+    "https://api.github.com/repos/JobiJoba/Placard/releases/assets/101",
+  )
+  .replaceAll(
+    "@PLACARD_ENV_API@",
+    "https://api.github.com/repos/JobiJoba/Placard/releases/assets/102",
+  )
+  .replaceAll(
+    "@PLACARD_HTTPS_API@",
+    "https://api.github.com/repos/JobiJoba/Placard/releases/assets/103",
+  )
+  .replaceAll(
+    "@PLACARD_CADDY_API@",
+    "https://api.github.com/repos/JobiJoba/Placard/releases/assets/104",
+  )
 if (shell !== "bash")
-  source = `function Invoke-WebRequest { param($Uri,$OutFile,[switch]$UseBasicParsing)
+  source = `function Invoke-WebRequest { param($Uri,$OutFile,$TimeoutSec,$Headers,[switch]$UseBasicParsing)
 if ($env:INSTALL_TEST_MODE -eq 'download') { throw 'download failed' }
 Add-Content -LiteralPath $env:INSTALL_TEST_LOG -Value $Uri
-$Name = if ($Uri.EndsWith('example.env')) { 'example.env' } elseif ($Uri.EndsWith('docker-compose.override.yml')) { 'docker-compose.override.yml' } elseif ($Uri.EndsWith('Caddyfile')) { 'Caddyfile' } else { 'compose.yml' }
+if ($env:INSTALL_TEST_MODE -eq 'fallback' -and $Uri.Contains('/releases/download/')) { throw '504 Gateway Timeout' }
+$Name = if (($Uri.EndsWith('example.env') -or $Uri.EndsWith('/assets/102'))) { 'example.env' } elseif (($Uri.EndsWith('docker-compose.override.yml') -or $Uri.EndsWith('/assets/103'))) { 'docker-compose.override.yml' } elseif (($Uri.EndsWith('Caddyfile') -or $Uri.EndsWith('/assets/104'))) { 'Caddyfile' } else { 'compose.yml' }
 Copy-Item -LiteralPath (Join-Path $env:INSTALL_TEST_FIXTURES $Name) -Destination $OutFile
 }
 & {\n${source}\n} @args\n`
@@ -105,7 +132,7 @@ try {
     assert.notEqual(run("", dest, [opt, value]).status, 0)
     assert.equal(existsSync(dest), false)
   }
-  for (const mode of ["success", "timeout", "pull", "config"]) {
+  for (const mode of ["success", "fallback", "timeout", "pull", "config"]) {
     const dest = join(temp, `${mode} with spaces`)
     const extra =
       mode === "success"
@@ -114,7 +141,7 @@ try {
           : ["-Port", "3456", "-PublicUrl", "https://places.example.com", "-Access", "network"]
         : []
     const r = run(mode, dest, extra)
-    assert.equal(r.status, mode === "success" ? 0 : 1, r.stdout + r.stderr)
+    assert.equal(r.status, mode === "success" || mode === "fallback" ? 0 : 1, r.stdout + r.stderr)
     const env = readFileSync(join(dest, ".env"), "utf8")
     const password = env.match(/^POSTGRES_PASSWORD=([a-f0-9]{64})$/m)?.[1]
     const auth = env.match(/^BETTER_AUTH_SECRET=([a-f0-9]{64})$/m)?.[1]
@@ -182,6 +209,16 @@ try {
   )
   assert.match(https.log, /"-f","docker-compose.yml","-f","docker-compose.override.yml","up"/)
   assert.match(https.stdout, /Certificate issuance may still be pending/)
+  const fallbackDest = join(temp, "https fallback")
+  const fallback = run("fallback", fallbackDest, [httpsOption, "places.example.com"])
+  assert.equal(fallback.status, 0, fallback.stdout + fallback.stderr)
+  for (const id of [101, 102, 103, 104]) assert.ok(fallback.log.includes(`/assets/${id}`))
+  for (const name of ["example.env", "docker-compose.override.yml", "Caddyfile"]) {
+    assert.equal(
+      readFileSync(join(fallbackDest, name), "utf8"),
+      readFileSync(join(temp, name), "utf8"),
+    )
+  }
   const downloadDest = join(temp, "https download failure")
   assert.notEqual(run("download", downloadDest, [httpsOption, "places.example.com"]).status, 0)
   assert.equal(existsSync(downloadDest), false)

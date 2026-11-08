@@ -20,13 +20,13 @@ starts the published app, worker, and database. No local build is needed.
 **Linux / macOS:**
 
 ```sh
-bash <(curl -fsSL https://github.com/JobiJoba/Placard/releases/latest/download/install.sh)
+bash <(curl -fsSL https://placard.fyi/install.sh)
 ```
 
 **Windows PowerShell:**
 
 ```powershell
-& ([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing https://github.com/JobiJoba/Placard/releases/latest/download/install.ps1).Content))
+& ([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing https://placard.fyi/install.ps1).Content))
 ```
 
 The default is local-only access at `http://localhost:3000`. Enter a public domain

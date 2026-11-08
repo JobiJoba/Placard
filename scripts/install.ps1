@@ -80,7 +80,28 @@ try {
     $Assets = @('docker-compose.yml','example.env')
     if ($HttpsDomain) { $Assets += @('docker-compose.override.yml','Caddyfile') }
     foreach ($Asset in $Assets) {
-        Invoke-WebRequest -UseBasicParsing -Uri "$Base/$Asset" -OutFile (Join-Path $Stage $Asset)
+        try {
+            Invoke-WebRequest -UseBasicParsing -TimeoutSec 30 -Uri "$Base/$Asset" -OutFile (Join-Path $Stage $Asset)
+        } catch {
+            $ApiUrls = @{
+                'docker-compose.yml' = '@PLACARD_COMPOSE_API@'
+                'example.env' = '@PLACARD_ENV_API@'
+                'docker-compose.override.yml' = '@PLACARD_HTTPS_API@'
+                'Caddyfile' = '@PLACARD_CADDY_API@'
+            }
+            $ApiUrl = $ApiUrls[$Asset]
+            if (!$ApiUrl -or !$ApiUrl.StartsWith("https://api.github.com/repos/$Repository/releases/assets/")) { throw "Download failed: $Asset. No API fallback is available in this installer." }
+            Write-Host "Release download failed for $Asset; retrying the same asset through GitHub API..."
+            for ($Attempt = 1; $Attempt -le 3; $Attempt++) {
+                try {
+                    Invoke-WebRequest -UseBasicParsing -TimeoutSec 30 -Headers @{ Accept = 'application/octet-stream' } -Uri $ApiUrl -OutFile (Join-Path $Stage $Asset)
+                    break
+                } catch {
+                    if ($Attempt -eq 3) { throw "Download failed: $Asset (release and API). No installation files were created." }
+                    Start-Sleep -Seconds 1
+                }
+            }
+        }
         if ((Get-Item (Join-Path $Stage $Asset)).Length -eq 0) { throw "Empty release asset: $Asset" }
     }
     New-Item -ItemType Directory -Path $Directory | Out-Null

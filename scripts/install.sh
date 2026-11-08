@@ -66,7 +66,18 @@ base="https://github.com/$REPOSITORY/releases/download/$RELEASE"
 assets=(docker-compose.yml example.env)
 if [ -n "$https_domain" ]; then assets+=(docker-compose.override.yml Caddyfile); fi
 for asset in "${assets[@]}"; do
-  curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' "$base/$asset" -o "$stage/$asset" || fail "Download failed: $asset. No installation files were created."
+  if ! curl --fail --silent --show-error --location --connect-timeout 10 --max-time 30 --proto '=https' --proto-redir '=https' "$base/$asset" -o "$stage/$asset"; then
+    api_url=''
+    case "$asset" in
+      docker-compose.yml) api_url='@PLACARD_COMPOSE_API@';;
+      example.env) api_url='@PLACARD_ENV_API@';;
+      docker-compose.override.yml) api_url='@PLACARD_HTTPS_API@';;
+      Caddyfile) api_url='@PLACARD_CADDY_API@';;
+    esac
+    [[ "$api_url" == https://api.github.com/repos/"$REPOSITORY"/releases/assets/* ]] || fail "Download failed: $asset. No API fallback is available in this installer."
+    printf 'Release download failed for %s; retrying the same asset through GitHub API…\n' "$asset" >&2
+    curl --fail --silent --show-error --location --retry 2 --connect-timeout 10 --max-time 30 --proto '=https' --proto-redir '=https' -H 'Accept: application/octet-stream' "$api_url" -o "$stage/$asset" || fail "Download failed: $asset (release and API). No installation files were created."
+  fi
   [ -s "$stage/$asset" ] || fail "Empty release asset: $asset"
 done
 secret() { od -An -N32 -tx1 /dev/urandom | tr -d ' \n'; }

@@ -5,8 +5,8 @@ import { SiteChrome } from "../components/SiteChrome"
 
 const GITHUB = "https://github.com/JobiJoba/Placard"
 
-const QUICK_INSTALL = `bash <(curl -fsSL https://github.com/JobiJoba/Placard/releases/latest/download/install.sh)`
-const WINDOWS_INSTALL = `& ([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing https://github.com/JobiJoba/Placard/releases/latest/download/install.ps1).Content))`
+const QUICK_INSTALL = `bash <(curl -fsSL https://placard.fyi/install.sh)`
+const WINDOWS_INSTALL = `& ([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing https://placard.fyi/install.ps1).Content))`
 
 const features = [
   [

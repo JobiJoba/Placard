@@ -18,6 +18,14 @@ const docker = (args) =>
 const source = readFileSync(join(root, "scripts/install.sh"), "utf8")
   .replaceAll("@PLACARD_RELEASE@", "v1.2.3")
   .replaceAll("@PLACARD_REPOSITORY@", "JobiJoba/Placard")
+  .replaceAll(
+    "@PLACARD_COMPOSE_API@",
+    "https://api.github.com/repos/JobiJoba/Placard/releases/assets/101",
+  )
+  .replaceAll(
+    "@PLACARD_ENV_API@",
+    "https://api.github.com/repos/JobiJoba/Placard/releases/assets/102",
+  )
   .replaceAll("project=placard", `project=${project}`)
   .replaceAll(
     "placard_pgdata placard_media placard_modules placard_caddy_data placard_caddy_config",
@@ -37,7 +45,9 @@ writeFileSync(
   `#!/bin/bash
 url=''; out=''
 while [ "$#" -gt 0 ]; do case "$1" in https:*) url=$1;; -o) shift; out=$1;; esac; shift; done
-case "$url" in */example.env) cp "$INSTALL_SMOKE_ASSETS/example.env" "$out";; */docker-compose.yml) cp "$INSTALL_SMOKE_ASSETS/docker-compose.yml" "$out";; *) exit 1;; esac
+# Exercise fallback after a simulated GitHub release-route failure.
+[[ "$url" != */releases/download/* ]] || exit 22
+case "$url" in */assets/102) cp "$INSTALL_SMOKE_ASSETS/example.env" "$out";; */assets/101) cp "$INSTALL_SMOKE_ASSETS/docker-compose.yml" "$out";; *) exit 1;; esac
 `,
   { mode: 0o755 },
 )

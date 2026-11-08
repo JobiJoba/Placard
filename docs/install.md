@@ -31,16 +31,18 @@ Aspire is needed.
 **Linux / macOS — Bash:**
 
 ```sh
-bash <(curl -fsSL https://github.com/JobiJoba/Placard/releases/latest/download/install.sh)
+bash <(curl -fsSL https://placard.fyi/install.sh)
 ```
 
 **Windows — PowerShell 5.1 or 7:**
 
 ```powershell
-& ([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing https://github.com/JobiJoba/Placard/releases/latest/download/install.ps1).Content))
+& ([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing https://placard.fyi/install.ps1).Content))
 ```
 
-These commands download and execute the published installer. To inspect it first,
+These commands download and execute a copy of the published release installer,
+served from `placard.fyi`. The site verifies the copy against the release asset's
+SHA-256 digest before publishing it. To inspect it first,
 download `install.sh` or `install.ps1` from the [latest release](https://github.com/JobiJoba/Placard/releases/latest),
 read the file, then run `bash ./install.sh` or `& ./install.ps1`. PowerShell file
 execution follows your existing execution policy; the installer does not change it.
@@ -60,7 +62,8 @@ The installer asks for:
 With an HTTPS domain, the installer sets the public URL to `https://<domain>` and
 keeps the app's direct host port on loopback. Public URL and access prompts are skipped.
 
-It downloads configuration from the **same release as the installer**, generates
+It downloads configuration from the **same release as the installer**, falling
+back to each exact asset's GitHub API URL if the normal download fails. It generates
 random database and authentication secrets, protects `.env`, and waits for the
 app, worker, and database to become healthy. Secrets are never printed. Configure
 Google later in Settings → Integrations. The success URL does not verify external

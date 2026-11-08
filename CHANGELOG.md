@@ -7,6 +7,10 @@ and this project aims to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Installers fall back to exact release-asset API URLs when GitHub release downloads fail; the docs site serves verified installer copies to avoid the same failure on the initial download
+
 ## [0.9.0] — 2026-11-08
 
 ### Added

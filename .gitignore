@@ -34,3 +34,7 @@ data/
 
 # Temporary marketing-site server bundle
 apps/site/.prerender/
+
+# Verified release installers mirrored during the Pages build
+apps/site/public/install.sh
+apps/site/public/install.ps1

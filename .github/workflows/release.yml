@@ -79,6 +79,17 @@ jobs:
             dist-release/docker-compose.override.yml
             dist-release/Caddyfile
             dist-release/example.env
-            dist-release/install.sh
-            dist-release/install.ps1
             dist-release/placard-recovery.py
+
+      # API download URLs exist only after the configuration assets are uploaded.
+      # Publish installers last, embedding those exact assets as download fallbacks.
+      - name: Publish installers with API fallback URLs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          export PLACARD_RELEASE_METADATA="$RUNNER_TEMP/placard-release.json"
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > "$PLACARD_RELEASE_METADATA"
+          node scripts/prepare-release-assets.mjs "$RELEASE_TAG"
+          gh release upload "$RELEASE_TAG" dist-release/install.sh dist-release/install.ps1 --clobber
