@@ -76,8 +76,10 @@ Before advertising the one-command installer:
   checks remain required before claiming those Docker Desktop combinations verified.
 - Publish the release with `docker-compose.yml`, `example.env`, `install.sh`, and
   `install.ps1`. Each generated installer embeds its own release tag and repository.
-- Deploy Pages only once both latest-release installer URLs resolve. The Pages
-  workflow checks this before building; rerun it manually after publication if needed
+- Deploy Pages only once the latest release has all required install and recovery
+  assets uploaded. The Pages workflow verifies the published asset list through
+  GitHub's API, so temporary download-CDN failures do not block documentation builds.
+  Rerun it manually after publication if needed
   (GitHub-token-created releases may not trigger another workflow).
 
 V1 installs fresh instances only. Existing configuration, credentials, and volumes

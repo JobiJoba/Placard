@@ -29,26 +29,40 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     steps:
-      - name: Check latest release installer assets
-        id: check
+      # Check publication through the API, rather than the download CDN. A transient
+      # CDN timeout must not block docs when the release assets are already uploaded.
+      - name: Check published release assets
+        timeout-minutes: 3
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
+          release_file=$(mktemp)
+          trap 'rm -f "$release_file"' EXIT
+          for attempt in 1 2 3; do
+            if gh api "repos/$GITHUB_REPOSITORY/releases/latest" > "$release_file"; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::Cannot verify the latest release through the GitHub API"
+              exit 1
+            fi
+            sleep 10
+          done
+          jq -e '.draft == false and .prerelease == false and (.assets | type == "array")' "$release_file" > /dev/null
           missing=()
-          for asset in install.sh install.ps1 docker-compose.yml example.env docker-compose.override.yml Caddyfile; do
-            for attempt in 1 2 3; do
-              status=$(curl --silent --show-error --location --retry 2 --connect-timeout 10 --max-time 60 --output /dev/null --write-out '%{http_code}' "https://github.com/JobiJoba/Placard/releases/latest/download/$asset")
-              [ "$status" = 200 ] && break
-              if [ "$attempt" -lt 3 ]; then sleep 10; fi
-            done
-            if [ "$status" != 200 ]; then
-              echo "::error::Installer asset $asset returned HTTP $status after 3 attempts"
-              missing+=("$asset (HTTP $status)")
+          for asset in install.sh install.ps1 docker-compose.yml example.env docker-compose.override.yml Caddyfile placard-recovery.py; do
+            if ! jq -e --arg name "$asset" '.assets | any(.name == $name and .state == "uploaded" and .size > 0)' "$release_file" > /dev/null; then
+              echo "::error::Latest release is missing a completed, non-empty asset: $asset"
+              missing+=("$asset")
             fi
           done
           if [ "${#missing[@]}" -gt 0 ]; then
-            printf 'Missing installer assets: %s\n' "${missing[*]}" >> "$GITHUB_STEP_SUMMARY"
+            printf 'Missing release assets: %s\n' "${missing[*]}" >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
+          tag=$(jq -r '.tag_name' "$release_file")
+          printf 'Verified published release %s: all required install and recovery assets are uploaded.\n' "$tag" >> "$GITHUB_STEP_SUMMARY"
 
   build:
     needs: installers-ready
