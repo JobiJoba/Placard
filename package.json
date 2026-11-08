@@ -19,7 +19,7 @@
     "db:migrate": "pnpm --filter @placard/server db:migrate",
     "lint": "biome check .",
     "format": "biome check --write .",
-    "typecheck": "pnpm -r --filter './packages/*' --filter './apps/*' typecheck",
+    "typecheck": "pnpm -r --filter './packages/**' --filter './apps/*' typecheck",
     "test": "pnpm --filter @placard/server test",
     "test:unit": "pnpm --filter @placard/server test:unit",
     "test:integration": "pnpm --filter @placard/server test:integration",

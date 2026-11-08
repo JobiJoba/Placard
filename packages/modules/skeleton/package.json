@@ -5,6 +5,7 @@
   "description": "Minimal Placard Marketplace module skeleton for humans and AI agents",
   "type": "module",
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "build:zip": "node ./scripts/build.mjs"
   },
   "devDependencies": {
