@@ -96,6 +96,8 @@ operating an instance, and extending the product.
 | --- | --- |
 | Understand the product | [Overview](docs/product-overview.md) |
 | Run your own instance | [Install](docs/install.md) |
+| Back up or recover an instance | [Backup and restore](docs/backup-restore.md) |
+| Upgrade an existing instance | [Upgrade](docs/upgrade.md) |
 | Import and organize places | [User guide](docs/user-guide.md) |
 | Configure enrichment | [Google APIs](docs/google-apis.md) |
 | Diagnose a problem | [Troubleshooting](docs/troubleshooting.md) |

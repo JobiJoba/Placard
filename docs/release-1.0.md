@@ -1,7 +1,9 @@
 # What is left before v1.0.0?
 
-**Status as recorded on 2026-11-02: the planned v1 features are implemented.
-Four real-world checks still have no recorded pass, followed by publishing the release.**
+**Status as recorded on 2026-11-08: the planned v1 features are implemented.
+Coolify, physical-phone use, a 500+ Takeout import, Docker installation, and the
+script installer have user-reported passes. Recovery with real media remains
+unverified; the v1.0.0 release is on hold until that check passes.**
 There is no additional feature work currently listed as required for v1. If a
 remaining check finds a bug, fixing it becomes part of the release work.
 
@@ -27,10 +29,10 @@ pass” means the docs do not establish completion; it does not mean a test fail
 
 | Status | Task | What counts as done |
 | --- | --- | --- |
-| No recorded pass | Fresh Coolify install | Follow the [install guide](install.md#coolify) on a fresh installation; confirm deployment health and that you can set up, sign in, and save a place. Correct any missing instructions. |
-| No recorded pass | Physical-phone check | Add Placard to a phone's home screen, launch it, and check the core flows: sign in, add, search/browse, and open a place. Record the device/browser and any problems. |
-| No recorded pass | Real Takeout import | Import a representative collection of about 500 places on Compose. Check triage, commit, Needs review, and browsing/searching the resulting library; record counts and problems. |
-| No recorded pass | Recovery with real media | Rehearse the [backup and restore guide](install.md#backup) using a representative instance and its actual media, restoring into separate recovery volumes. Verify login, places, photos, and installed modules. |
+| User-reported pass | Fresh Coolify install | Working with a generated domain and updated `PUBLIC_URL`; setup reported easy and fast. |
+| User-reported pass | Physical-phone check | User confirmed the phone check is OK; device/browser details were not supplied. |
+| User-reported pass | Real Takeout import | Import with 500+ Takeout items reported working; exact count and deployment details were not supplied. |
+| No recorded pass | Recovery with real media | Rehearse the [backup and restore guide](backup-restore.md) using a representative instance and its actual media, restoring into separate recovery volumes. Verify login, places, photos, and installed modules. |
 | Waiting for the checks above | Publish v1.0.0 | Ensure all checks pass on the release commit, publish the tag, and verify the published image and install assets. |
 
 For each completed manual check, add its date, environment, outcome, and any

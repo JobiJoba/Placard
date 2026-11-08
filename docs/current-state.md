@@ -2,11 +2,11 @@
 
 Where Placard stands relative to the original thesis. The current release contract is [v1.0.0 readiness](release-1.0.md). The [original build checklist](implementation-phases.md) remains available as implementation history.
 
-**v1 at a glance (2026-11-02):** planned features are implemented and local
-automated checks have passed. Four manual checks have no recorded pass: fresh
-Coolify install, physical phone, real Takeout collection, and recovery with real
-media. Publishing v1.0.0 follows those checks. See the
-[remaining-work checklist](release-1.0.md#still-to-do-before-publishing).
+**v1 at a glance (2026-11-08):** planned features are implemented and local
+automated checks have passed. The user reports successful Docker and script
+installations, Coolify deployment, physical-phone use, and a 500+ Takeout import.
+Recovery with real media remains unverified. Publishing v1.0.0 is on hold until
+that check passes; see the [remaining-work checklist](release-1.0.md#still-to-do-before-publishing).
 
 ## The first idea (unchanged)
 
@@ -72,16 +72,21 @@ mvp.md originally parked “third-party modules / SDK / manifest” under Later 
 
 **In tree:** per-user export zip; PWA manifest/icons; [install.md](install.md); GHCR release workflow + changelog.
 
-**No pass recorded yet — required before v1:**
+**User-reported results recorded on 2026-11-08:**
 
-- Coolify install following only the guide
-- Physical-phone home-screen install and core workflows
-- Backup and restore of a representative instance with its actual media, into separate recovery volumes
-- Real Takeout of ~500 places on Compose
+| Check | Outcome and environment |
+| --- | --- |
+| Docker installation | Working well; host OS and exact version not supplied. |
+| Script installation | Working well; shell and exact version not supplied. |
+| Coolify installation | Working with a generated domain and updated `PUBLIC_URL`; easy and fast. |
+| Real Takeout import | Working with 500+ items; exact count and deployment not supplied. |
+| Physical-phone check | Confirmed OK; device/browser and detailed flow results not supplied. |
 
-Record each result here with its date, environment (version, deployment or
-device/browser), outcome, and unresolved problems. The automated recovery pass
-below does not complete the manual recovery check.
+**Still required before v1:** backup and restore of a representative instance with
+its actual media into separate recovery volumes. Follow [Backup and restore](backup-restore.md)
+and record the date, version, environment, counts, verification results, and any
+problems here. The automated recovery pass below does not complete this manual check.
+The user has explicitly placed the release on hold pending recovery.
 
 ## Validation evidence
 
@@ -92,7 +97,15 @@ order. `pnpm check:recovery` passed against a disposable Compose stack: fresh in
 backup, volume removal, restore, and verification of account login, a place, photo
 and thumbnail hashes, and module-volume files. CI and release tags now run a
 shared validation workflow, including this recovery test, before publishing images. These checks
-do not replace Coolify, physical-phone, or real-library validation above.
+do not replace the manual real-media recovery rehearsal above.
+
+**Operator recovery helper (2026-11-08):** seven failure-path checks passed.
+A disposable Docker instance passed the new helper's backup and isolated restore,
+including existing-account login, a place, matching original photo/thumbnail hashes,
+and a module file. The source services restarted after backup, the recovery media
+and module volumes were distinct, and a literal dollar sign in the auth secret
+survived Compose generation. This fixture test does not complete the real-media
+release check.
 
 ## Explicitly later (still true)
 

@@ -241,15 +241,9 @@ Back up the database and media volume before installing plugins or upgrading. Se
 
 ### Upgrade
 
-```sh
-# Re-download the latest release compose if needed, then pull + recreate
-curl -fsSL -o docker-compose.yml \
-  https://github.com/JobiJoba/Placard/releases/latest/download/docker-compose.yml
-docker compose pull
-docker compose up -d
-```
-
-Migrations run on boot. Keep named volumes so the library and photos survive. See [CHANGELOG.md](../CHANGELOG.md).
+Use the dedicated [upgrade guide](upgrade.md) for existing Compose, script-created,
+Coolify, or Dokploy installations. It covers backups, version pinning, configuration
+changes, migration startup, verification, and recovery after a failed upgrade.
 
 ---
 
@@ -304,65 +298,22 @@ Paste repo [`compose.ghcr.yaml`](../compose.ghcr.yaml) instead of the release fi
 
 ## Backup
 
-Instance backup (database + files) — not Settings → Export library (per-user zip).
-Run these commands from your install directory with its Compose file and `.env`.
-
-Stop app and worker first so the database and files describe the same point in time.
-Leave Postgres running for `pg_dump`; do not tar a running database's data volume.
-
-```sh
-mkdir -p backup
-chmod 700 backup
-docker compose stop app worker
-docker compose exec -T db pg_dump -U placard -Fc placard > backup/database.dump
-docker compose run --rm --no-deps -T app tar czf - -C /data/media . > backup/media.tgz
-docker compose run --rm --no-deps -T app tar czf - -C /data/modules . > backup/modules.tgz
-# Run only after all three backup commands succeed:
-docker compose start app worker
-```
-
-Keep all three files together. Store a copy of your Compose file, `.env`, and image
-version securely alongside the backup: the environment contains credentials and
-must not be committed. Copy completed backups off the instance. If a backup step
-fails, resolve it before treating the backup as complete; start the app and worker
-again when you are ready to resume writes.
+Follow [Backup and restore](backup-restore.md) to save the database, photos, modules,
+and configuration together. It includes commands for Compose and Coolify, a
+rehearsal using separate recovery volumes, and checks with your actual media.
+Settings → Export library is a personal export, not an instance backup.
 
 ### Restore
 
-Restore to a **fresh instance with empty volumes**, using the same image version
-and saved environment. Start from a new install directory with its Compose file
-and `.env`; put the three backup files in `backup/`. If another stack is running
-on the same Docker host, give the recovery stack a distinct `COMPOSE_PROJECT_NAME`
-and host port. The restore replaces database objects; use empty recovery volumes
-to avoid overwriting an existing instance.
-
-```sh
-docker compose up -d --wait db
-docker compose exec -T db pg_restore -U placard -d placard --clean --if-exists --no-owner --exit-on-error < backup/database.dump
-docker compose run --rm --no-deps -T app tar xzf - -C /data/media < backup/media.tgz
-docker compose run --rm --no-deps -T app tar xzf - -C /data/modules < backup/modules.tgz
-docker compose up -d --wait
-```
-
-Check `/api/health`, sign in, open a saved place, and verify its photos and installed
-modules before routing users to the restored instance. Restore the original version
-first; upgrade only after verifying recovery.
+Use the [recovery helper walkthrough](backup-restore.md#quick-start).
+Restore the backed-up image version into empty recovery volumes and verify the
+library before switching users to it or upgrading.
 
 ### Contributor recovery check
 
-From a source checkout with Docker running:
-
-```sh
-pnpm check:recovery
-```
-
-This builds the image, creates a randomly named Compose project bound only to
-loopback, creates a test account/place/photo, stops writers, backs up, removes
-**only that generated project's volumes**, restores, and verifies login, the place,
-photo and thumbnail hashes, and a module-volume marker. It cleans up the temporary
-stack afterward. It does not use the checkout's `.env` or existing instance volumes.
-It checks the Compose recovery path; Coolify deployment and phone home-screen
-installation still require manual checks.
+From a source checkout with Docker running, `pnpm check:recovery` verifies the
+scripted recovery path using an isolated fixture instance. See the
+[contributor check](backup-restore.md#automated-contributor-check) for scope.
 
 ## Build from source (contributors)
 
@@ -387,7 +338,7 @@ Day-to-day development: `aspire run` — see the [README](../README.md#develop).
 ### Persistent module data
 
 Module code lives under `/data/modules/<moduleId>`; SDK 1 module data lives under
-`/data/modules/.data/<moduleId>`. The whole-volume archive above includes both,
+`/data/modules/.data/<moduleId>`. The [whole-volume backup](backup-restore.md) includes both,
 including hidden directories. Stop writers before archiving SQLite-backed modules.
 Updates and uninstall retain `.data`; reinstall reconnects to it. To permanently erase
 an uninstalled module's retained data, remove only its `.data/<moduleId>` directory.

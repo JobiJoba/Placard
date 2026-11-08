@@ -56,4 +56,9 @@ Uploaded modules land on the **`modules` volume** (`PLACARD_MODULES_DIR`). Keep 
 
 ## Backup
 
-Instance backup (database + media + modules volumes) is documented in [install.md](install.md#backup). Library **Export** in Settings is a per-user zip, not a full disaster-recovery backup.
+Instance backup (database + media + modules volumes) is documented in [Backup and restore](backup-restore.md). Library **Export** in Settings is a per-user zip, not a full disaster-recovery backup.
+
+## Upgrades
+
+Follow [Upgrade](upgrade.md) for version pinning, Compose and Coolify updates,
+verification, and recovery after a failed upgrade.

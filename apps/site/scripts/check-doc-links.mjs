@@ -19,6 +19,8 @@ const PUBLISHED = [
   "troubleshooting",
   "release-1.0",
   "install",
+  "backup-restore",
+  "upgrade",
   "google-apis",
   "deployment",
   "mcp",

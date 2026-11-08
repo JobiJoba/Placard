@@ -7,7 +7,13 @@ and this project aims to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-11-08
+
 ### Added
+
+- Operator recovery helper for Compose and Coolify: database, media, modules, environment, exact images, and backup checksums; restore into an isolated local copy with fresh volumes
+- Dedicated backup/recovery and version upgrade documentation, with a short scripted recovery walkthrough
+- Automated tests for recovery failure handling and a full helper backup/restore with login, photo/thumbnail hashes, and module files
 
 - Admin-gated household mode: share/unshare places, claim-first Google-place conflicts with copy-into, library Everyone / Mine / Shared filters
 - Profile name and avatar from Settings → General
@@ -24,6 +30,8 @@ and this project aims to follow [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - Use accessible switches with explicit On/Off labels for module MCP access in module settings and the MCP page; disable the switches while saving
+
+[0.9.0]: https://github.com/JobiJoba/Placard/releases/tag/v0.9.0
 
 [0.2.8]: https://github.com/JobiJoba/Placard/releases/tag/v0.2.8
 

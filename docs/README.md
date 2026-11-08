@@ -12,7 +12,8 @@ A private library for places you want to remember, revisit, and share with your 
 ## Run an instance
 
 - [Deployment](deployment.md): services, persistent volumes, and reverse proxies.
-- [Backup and restore](install.md#backup): recover the database, photos, and modules together.
+- [Backup and restore](backup-restore.md): recover the database, photos, and modules together.
+- [Upgrade](upgrade.md): update Compose or Coolify while retaining configuration and data.
 - [Troubleshooting](troubleshooting.md): diagnose setup, import, and connection problems.
 - [Security policy](../SECURITY.md): access, credentials, and trusted modules.
 - [Release readiness](release-1.0.md): the v1.0.0 scope and outstanding validation.

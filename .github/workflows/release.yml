@@ -81,3 +81,4 @@ jobs:
             dist-release/example.env
             dist-release/install.sh
             dist-release/install.ps1
+            dist-release/placard-recovery.py

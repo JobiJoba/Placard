@@ -28,7 +28,7 @@ export const DOC_NAV: DocNavGroup[] = [
       {
         slug: "install",
         title: "Install",
-        summary: "Docker Compose, Coolify, Dokploy, backup, and upgrades.",
+        summary: "Docker Compose, Coolify, Dokploy, and first setup.",
       },
       {
         slug: "google-apis",
@@ -40,6 +40,16 @@ export const DOC_NAV: DocNavGroup[] = [
   {
     label: "Operate",
     items: [
+      {
+        slug: "backup-restore",
+        title: "Backup and restore",
+        summary: "Back up Compose or Coolify and rehearse recovery with real data.",
+      },
+      {
+        slug: "upgrade",
+        title: "Upgrade",
+        summary: "Update an existing instance and recover if an upgrade fails.",
+      },
       {
         slug: "troubleshooting",
         title: "Troubleshooting",
