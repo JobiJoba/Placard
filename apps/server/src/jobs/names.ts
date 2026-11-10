@@ -36,3 +36,9 @@ export const importJobOptions = {
   retryBackoff: true,
   expireInSeconds: 60 * 60,
 } as const
+
+export const workerOptions = {
+  includeMetadata: true,
+  batchSize: 1,
+  pollingIntervalSeconds: 1,
+} as const

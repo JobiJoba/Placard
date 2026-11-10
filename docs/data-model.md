@@ -233,4 +233,4 @@ In addition to `module_id`, `version`, `source` (`bundled` \| `upload` \| `folde
 
 ## Jobs
 
-pg-boss keeps its own tables in a `pgboss` schema, created by pg-boss itself.
+pg-boss keeps its own tables in the `pgboss_v12` schema, created by pg-boss itself.

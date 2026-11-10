@@ -128,11 +128,11 @@ A web manifest, icons, and a responsive layout are shipped. There is no service 
 
 | Package | Version | Why pinned |
 | --- | --- | --- |
-| `effect`, `@effect/*` | 4.0.6 | Effect 4 |
+| `effect`, `@effect/*` | 4.1.2 | Effect 4 |
 | `drizzle-orm`, `drizzle-kit` | 1.0.0-rc.5 | The Effect 4 integration (`drizzle-orm/effect-postgres`) only exists in the 1.0 line |
-| `typescript` | 6.0.3 | Same major across the monorepo |
-| `vite` | 7.x | SPA bundler |
-| `better-auth` | 1.7.13 | Auth; server and React client must match |
+| `typescript` | 7.0.2 | Aspire AppHost uses 6.0.3 for typescript-eslint compatibility |
+| `vite` | 8.x | SPA bundler |
+| `better-auth` | 1.7.17 | Auth; server and React client must match |
 | Aspire CLI / SDK | 13.6.x | TypeScript AppHost GA |
 | Postgres image | `imresamu/postgis:18-3.6` | Multi-arch (amd64 + arm64); the official `postgis/postgis` image is amd64-only |
 

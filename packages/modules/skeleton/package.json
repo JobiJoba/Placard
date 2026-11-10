@@ -5,6 +5,7 @@
   "description": "Minimal Placard Marketplace module skeleton for humans and AI agents",
   "type": "module",
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "build:zip": "node ./scripts/build.mjs"
   },
   "devDependencies": {
@@ -12,7 +13,7 @@
     "@types/react": "^19.2.0",
     "esbuild": "^0.28.2",
     "react": "^19.2.0",
-    "react-router": "^7.9.0",
-    "typescript": "6.0.3"
+    "react-router": "^8.5.1",
+    "typescript": "7.0.2"
   }
 }

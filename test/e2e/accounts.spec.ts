@@ -89,7 +89,9 @@ test("the admin invites a user who gets their own empty library", async ({
   await openNav(memberPage, "Settings")
   await expect(memberPage.getByText("Distance unit")).toBeVisible()
   await expect(memberPage.getByRole("link", { name: "People" })).toHaveCount(0)
-  await expect(memberPage.getByRole("link", { name: "Marketplace" })).toHaveCount(0)
+  await expect(memberPage.getByRole("link", { name: "Manage plugins" })).toHaveCount(0)
+  await memberPage.goto("/settings/manage-plugins")
+  await expect(memberPage).toHaveURL(/\/settings\/general$/)
 
   await expect(memberPage.getByRole("link", { name: "Debug" })).toHaveCount(0)
   await memberPage.goto("/settings/debug")

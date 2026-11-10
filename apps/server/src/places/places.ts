@@ -23,7 +23,7 @@ import {
   type SavedPlace,
   type TagRef,
 } from "@placard/domain"
-import { Clock, Context, DateTime, Duration, Effect, Layer, Option } from "effect"
+import { Array as Arr, Clock, Context, DateTime, Duration, Effect, Layer, Option } from "effect"
 import { SqlClient } from "effect/sql"
 import { v7 as uuidv7 } from "uuid"
 import type { GooglePlaceDetails } from "../google/places.ts"
@@ -511,9 +511,9 @@ export class Places extends Context.Service<
             .withTransaction(
               Effect.gen(function* () {
                 yield* sql`delete from place_tags where place_id = ${id}`
-                if (resolved.length === 0) return
+                if (!Arr.isReadonlyArrayNonEmpty(resolved)) return
                 yield* sql`insert into place_tags ${sql.insert(
-                  resolved.map((tag) => ({ place_id: id, tag_id: tag.id })),
+                  Arr.map(resolved, (tag) => ({ place_id: id, tag_id: tag.id })),
                 )}`
               }),
             )
@@ -528,9 +528,9 @@ export class Places extends Context.Service<
             .withTransaction(
               Effect.gen(function* () {
                 yield* sql`delete from list_items where place_id = ${id}`
-                if (listIds.length === 0) return
+                if (!Arr.isReadonlyArrayNonEmpty(listIds)) return
                 yield* sql`insert into list_items ${sql.insert(
-                  listIds.map((listId) => ({ list_id: listId, place_id: id })),
+                  Arr.map(listIds, (listId) => ({ list_id: listId, place_id: id })),
                 )}`
               }),
             )
@@ -548,11 +548,12 @@ export class Places extends Context.Service<
           if (action._tag === "addToList" || action._tag === "removeFromList") {
             yield* requireLists(ownerId, [action.listId])
           }
+          if (!Arr.isReadonlyArrayNonEmpty(placeIds)) return { affected: 0 }
           if (action._tag === "addTag") {
             const tag = yield* tags.ensure(ownerId, action.tagName)
             yield* sql`
               insert into place_tags ${sql.insert(
-                placeIds.map((placeId) => ({ place_id: placeId, tag_id: tag.id })),
+                Arr.map(placeIds, (placeId) => ({ place_id: placeId, tag_id: tag.id })),
               )}
               on conflict do nothing`.pipe(Effect.orDie)
             return { affected: placeIds.length }
@@ -572,7 +573,7 @@ export class Places extends Context.Service<
           if (action._tag === "addToList") {
             yield* sql`
               insert into list_items ${sql.insert(
-                placeIds.map((placeId) => ({ list_id: action.listId, place_id: placeId })),
+                Arr.map(placeIds, (placeId) => ({ list_id: action.listId, place_id: placeId })),
               )}
               on conflict do nothing`.pipe(Effect.orDie)
             return { affected: placeIds.length }
