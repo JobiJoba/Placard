@@ -42,7 +42,9 @@ export class JobQueue extends Context.Service<
               connectionString: Redacted.value(databaseUrl),
               schema: queueSchema,
               application_name: "placard-jobs",
-              supervise: false,
+              // pg-boss coordinates supervision across API and worker instances.
+              // Keep it enabled to recover abandoned jobs and enforce retention.
+              supervise: true,
               schedule: false,
             })
             instance.on("error", (error) => {

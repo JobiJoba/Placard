@@ -7,6 +7,20 @@ and this project aims to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.0] — 2026-11-10
+
+First stable release, including the features introduced in 1.0.0-rc1.
+
+### Changed
+
+- Upgrade runtime, frontend, tooling, and container dependencies.
+- Move unfinished pg-boss 10 jobs to the pg-boss 12 schema on startup; stop the old app and worker before upgrading.
+- Synchronize plugin documentation and record the operator-confirmed recovery check with real media.
+
+### Fixed
+
+- Enable coordinated queue supervision so abandoned jobs recover after worker crashes and completed jobs are cleaned up.
+
 ## [1.0.0-rc1] — 2026-11-08
 
 ### Added
@@ -113,3 +127,5 @@ First v0.1 release candidate after phases 0–10.
 [0.1.0]: https://github.com/JobiJoba/Placard/releases/tag/v0.1.0
 
 [1.0.0-rc1]: https://github.com/JobiJoba/Placard/releases/tag/v1.0.0-rc1
+
+[1.0.0]: https://github.com/JobiJoba/Placard/releases/tag/v1.0.0

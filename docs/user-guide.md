@@ -59,8 +59,10 @@ explicit choice. Read confirmation prompts before refreshing a whole collection.
 
 - **Settings → General:** export your library, including media. This is a personal
   export; use the [backup procedure](install.md#backup) for full instance recovery.
-- **Settings → Marketplace:** install trusted modules or choose which appear in
-  your navigation. Only an administrator installs executable plugins.
+- **Marketplace:** discover Pick, Board, Day Out, Menus, and Decide Together,
+  included inactive by default. An administrator can activate them or install other
+  trusted plugins. Choose which active modules appear in your navigation through
+  **Settings → Marketplace**.
 - **Settings → MCP:** create a token and follow the [client connection guide](mcp.md).
   Treat the token like a password and revoke it when no longer needed.
 

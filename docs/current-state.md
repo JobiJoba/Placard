@@ -2,11 +2,12 @@
 
 Where Placard stands relative to the original thesis. The current release contract is [v1.0.0 readiness](release-1.0.md). The [original build checklist](implementation-phases.md) remains available as implementation history.
 
-**v1 at a glance (2026-11-08):** planned features are implemented and local
+**v1 at a glance (2026-11-10):** planned features are implemented and local
 automated checks have passed. The user reports successful Docker and script
 installations, Coolify deployment, physical-phone use, and a 500+ Takeout import.
-Recovery with real media remains unverified. Publishing v1.0.0 is on hold until
-that check passes; see the [remaining-work checklist](release-1.0.md#still-to-do-before-publishing).
+The operator also confirmed a successful recovery check with real media on
+2026-11-10. Final release-commit validation and publication checks remain; see the
+[remaining-work checklist](release-1.0.md#still-to-do-before-publishing).
 
 ## The first idea (unchanged)
 
@@ -66,7 +67,10 @@ These are real product surface, not side experiments:
 | **Household place sharing** | Admin toggle; `visibility=household`; claim-first conflict; library ownership filters |
 | **MCP `list_lists`** | Extra tool beyond the Phase 9 list |
 
-mvp.md originally parked “third-party modules / SDK / manifest” under Later — that work is **in tree now** as *trusted admin plugins* (no sandbox, no public store). Scope freeze was updated to match. Dinner-spin itself is a **module you install**, not a bundled first-party package.
+mvp.md originally parked “third-party modules / SDK / manifest” under Later — that work is **in tree now** as *trusted admin plugins* (no sandbox, no public store). Scope freeze was updated to match.
+
+Five official plugins (Pick, Board, Day Out, Menus, and Decide Together) now ship
+as pinned builds, inactive by default. Administrators activate them in Marketplace.
 
 ## Manual release checks
 
@@ -82,13 +86,28 @@ mvp.md originally parked “third-party modules / SDK / manifest” under Later 
 | Real Takeout import | Working with 500+ items; exact count and deployment not supplied. |
 | Physical-phone check | Confirmed OK; device/browser and detailed flow results not supplied. |
 
-**Still required before v1:** backup and restore of a representative instance with
-its actual media into separate recovery volumes. Follow [Backup and restore](backup-restore.md)
-and record the date, version, environment, counts, verification results, and any
-problems here. The automated recovery pass below does not complete this manual check.
-The user has explicitly placed the release on hold pending recovery.
+**Real-media recovery confirmed on 2026-11-10:** the operator reports completing
+the recovery check successfully using real media. The deployment environment,
+version, counts, and individual verification results were not supplied. This records
+the operator’s manual pass independently of the automated fixture checks below.
 
 ## Validation evidence
+
+**Release-readiness recheck (2026-11-10):** the baseline at `90adf5e` passed
+137 unit tests, 92 integration tests, 22 Chromium browser tests, typechecks,
+web/site production builds, published-doc link checks, and the production
+dependency audit. Lint passed with 23 existing warnings.
+
+After enabling queue supervision, typechecks, all 137 unit tests, and both queue
+integration tests passed. The new regression uses the real background timer to
+verify automatic retry of an abandoned job and retention cleanup of a completed
+job; the existing test verifies migration from pg-boss 10. A fresh Docker build
+passed the isolated backup/restore rehearsal, including existing-account login,
+a place, matching original photo/thumbnail hashes, and module files. Bash
+installer validation, installer smoke (app/worker/database health and API),
+HTTPS proxy/redirect checks, Compose validation, seven recovery-helper tests,
+and the documentation build/link checks also passed. Windows/PowerShell checks
+remain covered by CI and were not rerun locally in this recheck.
 
 **Automated verification (2026-11-02):** typecheck, 112 unit tests, 76 integration
 tests, 13 browser tests, published-doc links, and web/site production builds passed
@@ -111,7 +130,7 @@ release check.
 
 | Item | Notes |
 | --- | --- |
-| Dinner **vote** module | Household mode required (toggle + place sharing shipped); vote UI not built |
+| Guest voting and advanced voting rules | Household shortlist voting is available in the optional Decide Together plugin |
 | Shared lists | Lists stay `private` only |
 | Per-member Google key | Instance key only |
 | One-click backup UI | Documented `pg_dump` + volumes for now |

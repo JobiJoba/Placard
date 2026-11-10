@@ -21,7 +21,7 @@ Places, lists, tags, media, auth
 
 | Mode | Who | How |
 | --- | --- | --- |
-| **Bundled** | Reserved | First-party catalog slot (empty today — no modules ship inside the image) |
+| **Bundled** | Official plugins | Pinned builds of Pick, Board, Day Out, Menus, and Decide Together ship inactive; an administrator activates them in Marketplace |
 | **Upload** | You / third parties | Prebuilt zip → Settings → Module marketplace |
 | **GitHub** | You / third parties | Public repo URL → latest GitHub Release asset (`.placard-module` or `.zip`) |
 

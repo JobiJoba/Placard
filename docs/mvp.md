@@ -93,7 +93,7 @@ Distances show in km or miles according to a user setting. Results need to feel 
 - Module SDK + manifest (`@placard/module-sdk`)
 - In-app Marketplace: install/uninstall/enable; per-user show in nav
 - Admin upload of **prebuilt zip**, or install from a **public GitHub Release** asset, into `PLACARD_MODULES_DIR` (no in-container compile; no sandbox)
-- Dinner-spin / pick wheels are **optional modules** (e.g. sibling `placard-places-pick` → `places.pick`), not bundled in the Placard image
+- Dinner-spin / pick wheels are **optional modules**; the pinned `places.pick` build now ships inactive by default with the other official plugins
 - Not a public app store — admin-trusted plugins only
 
 ### 6. MCP (must-ship)
@@ -124,7 +124,7 @@ Distances show in km or miles according to a user setting. Results need to feel 
 | Feature | Planned for |
 | --- | --- |
 | Household: shared lists | v0.2 — lists stay private-only; place sharing shipped on `main` after the freeze |
-| Dinner vote module | v0.2 (needs household) |
+| Dinner vote module | Originally deferred; now available as the optional bundled Decide Together plugin |
 | Per-member Google key override | v0.2 |
 | One-click backup and restore UI | v0.2 (export plus documented `pg_dump` in v0.1) |
 | Optional visit history (dates, count) | v0.2 (status only in v0.1) |

@@ -111,7 +111,7 @@ Households on one instance (family dinner votes, household-shared places) — wi
 4. Run a **pick / spin** Marketplace module on a filtered pool (optional avoid-recent)
 5. MCP: search + get place (+ installed module tools) from an agent client
 6. Dish photos and want/been-there status work on cards
-7. Household: private + shared places and admin invites (in-app vote still later)
+7. Household: private + shared places and admin invites (optional in-app voting now ships through Decide Together)
 
 ## One-line pitch variants
 

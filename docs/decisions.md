@@ -58,7 +58,7 @@ Resolved choices from product discussion. Update this file when something change
 
 | Topic | Decision |
 | --- | --- |
-| **Modules** | Trusted same-process plugins; SDK + instance install + per-user show; marketplace catalog UI + admin zip upload / GitHub Release (**shipped** ahead of original “Later”). No bundled first-party wheel — Pick lives in sibling `placard-places-pick`. |
+| **Modules** | Trusted same-process plugins; SDK + instance install + per-user show; marketplace catalog UI + admin zip upload / GitHub Release (**shipped** ahead of original “Later”). Pick is developed separately and its pinned build ships inactive by default with the other official plugins. |
 | **Pick / spin wheel** | External Marketplace module (e.g. `places.pick`); optional **“avoid recent picks”** toggle. |
 | **MCP** | **Must-ship** — Streamable HTTP `/mcp` + PATs (**shipped**); module tools discovered after install. |
 | **Install targets** | Docker Compose / Coolify first; beside Nextcloud, not inside it (v1). |

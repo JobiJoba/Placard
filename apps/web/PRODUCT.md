@@ -20,7 +20,7 @@ Immich-adjacent for starred places: Compose-up, data on your disk, private to yo
 
 ## Operating Context
 
-Web client (PWA in Phase 10) against a self-hosted API (Effect HttpApi, PostGIS, Better Auth). Lifecycle: (1) seed — Takeout or manual add; (2) curate — lists, enrichment, photos, status; (3) return — near-me/city library, optional Marketplace modules, MCP. Google Places BYOK is optional; CRUD works without a key. No offline mode. MCP ships; pick wheels install from Marketplace; household place sharing is admin-gated; household vote is later.
+Web client (PWA in Phase 10) against a self-hosted API (Effect HttpApi, PostGIS, Better Auth). Lifecycle: (1) seed — Takeout or manual add; (2) curate — lists, enrichment, photos, status; (3) return — near-me/city library, optional Marketplace modules, MCP. Google Places BYOK is optional; CRUD works without a key. No offline mode. MCP ships; five official plugins ship inactive and can be activated in Marketplace; household place sharing is admin-gated; Decide Together provides optional household voting.
 
 ## Capabilities and Constraints
 

@@ -27,7 +27,7 @@ Ground truth for prioritization. Not every user will match this; it defines what
 
 - Shared *and* private places (admin toggle; place sharing shipped)
 - Admin invites / revoke only (no member removal yet)
-- Votes in-app only (still later)
+- Votes in-app only (now available through the optional Decide Together plugin)
 - No guest/kid accounts
 
 ## Tech preferences that affect UX

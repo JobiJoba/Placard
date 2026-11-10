@@ -39,7 +39,7 @@ Work that landed between phases (or ahead of mvp “Later”) and should be trea
 - **Custom fields** — per-place typed fields; merge vs force Google refresh on enrichment.
 - **Preferred maps app** — device-local setting for “Open in maps”.
 - **MCP `list_lists`** — extra tool beyond the original Phase 9 set.
-- **Household place sharing** — admin toggle, place `visibility`, claim-first Google-place conflicts, library Everyone / Mine / Shared. Lists remain private-only; dinner vote is still later.
+- **Household place sharing** — admin toggle, place `visibility`, claim-first Google-place conflicts, library Everyone / Mine / Shared. Lists remain private-only; optional household voting is now available through Decide Together.
 
 ---
 
@@ -302,7 +302,7 @@ Work that landed between phases (or ahead of mvp “Later”) and should be trea
 - Module SDK + manifest; host routes for plugin pages and `/api/m/<id>/*`
 - Marketplace: install/uninstall/enable; per-user show in nav + Allow MCP
 - Admin **prebuilt zip** upload and **public GitHub Release** install into `PLACARD_MODULES_DIR`
-- Skeleton starter in-repo; Pick wheel lives in sibling `placard-places-pick` (not bundled)
+- Skeleton starter in-repo; pinned official plugin builds, including Pick and Decide Together, ship inactive by default
 
 **You check**
 

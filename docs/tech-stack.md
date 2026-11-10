@@ -49,7 +49,7 @@ MCP client  ────┘     apps/web                    apps/server (/api, /
 Rules:
 
 1. **Core services are Effect services** (`Places`, `Lists`, `Search`, `Enrichment`, `Import`, `Media`), each defined as a service tag with a live Layer. HttpApi handlers, MCP tools, and modules all call these services. None of them talk to the database directly.
-2. **Modules** (e.g. `places.pick` from a sibling repo) are Marketplace plugins that call core HTTP only ([architecture-modules.md](architecture-modules.md)). The in-repo skeleton is the starter; product wheels are not bundled in the image.
+2. **Modules** (e.g. `places.pick` from a sibling repo) are Marketplace plugins that call core HTTP only ([architecture-modules.md](architecture-modules.md)). The in-repo skeleton is the starter; pinned builds of five official plugins ship in the image, inactive by default.
 3. **The Node runtime only.** No edge runtime, because PostGIS, the filesystem, and pg-boss need Node.
 
 ## How Effect is used

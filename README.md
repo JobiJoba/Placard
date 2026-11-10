@@ -6,8 +6,8 @@ Placard is a self-hosted place library: collect, organize, and enrich places you
 
 Think Immich, but for starred places: private to your instance, Docker-friendly, extensible.
 
-Preparing **v1.0.0**. [Release readiness](docs/release-1.0.md) tracks the remaining
-real-device and deployment checks. [Current state](docs/current-state.md) records
+**v1.0.0**. [Release readiness](docs/release-1.0.md) records validation
+and publication checks. [Current state](docs/current-state.md) records
 what is implemented and tested. AGPL-3.0 licensed.
 
 **[Documentation](docs/README.md) · [User guide](docs/user-guide.md) · [Contributing](CONTRIBUTING.md)**
@@ -108,9 +108,9 @@ operating an instance, and extending the product.
 
 ## Snapshot of decisions
 
-- **Import + browse + library search** are the top jobs; dinner spin is a Marketplace module (not bundled)
+- **Import + browse + library search** are the top jobs; dinner spin is the optional Pick plugin, included inactive by default
 - ~500 places, near-me daily, multi-city library OK
-- **PWA** installable (manifest + icons); multi-user accounts ship now; **household place sharing is admin-gated** (dinner vote and shared lists still later)
+- **PWA** installable (manifest + icons); multi-user accounts ship now; **household place sharing is admin-gated** (Decide Together provides optional household voting; shared lists remain future work)
 - Google Takeout must; instance Google key; force refresh, no auto mass cron
 - Want / been-there first-class; visit history optional & separate from dishes
 - **MCP ships**; trusted Marketplace plugins (zip upload + GitHub Release); AGPL-3.0

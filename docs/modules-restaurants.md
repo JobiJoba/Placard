@@ -30,7 +30,7 @@ Household-only surfaces (voting) stay invisible in single-user mode. See [decisi
 
 ## Module R1 — “What should we eat tonight?” (Pick / spin)
 
-**Solo-friendly.** Not bundled in the Placard image — install a Marketplace wheel such as **`places.pick`** (sibling repo `placard-places-pick`, zip or GitHub Release). It can target restaurants or any category; MCP tool example `places_pick__pick_place`.
+**Solo-friendly.** The **`places.pick`** plugin ships in the Placard image, inactive by default; activate it in Marketplace. Administrators can also install trusted plugins from a zip or GitHub Release. It can target restaurants or any category; MCP tool example `places_pick__pick_place`.
 
 ### Intent
 
@@ -63,6 +63,10 @@ Break decision paralysis: pick one restaurant from a curated pool.
 ---
 
 ## Module R2 — Household vote (“What should *we* eat?”)
+
+Decide Together (`places.decide-together`) now ships inactive by default and provides
+household shortlist voting. The sketch below records the original design intent;
+its nomination, ranking, veto, and archive ideas are not a feature contract.
 
 **Household-only. Hidden in single-user mode.**
 

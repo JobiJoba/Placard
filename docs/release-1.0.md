@@ -1,9 +1,10 @@
 # What is left before v1.0.0?
 
-**Status as recorded on 2026-11-08: the planned v1 features are implemented.
+**Status as recorded on 2026-11-10: the planned v1 features are implemented.
 Coolify, physical-phone use, a 500+ Takeout import, Docker installation, and the
-script installer have user-reported passes. Recovery with real media remains
-unverified; the v1.0.0 release is on hold until that check passes.**
+script installer have user-reported passes. The operator confirmed a successful
+recovery check with real media on 2026-11-10. Final validation on the release commit
+and verification of published assets remain required.**
 There is no additional feature work currently listed as required for v1. If a
 remaining check finds a bug, fixing it becomes part of the release work.
 
@@ -14,8 +15,10 @@ Use GitHub release assets for the version you actually install.
 
 - **Feature implementation:** the experience listed below is in the code.
 - **Local automated validation:** the [current-state record](current-state.md#validation-evidence)
-  reports passing typechecks, 112 unit tests, 76 integration tests, 13 browser
-  tests, documentation links, and production builds on 2026-11-02.
+  records the 2026-11-10 baseline (137 unit tests, 92 integration tests, 22 browser
+  tests, typechecks, audit, and builds), followed by queue regression/migration
+  checks and a fresh Docker recovery, installer smoke, and HTTPS pass after the
+  supervision fix.
 - **Automated backup and restore:** a disposable Compose instance passed backup,
   volume removal, and restore, including login, a place, photo/thumbnail hashes,
   and module files. This proves the tested recovery path with test data.
@@ -32,8 +35,8 @@ pass” means the docs do not establish completion; it does not mean a test fail
 | User-reported pass | Fresh Coolify install | Working with a generated domain and updated `PUBLIC_URL`; setup reported easy and fast. |
 | User-reported pass | Physical-phone check | User confirmed the phone check is OK; device/browser details were not supplied. |
 | User-reported pass | Real Takeout import | Import with 500+ Takeout items reported working; exact count and deployment details were not supplied. |
-| No recorded pass | Recovery with real media | Rehearse the [backup and restore guide](backup-restore.md) using a representative instance and its actual media, restoring into separate recovery volumes. Verify login, places, photos, and installed modules. |
-| Waiting for the checks above | Publish v1.0.0 | Ensure all checks pass on the release commit, publish the tag, and verify the published image and install assets. |
+| User-reported pass (2026-11-10) | Recovery with real media | Operator confirmed completing the recovery check with real media; environment and detailed results were not supplied. |
+| Pending release-commit validation | Publish v1.0.0 | Ensure all checks pass on the release commit, publish the tag, and verify the published image and install assets. |
 
 For each completed manual check, add its date, environment, outcome, and any
 remaining problems to [current state](current-state.md#manual-release-checks).
@@ -55,10 +58,10 @@ instance with its real files by following the guide.
 ## Can wait until after v1
 
 Offline operation, native apps, OIDC, shared lists, guest voting, per-member Google
-keys, sandboxed plugins, and a public module store remain future work. A pick wheel
-is an optional external module, not a bundled prerequisite.
+keys, sandboxed plugins, and a public module store remain future work. Pick and
+Decide Together ship as optional plugins, inactive by default.
 
-Shared lists, dinner voting, one-click backup UI, and the other future features
+Shared lists, guest voting, one-click backup UI, and the other future features
 are not blockers for this release. Automated fixtures do not establish compatibility
 with every export or deployment.
 
