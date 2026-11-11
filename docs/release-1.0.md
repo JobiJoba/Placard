@@ -1,49 +1,14 @@
-# What is left before v1.0.0?
+# Placard v1.0.0
 
-**Status as recorded on 2026-11-10: the planned v1 features are implemented.
-Coolify, physical-phone use, a 500+ Takeout import, Docker installation, and the
-script installer have user-reported passes. The operator confirmed a successful
-recovery check with real media on 2026-11-10. Final validation on the release commit
-and verification of published assets remain required.**
-There is no additional feature work currently listed as required for v1. If a
-remaining check finds a bug, fixing it becomes part of the release work.
+**v1.0.0 is out.** Placard’s first stable release was published on November 10, 2026.
 
-This page tracks preparation for v1.0.0; it does not announce a published release.
-Use GitHub release assets for the version you actually install.
+- [Release notes and downloads](https://github.com/placard-app/core/releases/tag/v1.0.0)
+- [Install Placard](install.md) using the latest published release assets.
+- [Upgrade an existing instance](upgrade.md) with configuration and data preserved.
 
-## Already done
-
-- **Feature implementation:** the experience listed below is in the code.
-- **Local automated validation:** the [current-state record](current-state.md#validation-evidence)
-  records the 2026-11-10 baseline (137 unit tests, 92 integration tests, 22 browser
-  tests, typechecks, audit, and builds), followed by queue regression/migration
-  checks and a fresh Docker recovery, installer smoke, and HTTPS pass after the
-  supervision fix.
-- **Automated backup and restore:** a disposable Compose instance passed backup,
-  volume removal, and restore, including login, a place, photo/thumbnail hashes,
-  and module files. This proves the tested recovery path with test data.
-- **Release automation:** CI and release tags use shared checks before publishing
-  the image and install files. Those checks must also pass for the release commit.
-
-## Still to do before publishing
-
-These are validation tasks, not requests to build more features. “No recorded
-pass” means the docs do not establish completion; it does not mean a test failed.
-
-| Status | Task | What counts as done |
-| --- | --- | --- |
-| User-reported pass | Fresh Coolify install | Working with a generated domain and updated `PUBLIC_URL`; setup reported easy and fast. |
-| User-reported pass | Physical-phone check | User confirmed the phone check is OK; device/browser details were not supplied. |
-| User-reported pass | Real Takeout import | Import with 500+ Takeout items reported working; exact count and deployment details were not supplied. |
-| User-reported pass (2026-11-10) | Recovery with real media | Operator confirmed completing the recovery check with real media; environment and detailed results were not supplied. |
-| Pending release-commit validation | Publish v1.0.0 | Ensure all checks pass on the release commit, publish the tag, and verify the published image and install assets. |
-
-For each completed manual check, add its date, environment, outcome, and any
-remaining problems to [current state](current-state.md#manual-release-checks).
-
-**Why recovery appears twice:** the automated recovery check is already done with
-test data. The remaining task checks that an operator can recover a representative
-instance with its real files by following the guide.
+This page describes what shipped and the current limits. The dated validation
+record is in [current state](current-state.md#validation-evidence); the full
+change history is in the [changelog](../CHANGELOG.md).
 
 ## Included experience
 
@@ -55,35 +20,36 @@ instance with its real files by following the guide.
 - Docker Compose operation, persistent storage, and documented backup/recovery.
 - Responsive browser UI with home-screen manifest and icons; online use only.
 
-## Can wait until after v1
+Five official plugins — Pick, Board, Day Out, Menus, and Decide Together — ship
+as pinned builds, inactive by default. Administrators activate them in Marketplace.
 
-Offline operation, native apps, OIDC, shared lists, guest voting, per-member Google
-keys, sandboxed plugins, and a public module store remain future work. Pick and
-Decide Together ship as optional plugins, inactive by default.
+The release also includes Bash and PowerShell installers, Compose configuration,
+and backup/recovery helpers. The installers create fresh instances; use the
+[upgrade guide](upgrade.md) for an existing installation.
 
-Shared lists, guest voting, one-click backup UI, and the other future features
-are not blockers for this release. Automated fixtures do not establish compatibility
-with every export or deployment.
+## Validation record
 
-## Installer release checks
+The [automated validation record](current-state.md#validation-evidence) includes
+unit, integration, and browser tests, typechecks, builds, dependency audits,
+installer checks, and a disposable Compose backup → wipe → restore rehearsal.
+The recovery rehearsal verifies account login, a place, matching photo/thumbnail
+hashes, and module files with test data.
 
-Before advertising the one-command installer:
+[Manual checks](current-state.md#manual-release-checks) record user-reported passes
+for Docker and script installation, Coolify deployment, physical-phone use, and a
+500+ item Takeout import. The operator confirmed successful recovery with real
+media on November 10, 2026. These reports retain their original level of detail;
+they do not establish compatibility with every device, export, or deployment.
 
-- Run `node scripts/check-installers.mjs bash` and `node scripts/check-installers.mjs pwsh`.
-  CI also checks Windows PowerShell 5.1, PowerShell 7, Linux, and macOS.
-- With the current app image built as `placard:dr-check`, run
-  `node scripts/check-installer-smoke.mjs`. It creates and removes only its own
-  randomly named Compose project, checks all three services and `/api/health`.
-- Manually exercise initial signup with Docker Desktop on macOS and Windows,
-  including a directory with spaces, local access, and a custom port. These manual
-  checks remain required before claiming those Docker Desktop combinations verified.
-- Publish the release with `docker-compose.yml`, `example.env`, `install.sh`, and
-  `install.ps1`. Each generated installer embeds its own release tag and repository.
-- Deploy Pages only once the latest release has all required install and recovery
-  assets uploaded. The Pages workflow verifies the published asset list through
-  GitHub's API, so temporary download-CDN failures do not block documentation builds.
-  Rerun it manually after publication if needed
-  (GitHub-token-created releases may not trigger another workflow).
+Contributor checks for future releases are documented in
+[Contributing](../CONTRIBUTING.md#installer-and-release-validation).
 
-V1 installs fresh instances only. Existing configuration, credentials, and volumes
-must be managed with the backup and manual upgrade instructions.
+## Current limits and future work
+
+Placard needs a connection to your server. Offline operation, native apps, OIDC,
+shared lists, guest voting, per-member Google keys, sandboxed plugins, a public
+module store, and a one-click backup UI remain future work.
+
+Lists are private; household place sharing is opt-in and administrator-gated.
+Modules run as trusted code installed by an administrator. Back up the database,
+media, and module volumes together using the [backup and restore guide](backup-restore.md).

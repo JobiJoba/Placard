@@ -175,7 +175,7 @@ export function HomePage() {
             ],
             [
               "What does v1.0.0 mean here?",
-              "We are preparing the 1.0.0 release around the implemented library experience. Deployment, real-collection, and physical-phone checks remain visible in the release-readiness guide. Install assets always refer to the latest published release.",
+              "v1.0.0 is out: Placard’s first stable release. It includes private place libraries, Takeout import, optional household sharing, Marketplace plugins, and MCP. Installers use the latest published release assets; the release overview describes what ships and the current limits.",
             ],
           ].map(([question, answer]) => (
             <details key={question}>
@@ -184,7 +184,7 @@ export function HomePage() {
             </details>
           ))}
           <Link className="text-link" to="/docs/release-1.0">
-            Follow v1.0.0 readiness →
+            Explore the v1.0.0 release →
           </Link>
         </section>
         <section className="closing-section">

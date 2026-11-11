@@ -48,5 +48,5 @@ trusted code installed by an administrator, not sandboxed extensions.
 ## Start with one place
 
 [Install Placard](install.md), create your administrator account, then follow the
-[user guide](user-guide.md). For the v1.0.0 release scope and remaining checks,
-see [release readiness](release-1.0.md).
+[user guide](user-guide.md). Placard v1.0.0 is available; see the
+[release overview](release-1.0.md) for included features and current limits.

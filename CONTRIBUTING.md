@@ -1,7 +1,7 @@
 # Contributing to Placard
 
 Read the [documentation index](docs/README.md), [architecture](docs/tech-stack.md),
-and [v1 scope](docs/release-1.0.md) before proposing changes.
+and [v1.0.0 release overview](docs/release-1.0.md) before proposing changes.
 
 ## Development
 
@@ -35,3 +35,22 @@ Explain the user-visible problem, resulting behavior, and validation in the PR.
 Add regression coverage for behavioral bugs. Update the relevant guide when a
 workflow changes. Label future ideas explicitly; do not describe planned features
 as available. Keep release evidence separate from feature claims.
+
+## Installer and release validation
+
+For releases that change installation or deployment:
+
+- Run `node scripts/check-installers.mjs bash` and `node scripts/check-installers.mjs pwsh`.
+  CI also checks Windows PowerShell 5.1, PowerShell 7, Linux, and macOS.
+- With the current app image built as `placard:dr-check`, run
+  `node scripts/check-installer-smoke.mjs`. It creates and removes only its own
+  randomly named Compose project, checks all three services and `/api/health`.
+- Manually exercise initial signup with Docker Desktop on macOS and Windows,
+  including a directory with spaces, local access, and a custom port. Record the tested environments before claiming those Docker Desktop combinations verified.
+- Publish the release with `docker-compose.yml`, `example.env`, `install.sh`, and
+  `install.ps1`. Each generated installer embeds its own release tag and repository.
+- Deploy Pages only once the latest release has all required install and recovery
+  assets uploaded. The Pages workflow verifies the published asset list through
+  GitHub's API, so temporary download-CDN failures do not block documentation builds.
+  Rerun it manually after publication if needed
+  (GitHub-token-created releases may not trigger another workflow).

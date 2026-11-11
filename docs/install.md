@@ -46,8 +46,8 @@ SHA-256 digest before publishing it. To inspect it first,
 download `install.sh` or `install.ps1` from the [latest release](https://github.com/placard-app/core/releases/latest),
 read the file, then run `bash ./install.sh` or `& ./install.ps1`. PowerShell file
 execution follows your existing execution policy; the installer does not change it.
-Installer assets are available starting with the release that introduces this feature;
-older releases retain the manual Compose instructions below.
+The v1.0.0 release includes these installer assets. For older releases without
+installers, use the manual Compose instructions below.
 
 The installer asks for:
 
@@ -254,7 +254,7 @@ changes, migration startup, verification, and recovery after a failed upgrade.
 
 | Tag | Use |
 | --- | --- |
-| Semver (`0.1.0`, …) | **Production** — what release `docker-compose.yml` pins by default |
+| Semver (`1.0.0`, …) | **Production** — what release `docker-compose.yml` pins by default |
 | `latest` | Latest **stable** release (moved only by `v*` tags, not nightlies) |
 | `nightly` | Experimental — tip of `main` after CI (see collapsible above) |
 | `nightly-<sha>` | Pin one nightly build |

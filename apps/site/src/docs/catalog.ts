@@ -57,8 +57,8 @@ export const DOC_NAV: DocNavGroup[] = [
       },
       {
         slug: "release-1.0",
-        title: "v1.0.0 readiness",
-        summary: "Release scope, validation, and remaining checks.",
+        title: "v1.0.0 release",
+        summary: "The first stable release: included features and current limits.",
       },
 
       {

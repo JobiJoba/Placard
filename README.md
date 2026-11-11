@@ -6,9 +6,11 @@ Placard is a self-hosted place library: collect, organize, and enrich places you
 
 Think Immich, but for starred places: private to your instance, Docker-friendly, extensible.
 
-**v1.0.0**. [Release readiness](docs/release-1.0.md) records validation
-and publication checks. [Current state](docs/current-state.md) records
-what is implemented and tested. AGPL-3.0 licensed.
+**[v1.0.0 is out](https://github.com/placard-app/core/releases/tag/v1.0.0)** —
+Placard’s first stable release, published on November 10, 2026. See the
+[release overview](docs/release-1.0.md) for what ships and
+[current state](docs/current-state.md) for implementation and validation evidence.
+AGPL-3.0 licensed.
 
 **[Documentation](docs/README.md) · [User guide](docs/user-guide.md) · [Contributing](CONTRIBUTING.md)**
 
@@ -33,8 +35,8 @@ The default is local-only access at `http://localhost:3000`. Enter a public doma
 at the HTTPS prompt to enable automatic certificates and HTTP redirects with Caddy.
 Complete administrator signup before exposing your instance. See **[the installation guide](docs/install.md)**
 for Docker prerequisites, download-and-inspect instructions, automated options,
-manual Compose setup, upgrades, and backup. Installer links require a release that
-includes the new installer assets.
+manual Compose setup, upgrades, and backup. The installers use the latest published
+release assets.
 
 Nightly / tip-of-`main` install lives in a collapsed section of **[docs/install.md](docs/install.md)**. Google Maps Platform BYOK: **[docs/google-apis.md](docs/google-apis.md)**. The marketing site serves the same pages under `/docs`.
 
@@ -104,7 +106,7 @@ operating an instance, and extending the product.
 | Connect an agent | [MCP](docs/mcp.md) |
 | Build a module | [Module authoring](docs/creating-modules.md) |
 | Contribute code | [Contributing](CONTRIBUTING.md) |
-| Follow v1.0.0 readiness | [Release gates](docs/release-1.0.md) |
+| See what ships in v1.0.0 | [Release overview](docs/release-1.0.md) |
 
 ## Snapshot of decisions
 

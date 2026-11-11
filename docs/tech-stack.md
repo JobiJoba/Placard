@@ -1,6 +1,6 @@
 # Tech stack
 
-The implemented stack used for v1.0.0 preparation. Keep this reference aligned with code; see [release readiness](release-1.0.md) for the product contract.
+The implemented stack shipped in v1.0.0. Keep this reference aligned with code; see the [release overview](release-1.0.md) for included features and current limits.
 
 ## Summary
 

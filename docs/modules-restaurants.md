@@ -1,6 +1,6 @@
 # Modules — Restaurants (first)
 
-> Historical planning reference. For current behavior, see the [product overview](product-overview.md); for the next release, see [v1.0.0 readiness](release-1.0.md).
+> Historical planning reference. For current behavior, see the [product overview](product-overview.md); for the first stable release, see the [v1.0.0 overview](release-1.0.md).
 
 Enrichment makes places useful. **Modules** make the library *do something* with that data — without becoming a permanent knot inside Placard’s core.
 
