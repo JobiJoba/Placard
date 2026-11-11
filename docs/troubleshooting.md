@@ -47,16 +47,16 @@ The server uses ARM64, but the selected image tag has no ARM64 variant. This hap
 before the app starts; changing environment variables will not resolve it.
 
 Release and nightly publishing target both `linux/amd64` and `linux/arm64`. Older
-images such as `ghcr.io/jobijoba/placard:0.1.1` may only contain AMD64. The workflow
+images may only contain AMD64. The workflow
 change does not update images already published: publish a new release containing
 the fix, then select that version in Coolify and redeploy. Alternatively, testers
-can set `PLACARD_IMAGE=ghcr.io/jobijoba/placard:nightly` after a successful nightly
+can set `PLACARD_IMAGE=ghcr.io/placard-app/placard:nightly` after a successful nightly
 publish containing the fix, provided their Compose configuration uses that variable.
 
 Inspect a tag before deploying it:
 
 ```sh
-docker buildx imagetools inspect ghcr.io/jobijoba/placard:0.1.1
+docker buildx imagetools inspect ghcr.io/placard-app/placard:nightly
 ```
 
 Look for `linux/arm64` in its platform list. Setting `platform: linux/amd64` requires

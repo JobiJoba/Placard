@@ -4,7 +4,7 @@ import { createHash } from "node:crypto"
 import { mkdirSync, writeFileSync } from "node:fs"
 import { resolve } from "node:path"
 
-const repository = process.env.GITHUB_REPOSITORY || "JobiJoba/Placard"
+const repository = process.env.GITHUB_REPOSITORY || "placard-app/core"
 if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository)) throw new Error("Invalid repository")
 const release = JSON.parse(
   execFileSync("gh", ["api", `repos/${repository}/releases/latest`], { encoding: "utf8" }),

@@ -12,7 +12,7 @@ packages, Node.js, or source build is needed. For Coolify, SSH into the server
 hosting Placard; run the helper on the host, not inside the app terminal.
 
 The helper is included starting with **v0.9.0**. Download `placard-recovery.py` from
-[the release assets](https://github.com/JobiJoba/Placard/releases/tag/v0.9.0) and place
+[the release assets](https://github.com/placard-app/core/releases/tag/v0.9.0) and place
 it on your Docker server. From a source checkout, use `scripts/placard-recovery.py`.
 Only run a script you trust and restore backups you created or trust.
 

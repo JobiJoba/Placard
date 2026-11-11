@@ -6,7 +6,7 @@ over an existing install.
 
 ## Before upgrading
 
-1. Choose a published version from [GitHub Releases](https://github.com/JobiJoba/Placard/releases)
+1. Choose a published version from [GitHub Releases](https://github.com/placard-app/core/releases)
    and read its release notes and [changelog](../CHANGELOG.md), including any
    instructions for intermediate versions. A planned version is not available
    until its release image and assets have been published.
@@ -47,13 +47,13 @@ keep the panel configuration and omit the bundled HTTPS overlay.
 ### 2. Pin the app and worker to the target image
 
 Edit the existing `.env` and set `PLACARD_IMAGE` to the chosen **published** version.
-For example, `v0.2.15` uses:
+Use the exact image reference in that release’s published Compose file. Releases published under the organization use this format:
 
 ```dotenv
-PLACARD_IMAGE=ghcr.io/jobijoba/placard:0.2.15
+PLACARD_IMAGE=ghcr.io/placard-app/placard:<version>
 ```
 
-Replace `0.2.15` with your target release number, without the leading `v`.
+Replace `<version>` with your target release number, without the leading `v`.
 The standard Compose file uses this variable for both app and worker. An existing
 `PLACARD_IMAGE` overrides the default image in a newly downloaded Compose file.
 Avoid moving tags such as `latest` or `nightly` for a controlled upgrade.
@@ -95,7 +95,7 @@ public domain (a Coolify-generated domain is fine).
    the resource without replacing its storage definitions or adding the standalone
    Caddy overlay. Preserve the existing app routing to internal port `3000` and
    any removal of the app's host `ports:` block.
-3. Set the resource's `PLACARD_IMAGE` to `ghcr.io/jobijoba/placard:<version>` with
+3. Set the resource's `PLACARD_IMAGE` to `ghcr.io/placard-app/placard:<version>` with
    the actual published number. Confirm **both app and worker** use that value;
    update any hard-coded image references together.
 4. During the maintenance window, stop the old app and worker before deploying

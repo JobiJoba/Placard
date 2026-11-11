@@ -28,6 +28,9 @@ Run `pnpm --filter @placard/site build` for site or published-doc changes.
 Use `pnpm check:recovery` for deployment or backup changes; it removes only its
 own randomly named disposable project's volumes.
 
+Open a pull request against `main`. Update the branch and resolve review conversations
+before squash merging after CI passes. Create release tags on commits already in `main`.
+
 Explain the user-visible problem, resulting behavior, and validation in the PR.
 Add regression coverage for behavioral bugs. Update the relevant guide when a
 workflow changes. Label future ideas explicitly; do not describe planned features

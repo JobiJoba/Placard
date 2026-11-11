@@ -43,7 +43,7 @@ bash <(curl -fsSL https://placard.fyi/install.sh)
 These commands download and execute a copy of the published release installer,
 served from `placard.fyi`. The site verifies the copy against the release asset's
 SHA-256 digest before publishing it. To inspect it first,
-download `install.sh` or `install.ps1` from the [latest release](https://github.com/JobiJoba/Placard/releases/latest),
+download `install.sh` or `install.ps1` from the [latest release](https://github.com/placard-app/core/releases/latest),
 read the file, then run `bash ./install.sh` or `& ./install.ps1`. PowerShell file
 execution follows your existing execution policy; the installer does not change it.
 Installer assets are available starting with the release that introduces this feature;
@@ -171,12 +171,12 @@ Download `docker-compose.yml` and `example.env` from the **latest GitHub Release
 
 ```sh
 curl -fsSL -o docker-compose.yml \
-  https://github.com/JobiJoba/Placard/releases/latest/download/docker-compose.yml
+  https://github.com/placard-app/core/releases/latest/download/docker-compose.yml
 curl -fsSL -o example.env \
-  https://github.com/JobiJoba/Placard/releases/latest/download/example.env
+  https://github.com/placard-app/core/releases/latest/download/example.env
 ```
 
-You can also grab those two files in the browser from the [latest release](https://github.com/JobiJoba/Placard/releases/latest).
+You can also grab those two files in the browser from the [latest release](https://github.com/placard-app/core/releases/latest).
 
 <details>
 <summary>Nightly / tip of <code>main</code> (experimental)</summary>
@@ -185,9 +185,9 @@ Use this only if you want CI tip-of-`main` builds. The compose file defaults to 
 
 ```sh
 curl -fsSL -o docker-compose.yml \
-  https://raw.githubusercontent.com/JobiJoba/Placard/main/compose.ghcr.yaml
+  https://raw.githubusercontent.com/placard-app/core/main/compose.ghcr.yaml
 curl -fsSL -o example.env \
-  https://raw.githubusercontent.com/JobiJoba/Placard/main/.env.example
+  https://raw.githubusercontent.com/placard-app/core/main/.env.example
 ```
 
 See [Image tags](#image-tags).
@@ -219,7 +219,7 @@ Optional:
 - `PLACARD_PORT` — host port (default `3000`)
 - `PLACARD_BIND_ADDRESS` — published Compose host binding (manual default `0.0.0.0`; installer default `127.0.0.1`)
 - `GOOGLE_MAPS_API_KEY` — or set later in Settings → Integrations (see [google-apis.md](google-apis.md))
-- `PLACARD_IMAGE` — override the image (release compose already pins a version; set `ghcr.io/jobijoba/placard:nightly` only if you opt into nightlies)
+- `PLACARD_IMAGE` — override the image (release compose already pins a version; set `ghcr.io/placard-app/placard:nightly` only if you opt into nightlies)
 - `MCP_ENABLED` — default `true`
 
 If the GHCR package is private: `docker login ghcr.io` (GitHub PAT with `read:packages`).
@@ -264,7 +264,7 @@ changes, migration startup, verification, and recovery after a failed upgrade.
 ## Coolify
 
 1. New Resource → **Docker Compose**
-2. Paste only the release `docker-compose.yml` from the [latest release](https://github.com/JobiJoba/Placard/releases/latest). Skip `docker-compose.override.yml` and `Caddyfile`: they add Caddy for standalone HTTPS; Coolify handles HTTPS itself.
+2. Paste only the release `docker-compose.yml` from the [latest release](https://github.com/placard-app/core/releases/latest). Skip `docker-compose.override.yml` and `Caddyfile`: they add Caddy for standalone HTTPS; Coolify handles HTTPS itself.
 3. Remove the `ports:` block under `app` from the pasted YAML. Coolify routes to the container directly, so publishing a host port is unnecessary.
 4. Set env from `example.env` (`POSTGRES_PASSWORD` ← `openssl rand -hex 24`, `BETTER_AUTH_SECRET` ← `openssl rand -base64 32`, `PUBLIC_URL=https://your-domain`). Set `PUBLIC_URL` to exactly the public HTTPS origin configured in Coolify.
 5. Map the HTTPS domain to the **app** service on internal container port **3000**
@@ -283,7 +283,7 @@ Paste repo [`compose.ghcr.yaml`](../compose.ghcr.yaml) instead of the release fi
 
 Same Compose stack as Coolify — create a **Docker Compose** service (not a single-image app).
 
-1. Paste the release `docker-compose.yml` from the [latest release](https://github.com/JobiJoba/Placard/releases/latest)
+1. Paste the release `docker-compose.yml` from the [latest release](https://github.com/placard-app/core/releases/latest)
 2. Set env from `example.env` (`POSTGRES_PASSWORD` ← `openssl rand -hex 24`, `BETTER_AUTH_SECRET` ← `openssl rand -base64 32`, `PUBLIC_URL=https://your-domain`)
 3. **Domains → Add Domain** → select the **app** service → container port **3000** (Dokploy/Traefik routes to that internal port; do not confuse this with host port publish)
 4. Deploy; wait for healthchecks. HTTPS certs may take a few seconds after the first deploy
@@ -323,8 +323,8 @@ scripted recovery path using an isolated fixture instance. See the
 For forks and local image builds, use the repo [`compose.yaml`](../compose.yaml):
 
 ```sh
-git clone https://github.com/JobiJoba/Placard.git
-cd Placard
+git clone https://github.com/placard-app/core.git
+cd core
 cp .env.example .env
 # Set POSTGRES_PASSWORD (openssl rand -hex 24), BETTER_AUTH_SECRET
 # (openssl rand -base64 32) and PUBLIC_URL

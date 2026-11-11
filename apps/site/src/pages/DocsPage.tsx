@@ -25,7 +25,7 @@ export function DocsPage() {
           <Link to="/docs">All docs</Link>
           {" · "}
           <a
-            href={`https://github.com/JobiJoba/Placard/blob/main/docs/${slug}.md`}
+            href={`https://github.com/placard-app/core/blob/main/docs/${slug}.md`}
             rel="noreferrer"
             target="_blank"
           >

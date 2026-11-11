@@ -65,9 +65,9 @@ First stable release, including the features introduced in 1.0.0-rc1.
 
 - Use accessible switches with explicit On/Off labels for module MCP access in module settings and the MCP page; disable the switches while saving
 
-[0.9.0]: https://github.com/JobiJoba/Placard/releases/tag/v0.9.0
+[0.9.0]: https://github.com/placard-app/core/releases/tag/v0.9.0
 
-[0.2.8]: https://github.com/JobiJoba/Placard/releases/tag/v0.2.8
+[0.2.8]: https://github.com/placard-app/core/releases/tag/v0.2.8
 
 ## [0.2.7] — 2026-11-02
 
@@ -75,7 +75,7 @@ First stable release, including the features introduced in 1.0.0-rc1.
 
 - Plugin callbacks use the app's internal listener instead of the public host port or proxy, fixing menu detail requests when Docker publishes a different port (such as 4000)
 
-[0.2.7]: https://github.com/JobiJoba/Placard/releases/tag/v0.2.7
+[0.2.7]: https://github.com/placard-app/core/releases/tag/v0.2.7
 
 ## [0.2.6] — 2026-11-02
 
@@ -85,7 +85,7 @@ First stable release, including the features introduced in 1.0.0-rc1.
 - Persistent Caddy certificate storage and release assets for the bundled HTTPS proxy
 - Installer validation and Docker checks for HTTPS configuration, redirects, and proxy traffic
 
-[0.2.6]: https://github.com/JobiJoba/Placard/releases/tag/v0.2.6
+[0.2.6]: https://github.com/placard-app/core/releases/tag/v0.2.6
 
 ## [0.1.1] — 2026-10-29
 
@@ -101,7 +101,7 @@ Release-assets and marketing-site release.
 
 - Install guide leads with download → `.env` → `docker compose up` instead of a local build
 
-[0.1.1]: https://github.com/JobiJoba/Placard/releases/tag/v0.1.1
+[0.1.1]: https://github.com/placard-app/core/releases/tag/v0.1.1
 
 ## [0.1.0] — 2026-10-29
 
@@ -124,8 +124,8 @@ First v0.1 release candidate after phases 0–10.
 - Household sharing shipped after this tag on `main`; dinner vote remains later
 - Instance disaster recovery is still `pg_dump` + volumes (documented); one-click backup UI is later
 
-[0.1.0]: https://github.com/JobiJoba/Placard/releases/tag/v0.1.0
+[0.1.0]: https://github.com/placard-app/core/releases/tag/v0.1.0
 
-[1.0.0-rc1]: https://github.com/JobiJoba/Placard/releases/tag/v1.0.0-rc1
+[1.0.0-rc1]: https://github.com/placard-app/core/releases/tag/v1.0.0-rc1
 
-[1.0.0]: https://github.com/JobiJoba/Placard/releases/tag/v1.0.0
+[1.0.0]: https://github.com/placard-app/core/releases/tag/v1.0.0

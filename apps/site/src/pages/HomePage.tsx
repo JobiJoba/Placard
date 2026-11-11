@@ -3,7 +3,7 @@ import { CopySnippet } from "../components/CopySnippet"
 import { CrateStage } from "../components/CrateStage"
 import { SiteChrome } from "../components/SiteChrome"
 
-const GITHUB = "https://github.com/JobiJoba/Placard"
+const GITHUB = "https://github.com/placard-app/core"
 
 const QUICK_INSTALL = `bash <(curl -fsSL https://placard.fyi/install.sh)`
 const WINDOWS_INSTALL = `& ([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing https://placard.fyi/install.ps1).Content))`

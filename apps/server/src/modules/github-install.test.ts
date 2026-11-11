@@ -82,18 +82,18 @@ describe("isNewerSemver", () => {
 
 describe("module releases", () => {
   it("preserves the module selector in install and update URLs", () => {
-    expect(parseGithubRepoUrl("JobiJoba/plugins#places.menus")).toEqual({
-      owner: "JobiJoba",
+    expect(parseGithubRepoUrl("ExampleOrg/plugins#places.menus")).toEqual({
+      owner: "ExampleOrg",
       repo: "plugins",
       moduleId: "places.menus",
-      repoUrl: "https://github.com/JobiJoba/plugins#places.menus",
+      repoUrl: "https://github.com/ExampleOrg/plugins#places.menus",
     })
-    expect(parseGithubRepoUrl("https://github.com/JobiJoba/plugins#places.pick")?.moduleId).toBe(
+    expect(parseGithubRepoUrl("https://github.com/ExampleOrg/plugins#places.pick")?.moduleId).toBe(
       "places.pick",
     )
-    expect(parseGithubRepoUrl("JobiJoba/plugins#../bad")).toBeNull()
-    expect(parseGithubRepoUrl("JobiJoba/plugins#")).toBeNull()
-    expect(parseGithubRepoUrl("JobiJoba/plugins#places.pick#extra")).toBeNull()
+    expect(parseGithubRepoUrl("ExampleOrg/plugins#../bad")).toBeNull()
+    expect(parseGithubRepoUrl("ExampleOrg/plugins#")).toBeNull()
+    expect(parseGithubRepoUrl("ExampleOrg/plugins#places.pick#extra")).toBeNull()
   })
 
   it.effect("selects each module independently, skips previews, and paginates", () =>
@@ -123,16 +123,16 @@ describe("module releases", () => {
           }),
         ),
       )
-      const menus = yield* fetchLatestRelease("JobiJoba", "plugins", "places.menus").pipe(
+      const menus = yield* fetchLatestRelease("ExampleOrg", "plugins", "places.menus").pipe(
         Effect.provide(layer),
       )
       expect(menus.tagName).toBe("places.menus@0.1.0")
       expect(calls).toHaveLength(2)
-      const pick = yield* fetchLatestRelease("JobiJoba", "plugins", "places.pick").pipe(
+      const pick = yield* fetchLatestRelease("ExampleOrg", "plugins", "places.pick").pipe(
         Effect.provide(layer),
       )
       expect(pick.tagName).toBe("places.pick@0.2.0")
-      const legacy = yield* fetchLatestRelease("JobiJoba", "old").pipe(Effect.provide(layer))
+      const legacy = yield* fetchLatestRelease("ExampleOrg", "old").pipe(Effect.provide(layer))
       expect(legacy.tagName).toBe("v9.0.0")
     }),
   )

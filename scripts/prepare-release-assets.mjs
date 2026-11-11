@@ -21,7 +21,7 @@ if (!/^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$/.test(version)) {
   process.exit(1)
 }
 
-const owner = (process.env.GITHUB_REPOSITORY_OWNER || "jobijoba").toLowerCase()
+const owner = (process.env.GITHUB_REPOSITORY_OWNER || "placard-app").toLowerCase()
 const image = `ghcr.io/${owner}/placard:${version}`
 
 mkdirSync(outDir, { recursive: true })
@@ -44,7 +44,7 @@ copyFileSync(join(root, "scripts", "placard-recovery.py"), join(outDir, "placard
 console.log(`Wrote ${outDir}/docker-compose.yml (default ${image})`)
 console.log(`Wrote ${outDir}/example.env`)
 
-const repository = process.env.GITHUB_REPOSITORY || "JobiJoba/Placard"
+const repository = process.env.GITHUB_REPOSITORY || "placard-app/core"
 if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository)) throw new Error("Invalid repository")
 const apiTokens = {
   "docker-compose.yml": "@PLACARD_COMPOSE_API@",
