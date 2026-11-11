@@ -2,7 +2,7 @@ import { Link } from "react-router"
 import { PluginPreview } from "../components/PluginPreview"
 import { SiteChrome } from "../components/SiteChrome"
 
-const REPOSITORY = "https://github.com/JobiJoba/plugins"
+const ORGANIZATION = "https://github.com/placard-app"
 
 const plugins = [
   {
@@ -77,8 +77,8 @@ export function PluginsPage() {
             instance, from restaurant menus and choosing where to go to printing a board of your
             favorite places, or planning a day around them.
           </p>
-          <a href={REPOSITORY} target="_blank" rel="noreferrer">
-            Browse the plugins repository on GitHub →
+          <a href={`${ORGANIZATION}?q=module-&tab=repositories`} target="_blank" rel="noreferrer">
+            Browse the module repositories on GitHub →
           </a>
         </header>
 
@@ -105,7 +105,7 @@ export function PluginsPage() {
                 <PluginPreview name={plugin.name} image={plugin.screenshot} />
                 <div className="plugin-install">
                   <a
-                    href={`${REPOSITORY}/tree/main/plugins/${plugin.id}`}
+                    href={`${ORGANIZATION}/module-${plugin.id.slice("places.".length)}`}
                     target="_blank"
                     rel="noreferrer"
                   >

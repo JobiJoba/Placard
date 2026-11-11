@@ -93,9 +93,9 @@ jobs:
       - name: Build site
         env:
           # placard.fyi is a custom domain, so GitHub Pages serves the site from
-          # the root. The project URL (jobijoba.github.io/Placard/) redirects to
+          # the root. The project URL (placard-app.github.io/core/) redirects to
           # the custom domain, so assets must be built with base "/" — building
-          # with "/Placard/" makes every asset 404 on the custom domain.
+          # with "/core/" makes every asset 404 on the custom domain.
           BASE_PATH: /
         run: pnpm --filter @placard/site build
 

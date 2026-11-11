@@ -322,9 +322,8 @@ export function SettingsMarketplacePage() {
             <div>
               <p className="font-medium">Install from GitHub</p>
               <p className="text-xs text-muted-foreground">
-                Public repo URL or owner/repo. For a repository with multiple modules, append
-                #module.id (for example, JobiJoba/plugins#places.menus). Installs that module’s
-                latest release.
+                Enter a public repository URL or owner/repo, such as placard-app/module-menus. For
+                repositories with multiple modules, append #module.id.
               </p>
               <a
                 href="https://placard.fyi/plugins"

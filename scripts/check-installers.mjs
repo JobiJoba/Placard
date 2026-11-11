@@ -69,22 +69,22 @@ for (const [source, target] of [
 }
 let source = readFileSync(join(root, `scripts/install.${shell === "bash" ? "sh" : "ps1"}`), "utf8")
   .replaceAll("@PLACARD_RELEASE@", "v1.2.3")
-  .replaceAll("@PLACARD_REPOSITORY@", "JobiJoba/Placard")
+  .replaceAll("@PLACARD_REPOSITORY@", "placard-app/core")
   .replaceAll(
     "@PLACARD_COMPOSE_API@",
-    "https://api.github.com/repos/JobiJoba/Placard/releases/assets/101",
+    "https://api.github.com/repos/placard-app/core/releases/assets/101",
   )
   .replaceAll(
     "@PLACARD_ENV_API@",
-    "https://api.github.com/repos/JobiJoba/Placard/releases/assets/102",
+    "https://api.github.com/repos/placard-app/core/releases/assets/102",
   )
   .replaceAll(
     "@PLACARD_HTTPS_API@",
-    "https://api.github.com/repos/JobiJoba/Placard/releases/assets/103",
+    "https://api.github.com/repos/placard-app/core/releases/assets/103",
   )
   .replaceAll(
     "@PLACARD_CADDY_API@",
-    "https://api.github.com/repos/JobiJoba/Placard/releases/assets/104",
+    "https://api.github.com/repos/placard-app/core/releases/assets/104",
   )
 if (shell !== "bash")
   source = `function Invoke-WebRequest { param($Uri,$OutFile,$TimeoutSec,$Headers,[switch]$UseBasicParsing)

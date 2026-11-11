@@ -17,7 +17,7 @@ A minimal uploadable starter lives in the repo:
 
 It exposes `GET /hello`, a small page, a CMD+K action (**Open Skeleton**), and MCP tool `skeleton_hello` so you can verify Marketplace + palette + MCP wiring before adding real behavior. Rename the id/paths when you turn it into a real module.
 
-Richer example: **`places.pick`** — generic “pick any category” wheel in [plugins workspace](https://github.com/JobiJoba/plugins/tree/main/plugins/places.pick) (next to this monorepo as `../placard-plugins/plugins/places.pick`). Install via zip upload or GitHub Release.
+Richer example: **`places.pick`** — generic “pick any category” wheel in the [Pick repository](https://github.com/placard-app/module-pick). Install via zip upload or GitHub Release.
 
 ## What you ship
 
@@ -107,7 +107,7 @@ Export `createModule()` that returns optional `createHttpApp` and/or `mcpTools`.
 Reference trees:
 
 - Skeleton starter: `packages/modules/skeleton/`
-- Upload / GitHub wheel: sibling workspace `../placard-plugins/plugins/places.pick`
+- Upload / GitHub wheel: [Pick module repository](https://github.com/placard-app/module-pick)
 
 ## Install on an instance
 
@@ -117,8 +117,10 @@ Reference trees:
 4. Enable the module for the instance
 5. Each user: Marketplace → module → **Settings** → show in nav / allow MCP
 
+Install an official module using its repository URL, such as `https://github.com/placard-app/module-menus`.
+
 For multiple modules in one repository, append `#module.id` to the GitHub URL, for
-example `https://github.com/JobiJoba/plugins#places.menus` or `#places.pick`. Publish
+example `https://github.com/owner/repo#places.menus` or `#places.pick`. Publish
 independent stable releases tagged `<module.id>@<version>` with the module's prebuilt
 asset. Installation and update checks follow that selector, skip drafts/prereleases,
 and validate the downloaded manifest ID. Existing single-module repo URLs still use

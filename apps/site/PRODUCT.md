@@ -43,7 +43,7 @@ Vite + React marketing + docs site. Home (`/`) persuades and points to Install. 
 - Site copy in `apps/site` (Home + Docs shell)
 - Canonical docs markdown: `docs/*.md` (Install, Google APIs, Deployment, MCP, …)
 - Runnable product UI elsewhere: `apps/web`
-- GitHub: https://github.com/JobiJoba/Placard
+- GitHub: https://github.com/placard-app/core
 - Do not fabricate testimonials, customer logos, benchmarks, or public user counts
 
 ## Product Principles

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { Link, useLocation } from "react-router"
 
-const GITHUB = "https://github.com/JobiJoba/Placard"
+const GITHUB = "https://github.com/placard-app/core"
 
 export function SiteChrome({ children }: { children: ReactNode }) {
   const { pathname } = useLocation()

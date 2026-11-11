@@ -17,14 +17,14 @@ const docker = (args) =>
 // Only the test's project name, image source, and dynamic host port differ from a release.
 const source = readFileSync(join(root, "scripts/install.sh"), "utf8")
   .replaceAll("@PLACARD_RELEASE@", "v1.2.3")
-  .replaceAll("@PLACARD_REPOSITORY@", "JobiJoba/Placard")
+  .replaceAll("@PLACARD_REPOSITORY@", "placard-app/core")
   .replaceAll(
     "@PLACARD_COMPOSE_API@",
-    "https://api.github.com/repos/JobiJoba/Placard/releases/assets/101",
+    "https://api.github.com/repos/placard-app/core/releases/assets/101",
   )
   .replaceAll(
     "@PLACARD_ENV_API@",
-    "https://api.github.com/repos/JobiJoba/Placard/releases/assets/102",
+    "https://api.github.com/repos/placard-app/core/releases/assets/102",
   )
   .replaceAll("project=placard", `project=${project}`)
   .replaceAll(

@@ -9,7 +9,7 @@ protect you from.
 Please **do not open a public issue** for a security problem.
 
 Use GitHub's private vulnerability reporting on
-[JobiJoba/Placard](https://github.com/JobiJoba/Placard/security/advisories/new). Include:
+[placard-app/core](https://github.com/placard-app/core/security/advisories/new). Include:
 
 - what you found and why it matters,
 - steps to reproduce (a minimal proof of concept is ideal),

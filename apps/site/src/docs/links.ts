@@ -1,7 +1,7 @@
 import { listPublishedSlugs } from "./catalog"
 
-const GITHUB_BLOB = "https://github.com/JobiJoba/Placard/blob/main"
-const GITHUB_RAW = "https://github.com/JobiJoba/Placard/raw/main"
+const GITHUB_BLOB = "https://github.com/placard-app/core/blob/main"
+const GITHUB_RAW = "https://github.com/placard-app/core/raw/main"
 
 const PUBLISHED = new Set(listPublishedSlugs())
 

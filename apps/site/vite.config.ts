@@ -7,7 +7,7 @@ const rootDir = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(rootDir, "../..")
 const repoDocs = path.resolve(repoRoot, "docs")
 
-/** Project Pages live under /Placard/; custom domains use /. */
+/** Project Pages live under /core/; custom domains use /. */
 const base = process.env.BASE_PATH || "/"
 
 export default defineConfig({

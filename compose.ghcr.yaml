@@ -20,7 +20,7 @@ x-placard-env: &placard-env
   PORT: "3000"
 
 x-placard-image: &placard-image
-  image: ${PLACARD_IMAGE:-ghcr.io/jobijoba/placard:nightly}
+  image: ${PLACARD_IMAGE:-ghcr.io/placard-app/placard:nightly}
   pull_policy: always
 
 services:
