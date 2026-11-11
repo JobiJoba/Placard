@@ -7,6 +7,13 @@ and this project aims to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.2] — 2026-11-11
+
+### Changed
+
+- Announce v1.0.0 as the first stable release across the README, documentation, and website FAQ.
+- Replace release-readiness guidance with shipped features and current limits; move future installer release checks to Contributing.
+
 ## [1.0.0] — 2026-11-10
 
 First stable release, including the features introduced in 1.0.0-rc1.
@@ -129,3 +136,5 @@ First v0.1 release candidate after phases 0–10.
 [1.0.0-rc1]: https://github.com/placard-app/core/releases/tag/v1.0.0-rc1
 
 [1.0.0]: https://github.com/placard-app/core/releases/tag/v1.0.0
+
+[1.0.2]: https://github.com/placard-app/core/releases/tag/v1.0.2

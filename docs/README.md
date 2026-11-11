@@ -16,7 +16,7 @@ A private library for places you want to remember, revisit, and share with your 
 - [Upgrade](upgrade.md): update Compose or Coolify while retaining configuration and data.
 - [Troubleshooting](troubleshooting.md): diagnose setup, import, and connection problems.
 - [Security policy](../SECURITY.md): access, credentials, and trusted modules.
-- [Release readiness](release-1.0.md): the v1.0.0 scope and outstanding validation.
+- [v1.0.0 release](release-1.0.md): the first stable release, included features, and current limits.
 
 ## Extend and contribute
 
@@ -29,8 +29,9 @@ A private library for places you want to remember, revisit, and share with your 
 ## How to read these docs
 
 User and operator guides describe implemented behavior. [Current state](current-state.md)
-records validation evidence; [release readiness](release-1.0.md) records what remains before
-v1.0.0. A release is available only when its tag and assets exist on GitHub.
+records validation evidence; the [v1.0.0 release overview](release-1.0.md) describes
+the first stable release, published on November 10, 2026. Download install assets
+from the [latest published release](https://github.com/placard-app/core/releases/latest).
 
 Early research and planning are retained for context: [vision](vision.md),
 [MVP scope](mvp.md), [implementation phases](implementation-phases.md),

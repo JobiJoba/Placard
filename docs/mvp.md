@@ -1,6 +1,6 @@
 # MVP freeze — Placard v0.1
 
-> Historical planning reference. For current behavior, see the [product overview](product-overview.md); for the next release, see [v1.0.0 readiness](release-1.0.md).
+> Historical planning reference. For current behavior, see the [product overview](product-overview.md); for the first stable release, see the [v1.0.0 overview](release-1.0.md).
 
 The scope contract for the first build. Anything not listed under **In** is out of v0.1, even if it appears elsewhere in the docs. To change scope, edit this file first.
 

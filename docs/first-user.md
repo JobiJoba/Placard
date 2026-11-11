@@ -1,6 +1,6 @@
 # First-user profile (founder)
 
-> Historical planning reference. For current behavior, see the [product overview](product-overview.md); for the next release, see [v1.0.0 readiness](release-1.0.md).
+> Historical planning reference. For current behavior, see the [product overview](product-overview.md); for the first stable release, see the [v1.0.0 overview](release-1.0.md).
 
 Ground truth for prioritization. Not every user will match this; it defines what “good” feels like early.
 

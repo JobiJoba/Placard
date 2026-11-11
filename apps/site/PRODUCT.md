@@ -20,16 +20,16 @@ Immich-adjacent for starred places: Compose-up from GHCR, data on your disk, pri
 
 ## Operating Context
 
-Vite + React marketing + docs site. Home (`/`) persuades and points to Install. Docs (`/docs`, `/docs/:slug`) render selected markdown from repo `docs/` with a left side nav and article content — Meet Placard, User guide, Install, Google APIs, Troubleshooting, Release readiness, Deployment, MCP, modules, Takeout. `/install` redirects to `/docs/install`. Source of truth remains the markdown files in `docs/`; the site is the reading surface. Secondary outbound: GitHub repo and AGPL license.
+Vite + React marketing + docs site. Home (`/`) persuades and points to Install. Docs (`/docs`, `/docs/:slug`) render selected markdown from repo `docs/` with a left side nav and article content — Meet Placard, User guide, Install, Google APIs, Troubleshooting, v1.0.0 release, Deployment, MCP, modules, Takeout. `/install` redirects to `/docs/install`. Source of truth remains the markdown files in `docs/`; the site is the reading surface. Secondary outbound: GitHub repo and AGPL license.
 
 ## Capabilities and Constraints
 
 - Confirmed routes: Home, Plugins (`/plugins`), Docs index, Docs pages; primary CTAs Install (→ docs) + GitHub.
 - Plugins lists Menus and Pick with cover illustrations, descriptions, copyable module-specific GitHub install URLs, source links and installation steps.
-- Install path: published GHCR image via release assets (`docker-compose.yml`, `example.env`); tip-of-main / `:nightly` fallback until first `v*` release.
+- Install path: published stable GHCR image via release installers and Compose assets; `:nightly` is an opt-in experimental build.
 - Do not invent a live public demo, SaaS signup, pricing, or hosted trial unless product truth changes.
 - Published docs set is curated in the site docs catalog (not every internal planning doc).
-- Undecided: production marketing domain and whether a hosted screenshot/demo gallery ships later.
+- Production marketing domain: `placard.fyi`. A hosted screenshot/demo gallery remains a future option.
 
 ## Brand Commitments
 
@@ -56,4 +56,4 @@ Vite + React marketing + docs site. Home (`/`) persuades and points to Install. 
 
 ## v1.0.0 editorial direction
 
-Warm paper, dark ink, rust accents, and large catalog typography retain the app’s collection identity. Lead with the value of remembering and rediscovering places; use the real library screenshot as product evidence. The site describes v1.0.0 preparation without claiming an unverified release. Keep the release-readiness page authoritative for remaining gates.
+Warm paper, dark ink, rust accents, and large catalog typography retain the app’s collection identity. Lead with the value of remembering and rediscovering places; use the real library screenshot as product evidence. The site announces v1.0.0 as the first stable release, published on November 10, 2026. Keep the release overview aligned with shipped features and current limits; link installation to the latest published release assets.

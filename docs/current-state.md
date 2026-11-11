@@ -1,13 +1,14 @@
 # Current state — idea vs shipped
 
-Where Placard stands relative to the original thesis. The current release contract is [v1.0.0 readiness](release-1.0.md). The [original build checklist](implementation-phases.md) remains available as implementation history.
+Where Placard stands relative to the original thesis. The first stable release is described in the [v1.0.0 overview](release-1.0.md). The [original build checklist](implementation-phases.md) remains available as implementation history.
 
-**v1 at a glance (2026-11-10):** planned features are implemented and local
-automated checks have passed. The user reports successful Docker and script
+**v1 at a glance:** [v1.0.0 was released on 2026-11-10](https://github.com/placard-app/core/releases/tag/v1.0.0)
+as the first stable release. Planned v1 features shipped and local automated checks
+have passed. The user reports successful Docker and script
 installations, Coolify deployment, physical-phone use, and a 500+ Takeout import.
 The operator also confirmed a successful recovery check with real media on
-2026-11-10. Final release-commit validation and publication checks remain; see the
-[remaining-work checklist](release-1.0.md#still-to-do-before-publishing).
+2026-11-10. See the [release overview](release-1.0.md) for included features and
+current limits; the dated records below preserve the validation evidence.
 
 ## The first idea (unchanged)
 
@@ -123,8 +124,8 @@ A disposable Docker instance passed the new helper's backup and isolated restore
 including existing-account login, a place, matching original photo/thumbnail hashes,
 and a module file. The source services restarted after backup, the recovery media
 and module volumes were distinct, and a literal dollar sign in the auth secret
-survived Compose generation. This fixture test does not complete the real-media
-release check.
+survived Compose generation. This fixture test is separate from the operator-confirmed real-media recovery
+check recorded above.
 
 ## Explicitly later (still true)
 
@@ -142,7 +143,8 @@ release check.
 | Doc | Role now |
 | --- | --- |
 | [vision.md](vision.md) | Why — still the north star |
-| [mvp.md](mvp.md) | What ships in v0.1 (scope contract) |
+| [mvp.md](mvp.md) | Historical MVP scope |
+| [release-1.0.md](release-1.0.md) | First stable release: shipped scope and current limits |
 | [implementation-phases.md](implementation-phases.md) | How we built it; phase status + extras |
 | **This file** | Snapshot of idea vs code |
 | [product-overview.md](product-overview.md) | Objects, modes, flows (implemented + planned) |
