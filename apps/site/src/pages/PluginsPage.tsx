@@ -59,8 +59,8 @@ const plugins = [
     tagline: "Vote on where to go.",
     description: "Vote on a shortlist and reveal your household’s favorite places.",
     image: "decide-together.svg",
-    screenshot: "decide-together.svg",
-    alt: "Decide Together voting illustration",
+    screenshot: "decide-together-desktop.png",
+    alt: "Illustration of a shared shortlist with a checkmark on a favorite place",
     features: ["Shared shortlists", "Household voting", "Reveal your favorites"],
   },
 ]
